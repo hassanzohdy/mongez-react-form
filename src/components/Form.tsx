@@ -74,6 +74,13 @@ export default class Form
   protected storedValuesList: FormInputsValues = {};
 
   /**
+   * {@inheritdoc}
+   */
+  public constructor(props) {
+    super(props);
+  }
+
+  /**
    * Determine whether to keep storing input values even if it is unregistered
    */
   public keepValues(keepValues: boolean = true): void {
