@@ -51,7 +51,7 @@ export type FormProps = {
   /**
    * Form Children list
    */
-  children: React.ReactNode;
+  children?: React.ReactNode;
   /**
    * Any other props
    */

@@ -23,6 +23,11 @@ export default class Form
   public formElement!: HTMLFormElement;
 
   /**
+   * {@inheritDoc}
+   */
+  protected props: FormProps = {};
+
+  /**
    * Form id
    */
   protected formId: string = Random.string(32);
