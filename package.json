@@ -1,27 +1,27 @@
 {
-  "name": "@mongez/react-form",
-  "version": "1.0.0",
-  "description": "A Powerful React form handler.",
-  "main": "src/index.ts",
-  "dependencies": {
-    "@mongez/events": "^1.0.x",
-    "form-serialize": "0.7.2",
-    "@mongez/validator": "^1.0.x",
-    "@mongez/reinforcements": "^1.0.x"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/hassanzohdy/mongez-react-form"
-  },
-  "keywords": [
-    "react",
-    "form",
-    "validation",
-    "material-io",
-    "semantic",
-    "react-form-hook",
-    "formik"
-  ],
-  "author": "hassanzohdy",
-  "license": "MIT"
+    "name": "@mongez/react-form",
+    "version": "1.0.0",
+    "description": "A Powerful React form handler.",
+    "main": "src/index.ts",
+    "dependencies": {
+        "@mongez/events": "^1.0.x",
+        "form-serialize": "0.7.2",
+        "@mongez/validator": "^1.0.x",
+        "@mongez/reinforcements": "^1.0.x"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/hassanzohdy/mongez-react-form"
+    },
+    "keywords": [
+        "react",
+        "form",
+        "validation",
+        "material-io",
+        "semantic",
+        "react-form-hook",
+        "formik"
+    ],
+    "author": "hassanzohdy",
+    "license": "MIT"
 }
