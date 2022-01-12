@@ -25,7 +25,7 @@ export default class Form
   /**
    * {@inheritDoc}
    */
-  protected props: FormProps = {};
+  public props: FormProps = {};
 
   /**
    * Form id
