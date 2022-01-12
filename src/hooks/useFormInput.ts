@@ -1,0 +1,186 @@
+import React from "react";
+import useForm from "./useForm";
+import { translatable } from "../utils";
+import { RuleResponse, validate } from "@mongez/validator";
+import { RegisteredFormInput, FormInputProps, FormInputHook } from "./../types";
+import {
+  useError,
+  useId,
+  useInputRules,
+  useLabel,
+  useLabelPosition,
+  useName,
+  usePlaceholder,
+  useValue,
+} from "./useFormInputProps";
+
+const predefinedProps = [
+  "id",
+  "ref",
+  "name",
+  "icon",
+  "value",
+  "rules",
+  "label",
+  "classes",
+  "onError",
+  "onChange",
+  "iconPosition",
+  "defaultValue",
+  "labelPosition",
+  "errorMessages",
+];
+
+export function useOtherProps(props: FormInputProps): any {
+  return React.useMemo(() => {
+    const otherProps: any = {};
+
+    for (const key in props) {
+      if (predefinedProps.includes(key)) continue;
+      otherProps[key] = props[key];
+    }
+
+    return otherProps;
+  }, [props]);
+}
+
+export default function useFormInput(props: FormInputProps): FormInputHook {
+  const id = useId(props);
+  const name = useName(props);
+  const label = useLabel(props);
+  const rules = useInputRules(props);
+  const otherProps = useOtherProps(props);
+  const placeholder = usePlaceholder(props);
+  const [value, setValue] = useValue(props);
+  const [error, setError] = useError();
+  const labelPosition = useLabelPosition(props);
+  const [isDisabled, disable] = React.useState<boolean>(
+    props.disabled || false
+  );
+  const [isReadOnly, readOnly] = React.useState<boolean>(
+    props.readOnly || false
+  );
+
+  const formProvider = useForm();
+
+  const onChange = (e: any) => {
+    const value: string = e.target.value;
+
+    if (props.value === undefined) {
+      if (props.validateOn !== "blur") {
+        setInputValue(value);
+      } else {
+        setValue(value);
+      }
+    }
+
+    props.onChange && props.onChange(e, formInput);
+  };
+
+  const onBlur = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value: string = e.target.value;
+
+    if (props.value === undefined) {
+      if (props.validateOn === "blur") {
+        setInputValue(value);
+      } else {
+        setValue(value);
+      }
+    }
+
+    props.onBlur && props.onBlur(e, formInput);
+  };
+
+  /**
+   * Set input value and validate it
+   */
+  const setInputValue = (value: any) => {
+    setValue(value);
+    validateInput(value);
+  };
+
+  /**
+   * Validate input value and return true if input value is valid, otherwise set error response and return false
+   *
+   * @returns {boolean}
+   */
+  const validateInput = (inputValue?: string): RuleResponse | null => {
+    let validatedInputValue = inputValue !== undefined ? inputValue : value;
+
+    const validator = validate(validatedInputValue, props, rules);
+
+    if (validator.passes()) {
+      setError(null);
+      formInput.isValid = true;
+      return null;
+    } else {
+      const error = validator.getError();
+      error.errorMessage = translatable(error.errorMessage, "errorMessage");
+      formInput.error = error;
+      formInput.isValid = false;
+      setError(error);
+      props.onError && props.onError(error, formInput);
+      return error;
+    }
+  };
+
+  const formInput = React.useMemo(() => {
+    const formInput: RegisteredFormInput = {
+      value,
+      id,
+      name,
+      isReadOnly,
+      readOnly,
+      setError: (error: RuleResponse) => {
+        setError(error);
+        props.onError && props.onError(error, formInput);
+      },
+      error,
+      isDisabled,
+      isValid: error === null,
+      reset: () => {
+        setInputValue("");
+        setError(null);
+      },
+      validate: validateInput,
+      disable,
+      changeValue(newValue) {
+        setInputValue(newValue);
+      },
+    };
+
+    return formInput;
+  }, [value, id, name, error, isDisabled, isReadOnly]);
+
+  React.useEffect(() => {
+    if (props.value === undefined) return;
+    setValue(props.value);
+  }, [props.value]);
+
+  React.useEffect(() => {
+    if (!formProvider) return;
+
+    formProvider.register(formInput);
+
+    return () => formProvider.unregister(formInput);
+  }, [value, id, name, isReadOnly, isDisabled, error]);
+
+  return {
+    id,
+    name,
+    label,
+    labelPosition,
+    rules,
+    error,
+    setError,
+    disabled: isDisabled,
+    placeholder,
+    ref: props.ref,
+    classes: props.classes || {},
+    value,
+    setValue,
+    onChange,
+    onBlur,
+    otherProps,
+  } as FormInputHook;
+}
