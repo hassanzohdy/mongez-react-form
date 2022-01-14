@@ -25,7 +25,7 @@ export default class Form
   /**
    * {@inheritDoc}
    */
-  public props: FormProps = {};
+  // public props: FormProps = {};
 
   /**
    * Form id
@@ -73,12 +73,13 @@ export default class Form
    */
   protected storedValuesList: FormInputsValues = {};
 
-  /**
-   * {@inheritdoc}
-   */
-  public constructor(props) {
-    super(props);
-  }
+  // /**
+  //  * {@inheritdoc}
+  //  */
+  // public constructor(props) {
+  //   super(props);
+  //   this.props = props;
+  // }
 
   /**
    * Determine whether to keep storing input values even if it is unregistered

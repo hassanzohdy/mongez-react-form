@@ -1,6 +1,6 @@
 import { getFormConfig } from "./configurations";
 
-export function translatable(value, translationKey: string): any {
+export function translatable(value: any, translationKey: string): any {
   if (!value) return "";
 
   if (

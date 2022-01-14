@@ -451,7 +451,7 @@ export type FormInputHook = FormInputProps & {
   /**
    * Set input error
    */
-  setError: (error: RuleResponse) => void;
+  setError: (error: InputError) => void;
   /**
    * Input reference
    */
@@ -464,6 +464,10 @@ export type FormInputHook = FormInputProps & {
    * Triggered when input's value is changed
    */
   onChange: (e: any) => void;
+  /**
+   * Form input handler
+   */
+  formInput: RegisteredFormInput;
   /**
    * Other props that will be passed to the component
    */
@@ -545,6 +549,9 @@ export type FormConfigurations = {
      * Default rules list
      */
     rules?: {
+      /**
+       * List of form input rules that will be used as default rules with FormInput Component
+       */
       list?: Rule[];
     };
     /**

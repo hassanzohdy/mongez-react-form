@@ -2,8 +2,8 @@ import React from "react";
 import { translatable } from "../utils";
 import { getFormConfig } from "../configurations";
 import { InputError, FormInputProps } from "../types";
+import { Rule } from "@mongez/validator";
 import { Random, toInputName } from "@mongez/reinforcements";
-import { requiredRule, Rule, rulesList } from "@mongez/validator";
 
 export function useLabel(props: FormInputProps) {
   return React.useMemo(() => translatable(props.label, "label"), [props.label]);
@@ -52,19 +52,14 @@ export function useError(): [InputError, (error: InputError) => void] {
 
 export function useRules(
   props: FormInputProps,
-  configRulesKey: string,
-  defaultRules: Rule[]
+  configRulesKey: string
 ): Rule[] {
   return React.useMemo(() => {
     return (props.rules ||
-      getFormConfig("input.rules." + configRulesKey, defaultRules)) as Rule[];
-  }, [props.rules, configRulesKey, defaultRules]);
-}
-
-export function useBasicRules(props: FormInputProps) {
-  return useRules(props, "list", [requiredRule]);
+      getFormConfig("input.rules." + configRulesKey)) as Rule[];
+  }, [props.rules, configRulesKey]);
 }
 
 export function useInputRules(props: FormInputProps) {
-  return useRules(props, "list", rulesList);
+  return useRules(props, "list");
 }

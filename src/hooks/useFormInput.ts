@@ -13,6 +13,7 @@ import {
   usePlaceholder,
   useValue,
 } from "./useFormInputProps";
+import { InputError } from "..";
 
 const predefinedProps = [
   "id",
@@ -44,26 +45,34 @@ export function useOtherProps(props: FormInputProps): any {
   }, [props]);
 }
 
-export default function useFormInput(props: FormInputProps): FormInputHook {
+export default function useFormInput(
+  baseProps: FormInputProps,
+  defaultProps: FormInputProps = {}
+): FormInputHook {
+  const props: FormInputProps = { ...defaultProps, ...baseProps };
+
   const id = useId(props);
   const name = useName(props);
   const label = useLabel(props);
   const rules = useInputRules(props);
-  const otherProps = useOtherProps(props);
+
+  const otherProps = useOtherProps(baseProps);
   const placeholder = usePlaceholder(props);
   const [value, setValue] = useValue(props);
   const [error, setError] = useError();
   const labelPosition = useLabelPosition(props);
+
   const [isDisabled, disable] = React.useState<boolean>(
     props.disabled || false
   );
+
   const [isReadOnly, readOnly] = React.useState<boolean>(
     props.readOnly || false
   );
 
   const formProvider = useForm();
 
-  const onChange = (e: any) => {
+  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value: string = e.target.value;
 
     if (props.value === undefined) {
@@ -131,9 +140,11 @@ export default function useFormInput(props: FormInputProps): FormInputHook {
       name,
       isReadOnly,
       readOnly,
-      setError: (error: RuleResponse) => {
+      setError: (error: InputError) => {
         setError(error);
-        props.onError && props.onError(error, formInput);
+        if (error) {
+          props.onError && props.onError(error, formInput);
+        }
       },
       error,
       isDisabled,
@@ -151,6 +162,10 @@ export default function useFormInput(props: FormInputProps): FormInputHook {
 
     return formInput;
   }, [value, id, name, error, isDisabled, isReadOnly]);
+
+  if (props.ref) {
+    props.ref.current = formInput;
+  }
 
   React.useEffect(() => {
     if (props.value === undefined) return;
@@ -173,6 +188,7 @@ export default function useFormInput(props: FormInputProps): FormInputHook {
     rules,
     error,
     setError,
+    formInput,
     disabled: isDisabled,
     placeholder,
     ref: props.ref,
