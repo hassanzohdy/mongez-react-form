@@ -24,6 +24,8 @@ Mongez React Form is an agnostic UI framework, which means it provides you with 
     - [Display error message](#display-error-message)
   - [Manually validating component](#manually-validating-component)
   - [The onError prop](#the-onerror-prop)
+  - [Validating onBlur instead of onChange](#validating-onblur-instead-of-onchange)
+  - [Use Input Value Hook](#use-input-value-hook)
   - [TODO](#todo)
 
 ## Installation
@@ -36,7 +38,18 @@ Or
 
 ## Usage
 
-Let's start with our main component, the `Form` component.
+For form validation messages, do not forget to import your locale validation object into Mongez Localization.
+
+```ts
+import { enTranslation } from '@mongez/validator';
+import { extend } from '@mongez/localization';
+
+extend('en', enTranslation);
+```
+
+Please check [Validation Messages Section](https://github.com/hassanzohdy/mongez-validator#validation-messages) which contains all available locales and current available rules list.
+
+Now, Let's start with our main component, the `Form` component.
 
 ```tsx
 // LoginPage.tsx
@@ -410,12 +423,14 @@ const defaultProps = {
 };
 
 export default function EmailInput(props) {    
-    const {name, error, id } = useFormInput(props, defaultProps);
+    const {name, error,  id } = useFormInput(props);
 
     return (
         <input type="email" name={name} />
     )
 }
+
+EmailInput.defaultProps = defaultProps;
 ```
 
 Hold on, what was that?
@@ -444,12 +459,14 @@ const defaultProps = {
 };
 
 export default function EmailInput(props) {    
-    const {name, error, value, onChange } = useFormInput(props, defaultProps);
+    const {name, error, value, onChange } = useFormInput(props);
 
     return (
         <input type="email" value={value} onChange={onChange} name={name} />
     )
 }
+
+EmailInput.defaultProps = defaultProps;
 ```
 
 So far the only rule that will be applied is `emailRule` as it validates only if the user inputs some text.
@@ -495,7 +512,7 @@ const defaultProps = {
 };
 
 export default function EmailInput(props) {    
-    const {name, error, value, onChange } = useFormInput(props, defaultProps);
+    const {name, error, value, onChange } = useFormInput(props);
 
     console.log(error); // null for first render
 
@@ -503,6 +520,8 @@ export default function EmailInput(props) {
         <input type="email" value={value} onChange={onChange} name={name} />
     )
 }
+
+EmailInput.defaultProps = defaultProps;
 ```
 
 Now when the user types anything, the error key will return A rule Response error, just type anything and see the console.
@@ -525,7 +544,7 @@ const defaultProps = {
 };
 
 export default function EmailInput(props) {    
-    const {name, error, value, onChange } = useFormInput(props, defaultProps);
+    const {name, error, value, onChange } = useFormInput(props);
 
     return (
         <>
@@ -537,6 +556,8 @@ export default function EmailInput(props) {
         </>
     )
 }
+
+EmailInput.defaultProps = defaultProps;
 ```
 
 ## Manually validating component
@@ -619,6 +640,8 @@ export default function EmailInput(props) {
         </>
     )
 }
+
+EmailInput.defaultProps = defaultProps;
 ```
 
 ```tsx
@@ -649,6 +672,78 @@ export default function LoginPage() {
 }
 ```
 
+## Validating onBlur instead of onChange
+
+By default, the validation occurs on `onChange` prop, but you may set it on `onBlur` event instead using `validateOn` prop.
+
+```tsx
+// LoginPage.tsx
+import React from 'react';
+import EmailInput from './EmailInput';
+import { RuleResponse } from '@mongez/validator';
+import { Form, FormInterface, RegisteredFormInput } from '@mongez/react-form';
+
+export default function LoginPage() {
+    const performLogin = (e: React.FormEvent, form: FormInterface) => {
+        //
+    };
+
+    const onError = (error: RuleResponse, formInput: RegisteredFormInput) => {
+        console.log(error); // will be triggered only if there is an error
+    }
+
+    return (
+        <Form collectValuesFromDOM onSubmit={performLogin}>
+            <EmailInput validateOn="blur" name="email" onError={onError} required />
+            <br />
+            <input type="password" name="password" placeholder="Password" />
+            <br />
+            <button>Login</button>
+        </Form>
+    )
+}
+```
+
+> Accepted values: `change` | `blur`, default is `change`
+
+## Use Input Value Hook
+
+This hook is very simple, interacts as a `React.useState` hook but with a twist, it automatically detects the input value and update the state directly.
+
+Before
+
+```tsx
+import React from 'react';
+
+export default function MyComponent() {
+    const [value, setValue] = React.useState('');
+
+    const onChange = e => {
+        setValue(e.target.value);
+    }
+
+    return (
+        <input onChange={onChange} value={value} />
+    )
+}
+```
+
+After
+
+```tsx
+import React from 'react';
+import { useInputValue } from '@mongez/react-form';
+
+export default function MyComponent() {
+    const [value, setValue] = useInputValue('');
+
+    return (
+        <input onChange={setValue} value={value} />
+    )
+}
+```
+
+It can work with almost any `onChange` event either in the native input elements or components from UI Frameworks like Material UI, Semantic UI, Ant Design and so on.
 
 ## TODO
 
