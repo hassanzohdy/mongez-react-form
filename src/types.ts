@@ -16,7 +16,7 @@ export type FormProps = {
   /**
    * Triggered when form validation results to error
    */
-  onError?: (invalidInputs: RegisteredFormInput[]) => void;
+  onError?: (invalidInputs: FormControl[]) => void;
   /**
    * Triggered when form validation is passed and now its in the submit process
    */
@@ -58,31 +58,93 @@ export type FormProps = {
   [key: string]: any;
 };
 
-export type RegisteredFormInput = {
+/**
+ * Reset form button props
+ */
+export type ResetFormButtonProps = {
+  /**
+   * The onClick props
+   */
+  onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  /**
+   * Determine what inputs to be reset, if not passed or passed as empty array
+   * Then all form controls will be cleared
+   *
+   * @default []
+   */
+  resetOnly?: string[];
+  /**
+   * Other props
+   */
+  [key: string]: any;
+};
+
+/**
+ * Available control modes
+ */
+export type ControlMode = "input" | "button";
+
+/**
+ * Available control types
+ */
+export type ControlType =
+  | "text"
+  | "color"
+  | "date"
+  | "time"
+  | "dateTime"
+  | "email"
+  | "checkbox"
+  | "radio"
+  | "hidden"
+  | "number"
+  | "password"
+  | "range"
+  | "search"
+  | "tel"
+  | "url"
+  | "week"
+  | "select"
+  | "autocomplete"
+  | "file"
+  | "image"
+  | "button"
+  | "reset"
+  | "submit";
+
+export type FormControl = {
   /**
    * Form input name, it must be unique
    */
   name: string;
   /**
+   * Form control mode
+   */
+  control: ControlMode;
+  /**
+   * Form control type
+   */
+  type: ControlType;
+  /**
    * Form input id, used as a form input flag determiner
    */
-  id: string;
+  id?: string;
   /**
    * Form input value
    */
-  value: any;
+  value?: any;
   /**
    * Triggered when form is changing disabling / enabling mode
    */
-  disable: (isDisabling: boolean) => void;
+  disable?: (isDisabling: boolean) => void;
   /**
    * Triggered when form is changing read only mode
    */
-  readOnly: (isReadingOnly: boolean) => void;
+  readOnly?: (isReadingOnly: boolean) => void;
   /**
    * Triggered when form is changing a value to the form input
    */
-  changeValue: (newValue: any) => void;
+  changeValue?: (newValue: any) => void;
   /**
    * Triggered when form input value is changed
    */
@@ -90,7 +152,7 @@ export type RegisteredFormInput = {
   /**
    * Triggered when form starts validation
    */
-  validate: (newValue?: string) => RuleResponse | null;
+  validate?: (newValue?: string) => RuleResponse | null;
   /**
    * Set form input error
    */
@@ -98,23 +160,27 @@ export type RegisteredFormInput = {
   /**
    * Determine whether the form input is valid, this is checked after calling the validate method
    */
-  isValid: boolean;
+  isValid?: boolean;
   /**
    * Determine whether form input is disabled
    */
-  isDisabled: boolean;
+  isDisabled?: boolean;
   /**
    * Determine whether form input is in read only state
    */
-  isReadOnly: boolean;
+  isReadOnly?: boolean;
   /**
    * Triggered when form resets its values
    */
-  reset: () => void;
+  reset?: () => void;
   /**
    * Form Input Error
    */
-  error: RuleResponse | null;
+  error?: RuleResponse | null;
+  /**
+   * Props list to this component
+   */
+  props?: any;
 };
 
 export type FormContextProps = null | {
@@ -125,17 +191,17 @@ export type FormContextProps = null | {
   /**
    * Register new form input
    */
-  register: (formInput: RegisteredFormInput) => void;
+  register: (formInput: FormControl) => void;
   /**
    * Unregister form input from the form
    */
-  unregister: (formInput: RegisteredFormInput) => void;
+  unregister: (formInput: FormControl) => void;
 };
 
 /**
  * Returns when calling form.values() or form.toObject() to list all form inputs with its values
  */
-export type FormInputsValues = {
+export type FormControlValues = {
   [name: string]: any;
 };
 
@@ -158,7 +224,7 @@ export type FormEventType =
   /**
    * Triggered after form submission
    */
-  | "submission"
+  | "submit"
   /**
    * Triggered before disabling/enabling form
    */
@@ -184,6 +250,14 @@ export type FormEventType =
    */
   | "register"
   /**
+   * Triggered before form unregistering form input
+   */
+  | "unregistering"
+  /**
+   * Triggered after form unregistering form input
+   */
+  | "unregister"
+  /**
    * Triggered before form serializing form inputs as object or string
    */
   | "serializing"
@@ -207,16 +281,14 @@ export interface FormInterface {
   submitting: (submitting: boolean) => void;
   /**
    * Trigger form validation
+   * If formControlNames is passed, then it will be operated only on these names.
    */
-  validate: () => void;
-  /**
-   * Validate only the given input names
-   */
-  validateOnly: (inputNames: string[]) => RegisteredFormInput[];
+  validate: (formControlNames: string[]) => void;
   /**
    * Trigger form disable/enable state
+   * If formControlNames is passed, then it will be operated only on these names.
    */
-  disable: (isDisabled: boolean) => void;
+  disable: (isDisabled: boolean, formControlNames?: string[]) => void;
   /**
    * Determine whether the form is disabled
    */
@@ -255,48 +327,51 @@ export interface FormInterface {
   /**
    * Register new form input
    */
-  register: (formInput: RegisteredFormInput) => void;
+  register: (formInput: FormControl) => void;
   /**
    * Unregister form input from the form
    */
-  unregister: (formInput: RegisteredFormInput) => void;
+  unregister: (formInput: FormControl) => void;
   /**
    * Trigger form resetting
+   * If formControlNames is passed, then it will be operated only on these names.
    */
-  reset: () => void;
+  reset: (formControlNames?: string[]) => void;
   /**
    * Get all form values
+   * If formControlNames is passed, then it will be operated only on these names.
    */
-  values: () => FormInputsValues;
+  values: (formControlNames?: string[]) => FormControlValues;
   /**
    * Return form values as an object
+   * If formControlNames is passed, then it will be operated only on these names.
    */
-  toObject: () => FormInputsValues;
+  toObject: (formControlNames?: string[]) => FormControlValues;
   /**
    * Return form values as a query string
+   * If formControlNames is passed, then it will be operated only on these names.
    */
-  toString: () => string;
+  toString: (formControlNames?: string[]) => string;
   /**
    * Return form values as a query string
+   * If formControlNames is passed, then it will be operated only on these names.
    */
-  toQueryString: () => string;
+  toQueryString: (formControlNames?: string[]) => string;
   /**
    * Return form values as json syntax
+   * If formControlNames is passed, then it will be operated only on these names.
    */
-  toJSON: () => string;
+  toJSON: (formControlNames?: string[]) => string;
   /**
    * Get input by input value
    *
    * @defaults getBy id
    */
-  getInput: (
-    value: string,
-    getBy?: "name" | "id"
-  ) => RegisteredFormInput | null;
+  control: (value: string, getBy?: "name" | "id") => FormControl | null;
   /**
-   * Get all form inputs list
+   * Get form controls list or only the given names
    */
-  inputsList: () => RegisteredFormInput[];
+  controls: (formControlNames?: string[]) => FormControl[];
 }
 
 export type ErrorMessages = {
@@ -351,6 +426,12 @@ export type FormInputProps = {
    * i.e user.name is valid, will be transformed into user[name]
    */
   name?: string;
+  /**
+   * Form control type
+   *
+   * @default 'input'
+   */
+  control?: string;
   /**
    * Override error messages
    */
@@ -410,7 +491,7 @@ export type FormInputProps = {
   /**
    * Triggered when input validation has an error
    */
-  onError?: (error: RuleResponse, formInput: RegisteredFormInput) => void;
+  onError?: (error: RuleResponse, formInput: FormControl) => void;
   /**
    * Input validation rules list
    */
@@ -420,14 +501,14 @@ export type FormInputProps = {
    */
   onChange?: (
     event: React.ChangeEvent<HTMLInputElement>,
-    formInput: RegisteredFormInput
+    formInput: FormControl
   ) => void;
   /**
    * A callback function triggered on input blue
    */
   onBlur?: (
     event: React.ChangeEvent<HTMLInputElement>,
-    formInput: RegisteredFormInput
+    formInput: FormControl
   ) => void;
   /**
    * Validate the input based on type of change
@@ -467,7 +548,7 @@ export type FormInputHook = FormInputProps & {
   /**
    * Form input handler
    */
-  formInput: RegisteredFormInput;
+  formInput: FormControl;
   /**
    * Other props that will be passed to the component
    */

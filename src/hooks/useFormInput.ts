@@ -2,7 +2,7 @@ import React from "react";
 import useForm from "./useForm";
 import { translatable } from "../utils";
 import { RuleResponse, validate } from "@mongez/validator";
-import { RegisteredFormInput, FormInputProps, FormInputHook } from "./../types";
+import { FormControl, FormInputProps, FormInputHook } from "./../types";
 import {
   useError,
   useId,
@@ -12,8 +12,8 @@ import {
   useName,
   usePlaceholder,
   useValue,
-} from "./useFormInputProps";
-import { InputError } from "..";
+} from "./form-hooks";
+import { ControlType, InputError } from "..";
 
 const predefinedProps = [
   "id",
@@ -134,11 +134,14 @@ export default function useFormInput(
   };
 
   const formInput = React.useMemo(() => {
-    const formInput: RegisteredFormInput = {
+    const formInput: FormControl = {
       value,
       id,
       name,
+      control: "input",
+      type: props.type as ControlType,
       isReadOnly,
+      props: props,
       readOnly,
       setError: (error: InputError) => {
         setError(error);

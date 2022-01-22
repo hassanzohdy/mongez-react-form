@@ -1,11 +1,12 @@
 {
     "name": "@mongez/react-form",
-    "version": "1.0.5",
+    "version": "1.0.6",
     "description": "A Powerful React form handler.",
     "main": "src/index.ts",
     "dependencies": {
         "@mongez/events": "^1.0.x",
         "form-serialize": "0.7.2",
+        "query-string": "^7.1.0",
         "@mongez/validator": "^1.0.x",
         "@mongez/reinforcements": "^1.0.x"
     },
