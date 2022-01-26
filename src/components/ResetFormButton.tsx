@@ -5,6 +5,7 @@ import { FormControl, ResetFormButtonProps } from "../types";
 
 export default function ResetFormButton({
   resetOnly,
+  component: Component = "button",
   onClick,
   ...otherProps
 }: ResetFormButtonProps) {
@@ -13,12 +14,12 @@ export default function ResetFormButton({
 
   React.useEffect(() => {
     const formControl: FormControl = {
-      name: "resetButton",
+      name: otherProps.name || "resetButton",
       control: "button",
       type: "reset",
       id: id,
       setError: (error) => {},
-      props: { resetOnly, onClick, ...otherProps },
+      props: { resetOnly, component: Component, onClick, ...otherProps },
     };
 
     formHandler?.form.register(formControl);
@@ -34,5 +35,5 @@ export default function ResetFormButton({
     [formHandler]
   );
 
-  return <button type="button" onClick={reset} {...otherProps} id={id} />;
+  return <Component type="button" onClick={reset} {...otherProps} id={id} />;
 }

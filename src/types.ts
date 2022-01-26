@@ -63,6 +63,12 @@ export type FormProps = {
  */
 export type ResetFormButtonProps = {
   /**
+   * Button component
+   *
+   * @default 'button'
+   */
+  component?: ReactComponent | string;
+  /**
    * The onClick props
    */
   onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;

@@ -2,7 +2,13 @@ import React from "react";
 import useForm from "./useForm";
 import { translatable } from "../utils";
 import { RuleResponse, validate } from "@mongez/validator";
-import { FormControl, FormInputProps, FormInputHook } from "./../types";
+import {
+  FormControl,
+  FormInputProps,
+  InputError,
+  ControlType,
+  FormInputHook,
+} from "./../types";
 import {
   useError,
   useId,
@@ -13,7 +19,6 @@ import {
   usePlaceholder,
   useValue,
 } from "./form-hooks";
-import { ControlType, InputError } from "..";
 
 const predefinedProps = [
   "id",

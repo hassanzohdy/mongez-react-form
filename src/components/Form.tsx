@@ -178,7 +178,7 @@ export default class Form
   ): FormControl[] {
     let formControls: FormControl[] = this.formControls;
     if (formControlNames.length > 0) {
-      formControls.filter((formControl) =>
+      formControls = formControls.filter((formControl) =>
         formControlNames.includes(formControl.name)
       );
     }
