@@ -82,6 +82,12 @@ export default class Form
    */
   public submitting(submitting: boolean): void {
     this.isBeingSubmitted = submitting;
+    if (submitting === true) {
+      this.submit();
+    } else {
+      this.trigger("submitting", submitting, this);
+      this.trigger("submit", submitting, this);
+    }
   }
 
   /**
@@ -483,8 +489,6 @@ export default class Form
    * The onSubmit method that will be passed to the form element
    */
   protected triggerSubmit(e: React.FormEvent): void {
-    this.trigger("submitting", e, this);
-
     e.preventDefault();
     e.stopPropagation();
 
