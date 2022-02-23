@@ -47,6 +47,7 @@ Mongez React Form is an agnostic UI framework, which means it provides you with 
     - [Use Id Hook](#use-id-hook)
     - [Use Name Hook](#use-name-hook)
   - [Form Events](#form-events)
+  - [Change Log](#change-log)
   - [TODO](#todo)
 
 ## Installation
@@ -1546,6 +1547,13 @@ form.on('serialize', (type, values, formControlNames: string[], form) => {
     // do something
 });
 ```
+
+## Change Log
+
+- 1.0.7 (26 Jan 2022)
+  - Fixed Filtering form controls in `each` method.
+  - Added **component** prop to `ResetFormButton`.
+  - Updated `ResetFormButton` props types.
 
 ## TODO
 

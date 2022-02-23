@@ -111,7 +111,7 @@ export default class Form
     if (this.props.collectValuesFromDOM) {
       const elements = this.formElement.elements;
 
-      for (let element of elements) {
+      for (let element of elements as any) {
         if (
           (!totalControlNames.includes(element["name"]) &&
             formControlNames.length > 0 &&
@@ -145,7 +145,7 @@ export default class Form
     const totalControlNames = controls.map((control) => control.name);
 
     if (this.props.collectValuesFromDOM) {
-      for (let element of this.formElement.elements) {
+      for (let element of this.formElement.elements as any) {
         if (
           (!totalControlNames.includes(element["name"]) &&
             formControlNames.length > 0 &&
@@ -447,7 +447,7 @@ export default class Form
    * Get all form controls list
    */
   public controls(formControlNames: string[] = []): FormControl[] {
-    return formControlNames
+    return formControlNames.length > 0
       ? this.formControls.filter((formControl) =>
           formControlNames.includes(formControl.name)
         )
