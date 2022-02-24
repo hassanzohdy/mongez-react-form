@@ -127,6 +127,9 @@ export default function useFormInput(
     if (validator.passes()) {
       setError(null);
       formInput.isValid = true;
+      if (formProvider) {
+        formProvider.form.validControl(formInput);
+      }
       return null;
     } else {
       const error = validator.getError();
@@ -135,6 +138,9 @@ export default function useFormInput(
       formInput.isValid = false;
       setError(error);
       props.onError && props.onError(error, formInput);
+      if (formProvider) {
+        formProvider.form.invalidControl(formInput);
+      }
       return error;
     }
   };
@@ -204,7 +210,7 @@ export default function useFormInput(
     classes: props.classes || {},
     value,
     setValue,
-    required: otherProps.required,
+    required: props.required,
     onChange,
     onBlur,
     otherProps,

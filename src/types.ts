@@ -220,6 +220,22 @@ export type FormEventType =
    */
   | "validating"
   /**
+   * Triggered when an invalid control is added to invalid controls
+   */
+  | "invalidControl"
+  /**
+   * Triggered when invalid controls has at least one invalid control
+   */
+  | "invalidControls"
+  /**
+   * Triggered when an invalid control becomes valid control
+   */
+  | "validControl"
+  /**
+   * Triggered when all invalid controls become valid controls
+   */
+  | "validControls"
+  /**
    * Triggered after form validation
    */
   | "validation"
@@ -378,6 +394,14 @@ export interface FormInterface {
    * Get form controls list or only the given names
    */
   controls: (formControlNames?: string[]) => FormControl[];
+  /**
+   * Mark the given form control as invalid control
+   */
+  invalidControl: (formControl: FormControl) => void;
+  /**
+   * Mark the given form control as valid control
+   */
+  validControl: (formControl: FormControl) => void;
 }
 
 export type ErrorMessages = {
@@ -427,6 +451,10 @@ export type FormInputProps = {
    * Input ref
    */
   ref?: any;
+  /**
+   * Determine whether the input should be auto focused
+   */
+  autoFocus?: boolean;
   /**
    * Input name attribute, allows dot notation syntax
    * i.e user.name is valid, will be transformed into user[name]

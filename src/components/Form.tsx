@@ -71,6 +71,43 @@ export default class Form
   protected storedValuesList: FormControlValues = {};
 
   /**
+   * List of invalid controls
+   */
+  protected invalidControls: FormControl[] = [];
+
+  /**
+   * Mark the given form control as invalid control
+   */
+  public invalidControl(formControl: FormControl): void {
+    if (this.invalidControls.find((control) => control.id === formControl.id))
+      return;
+
+    this.invalidControls.push(formControl);
+
+    this.trigger("invalidControl", formControl, this);
+    this.trigger("invalidControls", this.invalidControls, this);
+  }
+
+  /**
+   * Mark the given form control as valid control
+   */
+  public validControl(formControl: FormControl): void {
+    let controlIndex: number = this.invalidControls.findIndex(
+      (control) => control.id === formControl.id
+    );
+
+    if (controlIndex === -1) return;
+
+    this.trigger("validControl", formControl, this);
+
+    this.invalidControls.splice(controlIndex, 1);
+
+    if (this.invalidControls.length === 0) {
+      this.trigger("validControls", this);
+    }
+  }
+
+  /**
    * Determine whether to keep storing input values even if it is unregistered
    */
   public keepValues(keepValues: boolean = true): void {
