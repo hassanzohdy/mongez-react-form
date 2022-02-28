@@ -13,7 +13,7 @@ import {
   FormControl,
 } from "../types";
 import FormContext from "../contexts/FormContext";
-import { ControlMode, ControlType } from "..";
+import { ControlMode, ControlType, getFormConfig } from "..";
 
 export default class Form
   extends React.Component<FormProps>
@@ -525,7 +525,7 @@ export default class Form
   /**
    * The onSubmit method that will be passed to the form element
    */
-  protected triggerSubmit(e: React.FormEvent): void {
+  protected triggerSubmit(e: React.FormEvent, m: any): void {
     e.preventDefault();
     e.stopPropagation();
 
@@ -554,7 +554,7 @@ export default class Form
       keepValues,
       onSubmit,
       onValidating,
-      component: Component = "form",
+      component: Component = getFormConfig("components.formComponent", "form"),
       children,
       ...otherProps
     } = this.props;
@@ -568,11 +568,13 @@ export default class Form
     return (
       <FormContext.Provider value={formContext}>
         <Component
-          ref={(form: any) => (this.formElement = form)}
+          ref={(form: any) => {
+            this.formElement = form ? form.root || form : form;
+          }}
           className={className}
           id={id}
           noValidate={noValidate}
-          onSubmit={this.triggerSubmit.bind(this)}
+          onSubmit={this.triggerSubmit.bind(this) as any}
           {...otherProps}
         >
           {children}

@@ -28,6 +28,7 @@ const predefinedProps = [
   "value",
   "rules",
   "label",
+  "placeholder",
   "classes",
   "onError",
   "onChange",

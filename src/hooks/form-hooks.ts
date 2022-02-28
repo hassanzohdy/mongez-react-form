@@ -33,7 +33,12 @@ export function useId(props: FormInputProps) {
 
 export function useValue<T>(props: FormInputProps, initialValue = "") {
   const [value, setValue] = React.useState<T>(() => {
-    return props.value || props.defaultValue || initialValue || "";
+    if (![undefined, null].includes(props.value)) return props.value;
+
+    if (![undefined, null].includes(props.defaultValue))
+      return props.defaultValue;
+
+    return initialValue || "";
   });
 
   return [value, setValue];
