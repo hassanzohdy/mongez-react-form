@@ -1550,6 +1550,8 @@ form.on('serialize', (type, values, formControlNames: string[], form) => {
 
 ## Change Log
 
+- 1.0.11 (4 Mar 2022)
+  - Fixed Bugs
 - 1.0.7 (26 Jan 2022)
   - Fixed Filtering form controls in `each` method.
   - Added **component** prop to `ResetFormButton`.
