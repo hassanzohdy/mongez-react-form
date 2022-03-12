@@ -8,6 +8,7 @@ import {
   InputError,
   ControlType,
   FormInputHook,
+  UseFormInputOptions,
 } from "./../types";
 import {
   useError,
@@ -25,6 +26,7 @@ const predefinedProps = [
   "ref",
   "name",
   "icon",
+  "type",
   "value",
   "rules",
   "label",
@@ -39,12 +41,15 @@ const predefinedProps = [
   "errorMessages",
 ];
 
-export function useOtherProps(props: FormInputProps): any {
+export function useOtherProps(
+  props: FormInputProps,
+  excludeAlso: string[]
+): any {
   return React.useMemo(() => {
     const otherProps: any = {};
 
     for (const key in props) {
-      if (predefinedProps.includes(key)) continue;
+      if (predefinedProps.includes(key) || excludeAlso.includes(key)) continue;
       otherProps[key] = props[key];
     }
 
@@ -54,16 +59,19 @@ export function useOtherProps(props: FormInputProps): any {
 
 export default function useFormInput(
   baseProps: FormInputProps,
-  defaultProps: FormInputProps = {}
+  formInputOptions: UseFormInputOptions = {}
 ): FormInputHook {
-  const props: FormInputProps = { ...defaultProps, ...baseProps };
+  const props: FormInputProps = baseProps;
 
   const id = useId(props);
   const name = useName(props);
   const label = useLabel(props);
   const rules = useInputRules(props);
 
-  const otherProps = useOtherProps(baseProps);
+  const otherProps = useOtherProps(
+    baseProps,
+    formInputOptions.excludeFromOtherProps || []
+  );
   const placeholder = usePlaceholder(props);
   const [value, setValue] = useValue(props);
   const [error, setError] = useError();
@@ -211,6 +219,7 @@ export default function useFormInput(
     classes: props.classes || {},
     value,
     setValue,
+    type: props.type,
     required: props.required,
     onChange,
     onBlur,

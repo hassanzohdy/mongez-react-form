@@ -2,6 +2,17 @@ import React from "react";
 import { EventSubscription } from "@mongez/events";
 import { Rule, RuleResponse } from "@mongez/validator";
 
+export type HiddenInputProps = {
+  /**
+   * Input name
+   */
+  name?: string;
+  /**
+   * Input value
+   */
+  value?: any;
+};
+
 export type FormProps = {
   /**
    * Form Id
@@ -364,6 +375,13 @@ export interface FormInterface {
    * If formControlNames is passed, then it will be operated only on these names.
    */
   values: (formControlNames?: string[]) => FormControlValues;
+
+  /**
+   * Get value for the given control
+   *
+   */
+  value: (FormControlName: string) => any;
+
   /**
    * Return form values as an object
    * If formControlNames is passed, then it will be operated only on these names.
@@ -441,6 +459,13 @@ export type FormInputClasses = {
 export type LabelPosition = "top" | "inline";
 
 export type ValidateOn = "change" | "blur";
+
+export type UseFormInputOptions = {
+  /**
+   * List of props to be excluded from the otherProps object
+   */
+  excludeFromOtherProps?: string[];
+};
 
 export type FormInputProps = {
   /**

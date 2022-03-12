@@ -413,6 +413,14 @@ export default class Form
   }
 
   /**
+   * Get value from form controls
+   *
+   */
+  public value(FormControlName: string): any {
+    return this.control(FormControlName, "name")?.value;
+  }
+
+  /**
    * Get all form values
    */
   public values(formControlNames: string[] = []): FormControlValues {
