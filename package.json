@@ -1,6 +1,6 @@
 {
     "name": "@mongez/react-form",
-    "version": "1.0.13",
+    "version": "1.0.15",
     "description": "A Powerful React form handler.",
     "main": "src/index.ts",
     "dependencies": {

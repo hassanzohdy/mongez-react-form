@@ -1,7 +1,7 @@
 import React from "react";
 import useForm from "./useForm";
 import { translatable } from "../utils";
-import { RuleResponse, validate } from "@mongez/validator";
+import { validate } from "@mongez/validator";
 import {
   FormControl,
   FormInputProps,
@@ -72,6 +72,7 @@ export default function useFormInput(
     baseProps,
     formInputOptions.excludeFromOtherProps || []
   );
+
   const placeholder = usePlaceholder(props);
   const [value, setValue] = useValue(props);
   const [error, setError] = useError();
@@ -128,7 +129,7 @@ export default function useFormInput(
    *
    * @returns {boolean}
    */
-  const validateInput = (inputValue?: string): RuleResponse | null => {
+  const validateInput = (inputValue?: string): InputError => {
     let validatedInputValue = inputValue !== undefined ? inputValue : value;
 
     const validator = validate(validatedInputValue, props, rules);
@@ -202,7 +203,7 @@ export default function useFormInput(
     formProvider.register(formInput);
 
     return () => formProvider.unregister(formInput);
-  }, [value, id, name, isReadOnly, isDisabled, error]);
+  }, [value, id, name, isReadOnly, isDisabled, error, props]);
 
   return {
     id,

@@ -307,7 +307,7 @@ export interface FormInterface {
   /**
    * Form element
    */
-  formElement: React.ReactNode;
+  formElement: HTMLFormElement;
   /**
    * Trigger form submission
    */

@@ -341,7 +341,7 @@ export default class Form
    * Register form control
    */
   public register(formControl: FormControl): void {
-    if (this.control(formControl.id!)) return;
+    if (this.control(formControl.id!, "id")) return;
 
     this.trigger("registering", formControl, this);
 
@@ -376,7 +376,7 @@ export default class Form
    */
   public control(
     value: string,
-    getBy: "name" | "id" = "id"
+    getBy: "name" | "id" = "name"
   ): FormControl | null {
     if (getBy === "name") {
       value = toInputName(value);
