@@ -151,6 +151,10 @@ export type FormControl = {
    */
   value?: any;
   /**
+   * Old Form control value
+   */
+  oldValue?: any;
+  /**
    * Triggered when form is changing disabling / enabling mode
    */
   disable?: (isDisabling: boolean) => void;
@@ -186,6 +190,10 @@ export type FormControl = {
    * Determine whether form input is in read only state
    */
   isReadOnly?: boolean;
+  /**
+   * Determine whether form input's value has been changed
+   */
+  isDirty?: boolean;
   /**
    * Triggered when form resets its values
    */
@@ -267,6 +275,10 @@ export type FormEventType =
    */
   | "disable"
   /**
+   * Triggered when at least one form inputs value has been changed
+   */
+  | "dirty"
+  /**
    * Triggered before form resetting function
    */
   | "resetting"
@@ -290,6 +302,10 @@ export type FormEventType =
    * Triggered after form unregistering form input
    */
   | "unregister"
+  /**
+   * Triggered when form control's value is changed
+   */
+  | "change"
   /**
    * Triggered before form serializing form inputs as object or string
    */
@@ -338,6 +354,10 @@ export interface FormInterface {
    * Determine whether the form is valid, can be called after form validation
    */
   isValid: () => boolean;
+  /**
+   * Determine whether form controls'values has been changed, at least one
+   */
+  isDirty?: () => boolean;
   /**
    * Change form input value using its name
    */

@@ -17,8 +17,7 @@ import { ControlMode, ControlType, getFormConfig } from "..";
 
 export default class Form
   extends React.Component<FormProps>
-  implements FormInterface
-{
+  implements FormInterface {
   /**
    * {@inheritdoc}
    */
@@ -74,6 +73,17 @@ export default class Form
    * List of invalid controls
    */
   protected invalidControls: FormControl[] = [];
+
+  /**
+   * Determine if current form's controls values have been changed
+   * 
+   */
+  protected isDirtyForm: boolean = false;
+
+  /**
+   * List of dirty controls
+   */
+  protected dirtyControls: FormControl[] = [];
 
   /**
    * Mark the given form control as invalid control
@@ -293,7 +303,57 @@ export default class Form
 
     if (!input || !input.changeValue) return;
 
+    if (value !== input.oldValue) {
+      input.oldValue = value;
+    }
+
+    input.isDirty = true;
+
+    this.dirty(true, input);
+
     input.changeValue(value);
+
+    this.trigger('change', input, this);
+  }
+
+  /**
+   * Toggle form as dirty
+   * If first parameter is set to true, then second argument must be the input'value that has been updated
+   */
+  public dirty(isDirty: boolean, control?: FormControl) {
+    if (isDirty) {
+      let controlIndex = this.getDirtyControlIndex(control);
+      if (controlIndex > -1) {
+        this.dirtyControls[controlIndex] = control;
+      } else {
+        this.dirtyControls.push(control);
+      }
+    } else {
+      this.dirtyControls.forEach(control => {
+        control.isDirty = false;
+        control.oldValue = undefined;
+      });
+      this.dirtyControls = [];
+    }
+
+    this.isDirtyForm = isDirty;
+
+    this.trigger("dirty", this.isDirtyForm, this.dirtyControls, this);
+  }
+
+  /**
+   * Determine if the given form control is dirty
+   * 
+   */
+  public isDirtyControl(value: string, getBy: any) {
+    return this.control(value, getBy)?.isDirty;
+  }
+
+  /**
+   * Get dirty control index
+   */
+  public getDirtyControlIndex(control: FormControl): number {
+    return this.dirtyControls.findIndex(dirtyControl => dirtyControl.id === control.id);
   }
 
   /**
@@ -368,6 +428,11 @@ export default class Form
 
     this.formControls.splice(formControlIndex, 1);
 
+    if (formControl.isDirty) {
+      let dirtyControlIndex = this.getDirtyControlIndex(formControl);
+      this.dirtyControls.splice(dirtyControlIndex, 1);
+    }
+
     this.trigger("unregister", formControl, this);
   }
 
@@ -390,6 +455,7 @@ export default class Form
    */
   public reset(formControlNames: string[] = []): FormControl[] {
     this.trigger("resetting", formControlNames, this);
+    this.dirty(false);
 
     this.isValidForm = true;
     this.isBeingSubmitted = false;
@@ -500,8 +566,8 @@ export default class Form
   public controls(formControlNames: string[] = []): FormControl[] {
     return formControlNames.length > 0
       ? this.formControls.filter((formControl) =>
-          formControlNames.includes(formControl.name)
-        )
+        formControlNames.includes(formControl.name)
+      )
       : this.formControls;
   }
 

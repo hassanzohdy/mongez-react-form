@@ -174,6 +174,8 @@ export default function useFormInput(
       error,
       isDisabled,
       isValid: error === null,
+      isDirty: false,
+      oldValue: undefined,
       reset: () => {
         setInputValue("");
         setError(null);

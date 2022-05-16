@@ -1375,6 +1375,39 @@ export default function MyComponent(props) {
 <MyComponent id="name.first" /> // <input name="name[first]" />
 ```
 
+## Dirty Form
+
+Whenever any form control's value is changed, the form control is marked as dirty and the whole form as well.
+
+This could be useful if you want to get only the updated form inputs.
+
+```tsx
+const {id, name, formInput} = useFormInput(props);
+
+// check if form input is dirty
+
+if (formInput.isDirty) {
+    // do something
+}
+```
+
+Also, the form triggers a `dirty` event when any form input's value is changed.
+
+
+## Getting form control old value
+
+Whenever any form control is marked as dirty, the `oldValue` key appears in the form control object as it stores the last value before current input value.
+
+```tsx
+const {id, name, formInput} = useFormInput(props);
+
+// check if form input is dirty
+
+if (formInput.isDirty) {
+    console.log(formInput.oldValue);
+}
+```
+
 ## Form Events
 
 The form is shipped with multiple events types that can be listened to from.
@@ -1481,7 +1514,7 @@ form.on('submitting', (e: React.FormEvent, form) => {
 });
 ```
 
-7- `submit`: Triggered after form submission using either on normal form submission or using `form.submit()` method.
+8- `submit`: Triggered after form submission using either on normal form submission or using `form.submit()` method.
 
 > Please note that `submit` event is triggered only if form is valid otherwise it won't be triggered.
 > The `submit` event is triggered after calling `onSubmit` either it is set or not.
@@ -1492,7 +1525,7 @@ form.on('submit', (e: React.FormEvent, form) => {
 });
 ```
 
-8- `registering`: Triggered before registering form input to the form.
+9- `registering`: Triggered before registering form input to the form.
 
 ```ts
 form.on('registering', (formInput: FormControl, form) => {
@@ -1500,7 +1533,7 @@ form.on('registering', (formInput: FormControl, form) => {
 });
 ```
 
-9- `register`: Triggered after registering form input to the form.
+10- `register`: Triggered after registering form input to the form.
 
 ```ts
 form.on('register', (formInput: FormControl, form) => {
@@ -1508,7 +1541,7 @@ form.on('register', (formInput: FormControl, form) => {
 });
 ```
 
-10- `unregistering`: Triggered before removing form input from the form.
+11- `unregistering`: Triggered before removing form input from the form.
 
 ```ts
 form.on('unregistering', (formInput: FormControl, form) => {
@@ -1516,7 +1549,7 @@ form.on('unregistering', (formInput: FormControl, form) => {
 });
 ```
 
-10- `unregister`: Triggered after removing form input from the form.
+12- `unregister`: Triggered after removing form input from the form.
 
 ```ts
 form.on('unregister', (formInput: FormControl, form) => {
@@ -1524,7 +1557,7 @@ form.on('unregister', (formInput: FormControl, form) => {
 });
 ```
 
-11- `serializing`: Triggered before form serializing.
+13- `serializing`: Triggered before form serializing.
 
 > Please note that it will be triggered twice if serializing is `toQueryString` or `toJSON`.
 
@@ -1536,7 +1569,7 @@ form.on('serializing', (type, formControlNames: string[], form) => {
 });
 ```
 
-12- `serialize`: Triggered after form serializing.
+14- `serialize`: Triggered after form serializing.
 
 > Please note that it will be triggered twice if serializing is `toQueryString` or `toJSON`.
 
@@ -1548,8 +1581,96 @@ form.on('serialize', (type, values, formControlNames: string[], form) => {
 });
 ```
 
+15- `invalidControl`: Triggered when form control is validated and being not valid.
+
+```ts
+form.on('invalidControl', (formControl: FormControl, form: FormInterface) => {
+    // do something
+});
+```
+
+16- `validControl`: Triggered when form control is validated and being valid.
+
+```ts
+form.on('validControl', (formControl: FormControl, form: FormInterface) => {
+    // do something
+});
+```
+
+17- `invalidControls`: Triggered when at least one form control is not valid.
+
+```ts
+form.on('invalidControls', (formControls: FormControl[], form: FormInterface) => {
+    // do something
+});
+```
+
+18- `validControl`: Triggered when all form controls are valid.
+
+```ts
+form.on('validControls', (formControls: FormControl[], form: FormInterface) => {
+    // do something
+});
+```
+
+19- `dirty`: Triggered when at least one form inputs value has been changed
+
+```ts
+form.on('dirty', (isDirty: boolean, dirtyControls: FormControl[], form: FormInterface) => {
+    // do something
+});
+```
+> Please note that the `dirty` event is triggered also when the form is reset as it will be triggered after `resetting` event directly.
+
+
+20- `change`: Triggered when form control's value has been changed.
+
+```ts
+form.on('change', (formControl: FormControl, form: FormInterface) => {
+    // do something
+});
+```
+
+> Please note that the `dirty` event is triggered also when the form is reset as it will be triggered after `resetting` event directly.
+
+## Use Form Event Hook
+
+Alternatively, you may use `useFormEvent` hook as it works seamlessly inside React Components.
+
+```tsx
+import { useState } from 'react';
+import { useFormEvent } from '@mongez/react-form';
+
+export default function LoginButton() {
+    const [isDisabled, setDisabled] = useState(false);
+
+    // if the form controls contain any invalid control, then disable the submit button
+    useFormEvent('invalidControls', () => setDisabled(true));
+    // if all form controls ar valid, then enable the submit button
+    useFormEvent('validControls', () => setDisabled(false));
+
+    // Enable/Disable the button on form submission
+    useFormEvent('submit', (isSubmitted: boolean) => setDisabled(isSubmitted));
+
+    // or in easier way
+    useFormEvent('submit', setDisabled);
+    // If form is being disabled
+    useFormEvent('disable', setDisabled);
+
+    return (
+        <button disabled={isDisabled}>Login</button>
+    )
+}
+```
+
+All registered events in `useFormEvent` are being unsubscribed once the component is unmounted.
+
 ## Change Log
 
+- 1.1.0 (16 May 2022)
+  - Added `change` form event.
+  - Added Dirty Form Controls.
+  - Added [useFormEvent Hook](#use-form-event-hook)
 - 1.0.11 (4 Mar 2022)
   - Fixed Bugs
 - 1.0.7 (26 Jan 2022)
@@ -1561,3 +1682,4 @@ form.on('serialize', (type, values, formControlNames: string[], form) => {
 
 - Separate form dom elements `toObject` serializer as configuration.
 - Separate form `toQueryString` serializer as configuration.
+- Add input values change log.
