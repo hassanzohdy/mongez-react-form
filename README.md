@@ -1724,6 +1724,8 @@ All registered events in `useFormEvent` are being unsubscribed once the componen
 
 ## Change Log
 
+- 1.2.1 (15 Jun 2022)
+  - `validate` and `validateVisible` methods return the validated form controls.
 - 1.2.0 (15 Jun 2022)
 - Fixed `validate` method to allow calling it without any parameters.
 - Added [validateVisible method](#validate-only-visible-elements)

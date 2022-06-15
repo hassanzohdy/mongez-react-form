@@ -68,7 +68,7 @@ export default function useFormInput(
   const label = useLabel(props);
   const rules = useInputRules(props);
 
-  const inputRef = React.useRef();
+  const inputRef = React.useRef<any>();
 
   const otherProps = useOtherProps(
     baseProps,

@@ -11,6 +11,7 @@ import {
   FormProps,
   FormContextProps,
   FormControl,
+  FormControlType,
 } from "../types";
 import FormContext from "../contexts/FormContext";
 import { ControlMode, ControlType, getFormConfig } from "..";
@@ -143,7 +144,7 @@ export default class Form
    */
   public disable(
     isDisabled: boolean = true,
-    formControlNames: string[] = []
+    formControlNames: FormControlType[] = []
   ): void {
     this.trigger(
       "disabling",
@@ -189,7 +190,7 @@ export default class Form
    */
   public readOnly(
     isReadOnly: boolean = true,
-    formControlNames: string[] = []
+    formControlNames: FormControlType[] = []
   ): void {
     const controls = this.each(
       (input) => input.readOnly && input.readOnly(isReadOnly),
@@ -228,7 +229,7 @@ export default class Form
    */
   public each(
     callback: (input: FormControl) => void,
-    formControlNames: string[] = []
+    formControlNames: FormControlType[] = []
   ): FormControl[] {
     let formControls: FormControl[] = this.formControls;
     if (formControlNames.length > 0) {
@@ -322,7 +323,7 @@ export default class Form
    * If first parameter is set to true, then second argument must be the input'value that has been updated
    */
   public dirty(isDirty: boolean, control?: FormControl) {
-    if (isDirty) {
+    if (isDirty && control) {
       let controlIndex = this.getDirtyControlIndex(control);
       if (controlIndex > -1) {
         this.dirtyControls[controlIndex] = control;
@@ -371,7 +372,7 @@ export default class Form
   /**
    * Trigger form validation
    */
-  public validate(formControlNames: string[] = []): void {
+  public validate(formControlNames: FormControlType[] = []): FormControl[] {
     this.trigger("validating", formControlNames, this);
     this.isValidForm = true;
     this.invalidInputs = [];
@@ -398,20 +399,22 @@ export default class Form
     }
 
     this.trigger("validation", validatedInputs, this);
+
+    return validatedInputs;
   }
 
   /**
    * Trigger form validation only for visible elements in the dom
    * If formControlNames is passed, then it will be operated only on these names.
    */
-  public validateVisible(formControlNames: string[] = []): void {
-    let controls = this.controls(formControlNames);
-
-    controls.filter(
+  public validateVisible(
+    formControlNames: FormControlType[] = []
+  ): FormControl[] {
+    let controls = this.controls(formControlNames).filter(
       (control) => document.getElementById(control.id!)?.offsetParent !== null
     );
 
-    this.validate(controls.map((control) => control.name));
+    return this.validate(controls);
   }
 
   /**
@@ -470,7 +473,7 @@ export default class Form
   /**
    * Reset all form values and properties
    */
-  public reset(formControlNames: string[] = []): FormControl[] {
+  public reset(formControlNames: FormControlType[] = []): FormControl[] {
     this.trigger("resetting", formControlNames, this);
     this.dirty(false);
 
@@ -508,7 +511,7 @@ export default class Form
   /**
    * Get all form values
    */
-  public values(formControlNames: string[] = []): FormControlValues {
+  public values(formControlNames: FormControlType[] = []): FormControlValues {
     this.trigger("serializing", "object", formControlNames, this);
     let storedValuesList: FormControlValues = {};
 
@@ -540,21 +543,21 @@ export default class Form
   /**
    * Return form values as an object
    */
-  public toObject(formControlNames: string[] = []): FormControlValues {
+  public toObject(formControlNames: FormControlType[] = []): FormControlValues {
     return this.values(formControlNames);
   }
 
   /**
    * Return form values as a query string
    */
-  public toString(formControlNames: string[] = []): string {
+  public toString(formControlNames: FormControlType[] = []): string {
     return this.toQueryString(formControlNames);
   }
 
   /**
    * Return form values as a query string
    */
-  public toQueryString(formControlNames: string[] = []): string {
+  public toQueryString(formControlNames: FormControlType[] = []): string {
     this.trigger("serializing", "queryString", formControlNames, this);
 
     const values = queryString.stringify(this.toObject(formControlNames), {
@@ -569,7 +572,7 @@ export default class Form
   /**
    * Return form values as json syntax
    */
-  public toJSON(formControlNames: string[] = []): string {
+  public toJSON(formControlNames: FormControlType[] = []): string {
     this.trigger("serializing", "json", formControlNames, this);
 
     const values = JSON.stringify(this.toObject(formControlNames));
@@ -582,12 +585,20 @@ export default class Form
   /**
    * Get all form controls list
    */
-  public controls(formControlNames: string[] = []): FormControl[] {
-    return formControlNames.length > 0
-      ? this.formControls.filter((formControl) =>
-          formControlNames.includes(formControl.name)
-        )
-      : this.formControls;
+  public controls(formControls: FormControlType[] = []): FormControl[] {
+    if (formControls?.length === 0) return this.formControls;
+
+    const formControlNames: FormControlType[] = formControls.map(
+      (formControl) => {
+        if (typeof formControl === "string") return formControl;
+
+        return formControl.name;
+      }
+    );
+
+    return this.formControls.filter((formControl) => {
+      return formControlNames.includes(formControl.name);
+    });
   }
 
   /**

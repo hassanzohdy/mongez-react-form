@@ -212,6 +212,8 @@ export type FormControl = {
   props?: any;
 };
 
+export type FormControlType = string | FormControl;
+
 export type FormContextProps = null | {
   /**
    * Form component
@@ -336,17 +338,17 @@ export interface FormInterface {
    * Trigger form validation
    * If formControlNames is passed, then it will be operated only on these names.
    */
-  validate: (formControlNames?: string[]) => void;
+  validate: (formControlNames?: FormControlType[]) => FormControl[];
   /**
    * Trigger form validation only for visible elements in the dom
    * If formControlNames is passed, then it will be operated only on these names.
    */
-  validateVisible: (formControlNames?: string[]) => void;
+  validateVisible: (formControlNames?: FormControlType[]) => FormControl[];
   /**
    * Trigger form disable/enable state
    * If formControlNames is passed, then it will be operated only on these names.
    */
-  disable: (isDisabled: boolean, formControlNames?: string[]) => void;
+  disable: (isDisabled: boolean, formControlNames?: FormControlType[]) => void;
   /**
    * Determine whether the form is disabled
    */
@@ -398,12 +400,12 @@ export interface FormInterface {
    * Trigger form resetting
    * If formControlNames is passed, then it will be operated only on these names.
    */
-  reset: (formControlNames?: string[]) => void;
+  reset: (formControlNames?: FormControlType[]) => void;
   /**
    * Get all form values
    * If formControlNames is passed, then it will be operated only on these names.
    */
-  values: (formControlNames?: string[]) => FormControlValues;
+  values: (formControlNames?: FormControlType[]) => FormControlValues;
 
   /**
    * Get value for the given control
@@ -415,22 +417,22 @@ export interface FormInterface {
    * Return form values as an object
    * If formControlNames is passed, then it will be operated only on these names.
    */
-  toObject: (formControlNames?: string[]) => FormControlValues;
+  toObject: (formControlNames?: FormControlType[]) => FormControlValues;
   /**
    * Return form values as a query string
    * If formControlNames is passed, then it will be operated only on these names.
    */
-  toString: (formControlNames?: string[]) => string;
+  toString: (formControlNames?: FormControlType[]) => string;
   /**
    * Return form values as a query string
    * If formControlNames is passed, then it will be operated only on these names.
    */
-  toQueryString: (formControlNames?: string[]) => string;
+  toQueryString: (formControlNames?: FormControlType[]) => string;
   /**
    * Return form values as json syntax
    * If formControlNames is passed, then it will be operated only on these names.
    */
-  toJSON: (formControlNames?: string[]) => string;
+  toJSON: (formControlNames?: FormControlType[]) => string;
   /**
    * Get input by input value
    *
@@ -440,7 +442,7 @@ export interface FormInterface {
   /**
    * Get form controls list or only the given names
    */
-  controls: (formControlNames?: string[]) => FormControl[];
+  controls: (formControlNames?: FormControlType[]) => FormControl[];
   /**
    * Mark the given form control as invalid control
    */
