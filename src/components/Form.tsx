@@ -17,7 +17,8 @@ import { ControlMode, ControlType, getFormConfig } from "..";
 
 export default class Form
   extends React.Component<FormProps>
-  implements FormInterface {
+  implements FormInterface
+{
   /**
    * {@inheritdoc}
    */
@@ -76,7 +77,7 @@ export default class Form
 
   /**
    * Determine if current form's controls values have been changed
-   * 
+   *
    */
   protected isDirtyForm: boolean = false;
 
@@ -313,7 +314,7 @@ export default class Form
 
     input.changeValue(value);
 
-    this.trigger('change', input, this);
+    this.trigger("change", input, this);
   }
 
   /**
@@ -329,7 +330,7 @@ export default class Form
         this.dirtyControls.push(control);
       }
     } else {
-      this.dirtyControls.forEach(control => {
+      this.dirtyControls.forEach((control) => {
         control.isDirty = false;
         control.oldValue = undefined;
       });
@@ -343,7 +344,7 @@ export default class Form
 
   /**
    * Determine if the given form control is dirty
-   * 
+   *
    */
   public isDirtyControl(value: string, getBy: any) {
     return this.control(value, getBy)?.isDirty;
@@ -353,7 +354,9 @@ export default class Form
    * Get dirty control index
    */
   public getDirtyControlIndex(control: FormControl): number {
-    return this.dirtyControls.findIndex(dirtyControl => dirtyControl.id === control.id);
+    return this.dirtyControls.findIndex(
+      (dirtyControl) => dirtyControl.id === control.id
+    );
   }
 
   /**
@@ -395,6 +398,20 @@ export default class Form
     }
 
     this.trigger("validation", validatedInputs, this);
+  }
+
+  /**
+   * Trigger form validation only for visible elements in the dom
+   * If formControlNames is passed, then it will be operated only on these names.
+   */
+  public validateVisible(formControlNames: string[] = []): void {
+    let controls = this.controls(formControlNames);
+
+    controls.filter(
+      (control) => document.getElementById(control.id!)?.offsetParent !== null
+    );
+
+    this.validate(controls.map((control) => control.name));
   }
 
   /**
@@ -457,20 +474,22 @@ export default class Form
     this.trigger("resetting", formControlNames, this);
     this.dirty(false);
 
-    this.isValidForm = true;
-    this.isBeingSubmitted = false;
-    this.isBeingDisabled = false;
-    this.invalidInputs = [];
-    this.storedValuesList = {};
-    this.isStoringValues = false;
-
     const controls = this.each(
       (input) => input.reset && input.reset(),
       formControlNames
     );
 
-    if (this.props.collectValuesFromDOM) {
-      this.formElement.reset();
+    if (formControlNames.length === 0) {
+      this.isValidForm = true;
+      this.isBeingSubmitted = false;
+      this.isBeingDisabled = false;
+      this.invalidInputs = [];
+      this.storedValuesList = {};
+      this.isStoringValues = false;
+
+      if (this.props.collectValuesFromDOM) {
+        this.formElement.reset();
+      }
     }
 
     this.trigger("reset", controls, this);
@@ -566,8 +585,8 @@ export default class Form
   public controls(formControlNames: string[] = []): FormControl[] {
     return formControlNames.length > 0
       ? this.formControls.filter((formControl) =>
-        formControlNames.includes(formControl.name)
-      )
+          formControlNames.includes(formControl.name)
+        )
       : this.formControls;
   }
 

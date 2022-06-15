@@ -195,6 +195,10 @@ export type FormControl = {
    */
   isDirty?: boolean;
   /**
+   * Focus on the element
+   */
+  focus?: (focus: boolean) => void;
+  /**
    * Triggered when form resets its values
    */
   reset?: () => void;
@@ -332,7 +336,12 @@ export interface FormInterface {
    * Trigger form validation
    * If formControlNames is passed, then it will be operated only on these names.
    */
-  validate: (formControlNames: string[]) => void;
+  validate: (formControlNames?: string[]) => void;
+  /**
+   * Trigger form validation only for visible elements in the dom
+   * If formControlNames is passed, then it will be operated only on these names.
+   */
+  validateVisible: (formControlNames?: string[]) => void;
   /**
    * Trigger form disable/enable state
    * If formControlNames is passed, then it will be operated only on these names.
@@ -612,6 +621,10 @@ export type FormInputHook = FormInputProps & {
    * Set input error
    */
   setError: (error: InputError) => void;
+  /**
+   * Input Ref
+   */
+  inputRef?: any;
   /**
    * Input reference
    */

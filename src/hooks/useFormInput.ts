@@ -68,6 +68,8 @@ export default function useFormInput(
   const label = useLabel(props);
   const rules = useInputRules(props);
 
+  const inputRef = React.useRef();
+
   const otherProps = useOtherProps(
     baseProps,
     formInputOptions.excludeFromOtherProps || []
@@ -176,6 +178,15 @@ export default function useFormInput(
       isValid: error === null,
       isDirty: false,
       oldValue: undefined,
+      focus: (focus: boolean = true) => {
+        if (!inputRef.current) return;
+
+        if (focus) {
+          inputRef.current.focus();
+        } else {
+          inputRef.current.blur();
+        }
+      },
       reset: () => {
         setInputValue("");
         setError(null);
@@ -216,6 +227,7 @@ export default function useFormInput(
     error,
     setError,
     formInput,
+    inputRef,
     disabled: isDisabled,
     placeholder,
     ref: props.ref,

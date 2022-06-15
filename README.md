@@ -63,10 +63,10 @@ Or
 For form validation messages, do not forget to import your locale validation object into Mongez Localization.
 
 ```ts
-import { enTranslation } from '@mongez/validator';
-import { extend } from '@mongez/localization';
+import { enTranslation } from "@mongez/validator";
+import { extend } from "@mongez/localization";
 
-extend('en', enTranslation);
+extend("en", enTranslation);
 ```
 
 Please check [Validation Messages Section](https://github.com/hassanzohdy/mongez-validator#validation-messages) which contains all available locales and current available rules list.
@@ -75,23 +75,23 @@ Now, Let's start with our main component, the `Form` component.
 
 ```tsx
 // LoginPage.tsx
-import React from 'react';
-import { Form } from '@mongez/react-form';
+import React from "react";
+import { Form } from "@mongez/react-form";
 
 export default function LoginPage() {
-    const performLogin = (e: React.FormEvent) => {
-        //
-    };
+  const performLogin = (e: React.FormEvent) => {
+    //
+  };
 
-    return (
-        <Form onSubmit={performLogin}>
-            <input type="email" name="email" placeholder="Email Address" />
-            <br />
-            <input type="password" name="password" placeholder="Password" />
-            <br />
-            <button>Login</button>
-        </Form>
-    )
+  return (
+    <Form onSubmit={performLogin}>
+      <input type="email" name="email" placeholder="Email Address" />
+      <br />
+      <input type="password" name="password" placeholder="Password" />
+      <br />
+      <button>Login</button>
+    </Form>
+  );
 }
 ```
 
@@ -103,23 +103,23 @@ Now let's get the form inputs values.
 
 ```tsx
 // LoginPage.tsx
-import React from 'react';
-import { Form } from '@mongez/react-form';
+import React from "react";
+import { Form } from "@mongez/react-form";
 
 export default function LoginPage() {
-    const performLogin = (e: React.FormEvent) => {
-        //
-    };
+  const performLogin = (e: React.FormEvent) => {
+    //
+  };
 
-    return (
-        <Form collectValuesFromDOM onSubmit={performLogin}>
-            <input type="email" name="email" placeholder="Email Address" />
-            <br />
-            <input type="password" name="password" placeholder="Password" />
-            <br />
-            <button>Login</button>
-        </Form>
-    )
+  return (
+    <Form collectValuesFromDOM onSubmit={performLogin}>
+      <input type="email" name="email" placeholder="Email Address" />
+      <br />
+      <input type="password" name="password" placeholder="Password" />
+      <br />
+      <button>Login</button>
+    </Form>
+  );
 }
 ```
 
@@ -127,23 +127,23 @@ The only thing that is added here is `collectValuesFromDOM` which collects all i
 
 ```tsx
 // LoginPage.tsx
-import React from 'react';
-import { Form, FormInterface } from '@mongez/react-form';
+import React from "react";
+import { Form, FormInterface } from "@mongez/react-form";
 
 export default function LoginPage() {
-    const performLogin = (e: React.FormEvent, form: FormInterface) => {
-        console.log(form.values()); // {email: written-value, password: written-value }
-    };
+  const performLogin = (e: React.FormEvent, form: FormInterface) => {
+    console.log(form.values()); // {email: written-value, password: written-value }
+  };
 
-    return (
-        <Form collectValuesFromDOM onSubmit={performLogin}>
-            <input type="email" name="email" placeholder="Email Address" />
-            <br />
-            <input type="password" name="password" placeholder="Password" />
-            <br />
-            <button>Login</button>
-        </Form>
-    )
+  return (
+    <Form collectValuesFromDOM onSubmit={performLogin}>
+      <input type="email" name="email" placeholder="Email Address" />
+      <br />
+      <input type="password" name="password" placeholder="Password" />
+      <br />
+      <button>Login</button>
+    </Form>
+  );
 }
 ```
 
@@ -157,38 +157,36 @@ You may access the form class from any child component using `FormContext`
 
 ```tsx
 // LoginPage.tsx
-import React from 'react';
-import EmailInput from './EmailInput';
-import { Form, FormInterface } from '@mongez/react-form';
+import React from "react";
+import EmailInput from "./EmailInput";
+import { Form, FormInterface } from "@mongez/react-form";
 
 export default function LoginPage() {
-    const performLogin = (e: React.FormEvent, form: FormInterface) => {
-        console.log(form.values()); // {email: written-value, password: written-value }
-    };
+  const performLogin = (e: React.FormEvent, form: FormInterface) => {
+    console.log(form.values()); // {email: written-value, password: written-value }
+  };
 
-    return (
-        <Form collectValuesFromDOM onSubmit={performLogin}>
-            <EmailInput name="email" placeholder="Email Address" />
-            <br />
-            <input type="password" name="password" placeholder="Password" />
-            <br />
-            <button>Login</button>
-        </Form>
-    )
+  return (
+    <Form collectValuesFromDOM onSubmit={performLogin}>
+      <EmailInput name="email" placeholder="Email Address" />
+      <br />
+      <input type="password" name="password" placeholder="Password" />
+      <br />
+      <button>Login</button>
+    </Form>
+  );
 }
 ```
 
 ```tsx
 // EmailInput.tsx
-import React from 'react';
-import { FormContext } from '@mongez/react-form';
+import React from "react";
+import { FormContext } from "@mongez/react-form";
 
 export default function EmailInput(props) {
-    const { form } = React.useContext(FormContext);
+  const { form } = React.useContext(FormContext);
 
-    return (
-        <input type="email" {...props} />
-    )
+  return <input type="email" {...props} />;
 }
 ```
 
@@ -200,15 +198,13 @@ Another way to access form class is to use `useForm` hook.
 
 ```tsx
 // EmailInput.tsx
-import React from 'react';
-import { useForm } from '@mongez/react-form';
+import React from "react";
+import { useForm } from "@mongez/react-form";
 
 export default function EmailInput(props) {
-    const { form } = useForm();
+  const { form } = useForm();
 
-    return (
-        <input type="email" {...props} />
-    )
+  return <input type="email" {...props} />;
 }
 ```
 
@@ -220,40 +216,38 @@ Now let's go more deeper, Let's update our `EmailInput` component using `useForm
 
 ```tsx
 // EmailInput.tsx
-import React from 'react';
-import { useFormInput } from '@mongez/react-form';
+import React from "react";
+import { useFormInput } from "@mongez/react-form";
 
 export default function EmailInput(props) {
-    const { name, id } = useFormInput(props);
+  const { name, id } = useFormInput(props);
 
   console.log(id, name); // something like el-6BUxp8 email
 
-    return (
-        <input type="email" name={name} />
-    )
+  return <input type="email" name={name} />;
 }
 ```
 
 ```tsx
 // LoginPage.tsx
-import React from 'react';
-import EmailInput from './EmailInput';
-import { Form, FormInterface } from '@mongez/react-form';
+import React from "react";
+import EmailInput from "./EmailInput";
+import { Form, FormInterface } from "@mongez/react-form";
 
 export default function LoginPage() {
-    const performLogin = (e: React.FormEvent, form: FormInterface) => {
-        //
-    };
+  const performLogin = (e: React.FormEvent, form: FormInterface) => {
+    //
+  };
 
-    return (
-        <Form collectValuesFromDOM onSubmit={performLogin}>
-            <EmailInput name="email" />
-            <br />
-            <input type="password" name="password" placeholder="Password" />
-            <br />
-            <button>Login</button>
-        </Form>
-    )
+  return (
+    <Form collectValuesFromDOM onSubmit={performLogin}>
+      <EmailInput name="email" />
+      <br />
+      <input type="password" name="password" placeholder="Password" />
+      <br />
+      <button>Login</button>
+    </Form>
+  );
 }
 ```
 
@@ -266,7 +260,7 @@ Each component uses `useFormInput` hook gets a `FormControl` object declared in 
 Let's look at the available props in that object then see why this formInput exists.
 
 ```ts
-import { RuleResponse } from '@mongez/validator';
+import { RuleResponse } from "@mongez/validator";
 
 type FormControl = {
   /**
@@ -360,24 +354,24 @@ But why to get the name from `useFormInput` rather than getting it from `props` 
 
 ```tsx
 // LoginPage.tsx
-import React from 'react';
-import EmailInput from './EmailInput';
-import { Form, FormInterface } from '@mongez/react-form';
+import React from "react";
+import EmailInput from "./EmailInput";
+import { Form, FormInterface } from "@mongez/react-form";
 
 export default function LoginPage() {
-    const performLogin = (e: React.FormEvent, form: FormInterface) => {
-        //
-    };
+  const performLogin = (e: React.FormEvent, form: FormInterface) => {
+    //
+  };
 
-    return (
-        <Form collectValuesFromDOM onSubmit={performLogin}>
-            <EmailInput name="user.email" />
-            <br />
-            <input type="password" name="password" placeholder="Password" />
-            <br />
-            <button>Login</button>
-        </Form>
-    )
+  return (
+    <Form collectValuesFromDOM onSubmit={performLogin}>
+      <EmailInput name="user.email" />
+      <br />
+      <input type="password" name="password" placeholder="Password" />
+      <br />
+      <button>Login</button>
+    </Form>
+  );
 }
 ```
 
@@ -391,24 +385,24 @@ Uncontrolled Component
 
 ```tsx
 // LoginPage.tsx
-import React from 'react';
-import EmailInput from './EmailInput';
-import { Form, FormInterface } from '@mongez/react-form';
+import React from "react";
+import EmailInput from "./EmailInput";
+import { Form, FormInterface } from "@mongez/react-form";
 
 export default function LoginPage() {
-    const performLogin = (e: React.FormEvent, form: FormInterface) => {
-        //
-    };
+  const performLogin = (e: React.FormEvent, form: FormInterface) => {
+    //
+  };
 
-    return (
-        <Form collectValuesFromDOM onSubmit={performLogin}>
-            <EmailInput name="email" defaultValue="Initial Email Value" />
-            <br />
-            <input type="password" name="password" placeholder="Password" />
-            <br />
-            <button>Login</button>
-        </Form>
-    )
+  return (
+    <Form collectValuesFromDOM onSubmit={performLogin}>
+      <EmailInput name="email" defaultValue="Initial Email Value" />
+      <br />
+      <input type="password" name="password" placeholder="Password" />
+      <br />
+      <button>Login</button>
+    </Form>
+  );
 }
 ```
 
@@ -416,26 +410,30 @@ Controlled Component
 
 ```tsx
 // LoginPage.tsx
-import React from 'react';
-import EmailInput from './EmailInput';
-import { Form, FormInterface } from '@mongez/react-form';
+import React from "react";
+import EmailInput from "./EmailInput";
+import { Form, FormInterface } from "@mongez/react-form";
 
 export default function LoginPage() {
-    const [email, setEmail] = React.useState('');
+  const [email, setEmail] = React.useState("");
 
-    const performLogin = (e: React.FormEvent, form: FormInterface) => {
-        //
-    };
+  const performLogin = (e: React.FormEvent, form: FormInterface) => {
+    //
+  };
 
-    return (
-        <Form collectValuesFromDOM onSubmit={performLogin}>
-            <EmailInput name="email" value={email} onChange={e => setEmail(e.target.value)} />
-            <br />
-            <input type="password" name="password" placeholder="Password" />
-            <br />
-            <button>Login</button>
-        </Form>
-    )
+  return (
+    <Form collectValuesFromDOM onSubmit={performLogin}>
+      <EmailInput
+        name="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+      />
+      <br />
+      <input type="password" name="password" placeholder="Password" />
+      <br />
+      <button>Login</button>
+    </Form>
+  );
 }
 ```
 
@@ -445,25 +443,23 @@ Let's get to the heavy part, the input validation, yet it is very simple.
 
 ```tsx
 // EmailInput.tsx
-import React from 'react';
-import { useFormInput } from '@mongez/react-form';
-import { emailRule, requiredRule } from '@mongez/validator';
+import React from "react";
+import { useFormInput } from "@mongez/react-form";
+import { emailRule, requiredRule } from "@mongez/validator";
 
 const rules = [requiredRule, emailRule];
 
 const defaultProps = {
-    rules,
-    type: "email", // required for emailRule
+  rules,
+  type: "email", // required for emailRule
 };
 
-export default function EmailInput(props) {    
-    const {name, error,  id } = useFormInput(props);
-    
-    console.log(error);
+export default function EmailInput(props) {
+  const { name, error, id } = useFormInput(props);
 
-    return (
-        <input type="email" name={name} />
-    )
+  console.log(error);
+
+  return <input type="email" name={name} />;
 }
 
 EmailInput.defaultProps = defaultProps;
@@ -483,23 +479,21 @@ But for the previous snippet, nothing much will happen as we didn't pass the `on
 
 ```tsx
 // EmailInput.tsx
-import React from 'react';
-import { useFormInput } from '@mongez/react-form';
-import { emailRule, requiredRule } from '@mongez/validator';
+import React from "react";
+import { useFormInput } from "@mongez/react-form";
+import { emailRule, requiredRule } from "@mongez/validator";
 
 const rules = [requiredRule, emailRule];
 
 const defaultProps = {
-    rules,
-    type: "email", // required for emailRule
+  rules,
+  type: "email", // required for emailRule
 };
 
-export default function EmailInput(props) {    
-    const {name, error, value, onChange } = useFormInput(props);
+export default function EmailInput(props) {
+  const { name, error, value, onChange } = useFormInput(props);
 
-    return (
-        <input type="email" value={value} onChange={onChange} name={name} />
-    )
+  return <input type="email" value={value} onChange={onChange} name={name} />;
 }
 
 EmailInput.defaultProps = defaultProps;
@@ -511,24 +505,24 @@ Let's tell the validator to check for the input that should have a value.
 
 ```tsx
 // LoginPage.tsx
-import React from 'react';
-import EmailInput from './EmailInput';
-import { Form, FormInterface } from '@mongez/react-form';
+import React from "react";
+import EmailInput from "./EmailInput";
+import { Form, FormInterface } from "@mongez/react-form";
 
 export default function LoginPage() {
-    const performLogin = (e: React.FormEvent, form: FormInterface) => {
-        //
-    };
+  const performLogin = (e: React.FormEvent, form: FormInterface) => {
+    //
+  };
 
-    return (
-        <Form collectValuesFromDOM onSubmit={performLogin}>
-            <EmailInput name="email" required />
-            <br />
-            <input type="password" name="password" placeholder="Password" />
-            <br />
-            <button>Login</button>
-        </Form>
-    )
+  return (
+    <Form collectValuesFromDOM onSubmit={performLogin}>
+      <EmailInput name="email" required />
+      <br />
+      <input type="password" name="password" placeholder="Password" />
+      <br />
+      <button>Login</button>
+    </Form>
+  );
 }
 ```
 
@@ -536,25 +530,23 @@ We passed `required` prop, then the `requiredRule` now will work.
 
 ```tsx
 // EmailInput.tsx
-import React from 'react';
-import { useFormInput } from '@mongez/react-form';
-import { emailRule, requiredRule } from '@mongez/validator';
+import React from "react";
+import { useFormInput } from "@mongez/react-form";
+import { emailRule, requiredRule } from "@mongez/validator";
 
 const rules = [requiredRule, emailRule];
 
 const defaultProps = {
-    rules,
-    type: "email", // required for emailRule
+  rules,
+  type: "email", // required for emailRule
 };
 
-export default function EmailInput(props) {    
-    const {name, error, value, onChange } = useFormInput(props);
+export default function EmailInput(props) {
+  const { name, error, value, onChange } = useFormInput(props);
 
-    console.log(error); // null for first render
+  console.log(error); // null for first render
 
-    return (
-        <input type="email" value={value} onChange={onChange} name={name} />
-    )
+  return <input type="email" value={value} onChange={onChange} name={name} />;
 }
 
 EmailInput.defaultProps = defaultProps;
@@ -568,29 +560,27 @@ Now let's display our error message in the dom.
 
 ```tsx
 // EmailInput.tsx
-import React from 'react';
-import { useFormInput } from '@mongez/react-form';
-import { emailRule, requiredRule } from '@mongez/validator';
+import React from "react";
+import { useFormInput } from "@mongez/react-form";
+import { emailRule, requiredRule } from "@mongez/validator";
 
 const rules = [requiredRule, emailRule];
 
 const defaultProps = {
-    rules,
-    type: "email", // required for emailRule
+  rules,
+  type: "email", // required for emailRule
 };
 
-export default function EmailInput(props) {    
-    const {name, error, value, onChange } = useFormInput(props);
+export default function EmailInput(props) {
+  const { name, error, value, onChange } = useFormInput(props);
 
-    return (
-        <>
-        <input type="email" value={value} onChange={onChange} name={name} />
+  return (
+    <>
+      <input type="email" value={value} onChange={onChange} name={name} />
 
-        {error && 
-            <span>{error.errorMessage}</span>
-        }
-        </>
-    )
+      {error && <span>{error.errorMessage}</span>}
+    </>
+  );
 }
 
 EmailInput.defaultProps = defaultProps;
@@ -602,49 +592,47 @@ You may also validate the component manually instead of using the rules.
 
 ```tsx
 // EmailInput.tsx
-import React from 'react';
-import Is from '@mongez/supportive-is';
-import { useFormInput } from '@mongez/react-form';
+import React from "react";
+import Is from "@mongez/supportive-is";
+import { useFormInput } from "@mongez/react-form";
 
 export default function EmailInput(props) {
-    const {name, setValue, value, error, setError } = useFormInput(props);
+  const { name, setValue, value, error, setError } = useFormInput(props);
 
-    const onChange = e => {
-        const newValue = e.target.value;
-        if (! newValue) {
-            setError({
-                hasError: true,
-                errorType: 'required',
-                errorMessage: 'This input is required',
-            });
-        } else if (! Is.email(newValue)) {
-            setError({
-                hasError: true,
-                errorType: 'email',
-                errorMessage: 'Invalid Email Address',
-            });
-        } else {
-            setError(null);
-        }
-
-        setValue(newValue);
+  const onChange = (e) => {
+    const newValue = e.target.value;
+    if (!newValue) {
+      setError({
+        hasError: true,
+        errorType: "required",
+        errorMessage: "This input is required",
+      });
+    } else if (!Is.email(newValue)) {
+      setError({
+        hasError: true,
+        errorType: "email",
+        errorMessage: "Invalid Email Address",
+      });
+    } else {
+      setError(null);
     }
 
-    return (
-        <>
-        <input type="email" value={value} onChange={onChange} name={name} />
+    setValue(newValue);
+  };
 
-        {error && 
-            <span>{error.errorMessage}</span>
-        }
-        </>
-    )
+  return (
+    <>
+      <input type="email" value={value} onChange={onChange} name={name} />
+
+      {error && <span>{error.errorMessage}</span>}
+    </>
+  );
 }
 ```
 
 In our previous example, we got introduced two new methods, `setValue` and `setError`, these methods are used to set the component value and error respectively.
 
-`setError` function accepts `null` for no errors and `RuleResponse` from [Mongez Validator]([https://g](https://github.com/hassanzohdy/mongez-validator)) for displaying an error.
+`setError` function accepts `null` for no errors and `RuleResponse` from [Mongez Validator](<[https://g](https://github.com/hassanzohdy/mongez-validator)>) for displaying an error.
 
 > It's recommended to use rules instead, this will make your code cleaner and easier to maintain.
 
@@ -654,9 +642,9 @@ Now you may detect if the component catches an error from the its own rules usin
 
 ```tsx
 // EmailInput.tsx
-import React from 'react';
+import React from "react";
 import { emailRule } from "@mongez/validator";
-import { useFormInput } from '@mongez/react-form';
+import { useFormInput } from "@mongez/react-form";
 
 const defaultProps = {
   rules: [emailRule],
@@ -664,17 +652,15 @@ const defaultProps = {
 };
 
 export default function EmailInput(props) {
-    const {name, value, error, onChange } = useFormInput(props);
+  const { name, value, error, onChange } = useFormInput(props);
 
-    return (
-        <>
-        <input type="email" value={value} onChange={onChange} name={name} />
+  return (
+    <>
+      <input type="email" value={value} onChange={onChange} name={name} />
 
-        {error && 
-            <span>{error.errorMessage}</span>
-        }
-        </>
-    )
+      {error && <span>{error.errorMessage}</span>}
+    </>
+  );
 }
 
 EmailInput.defaultProps = defaultProps;
@@ -682,29 +668,29 @@ EmailInput.defaultProps = defaultProps;
 
 ```tsx
 // LoginPage.tsx
-import React from 'react';
-import EmailInput from './EmailInput';
-import { RuleResponse } from '@mongez/validator';
-import { Form, FormInterface, FormControl } from '@mongez/react-form';
+import React from "react";
+import EmailInput from "./EmailInput";
+import { RuleResponse } from "@mongez/validator";
+import { Form, FormInterface, FormControl } from "@mongez/react-form";
 
 export default function LoginPage() {
-    const performLogin = (e: React.FormEvent, form: FormInterface) => {
-        //
-    };
+  const performLogin = (e: React.FormEvent, form: FormInterface) => {
+    //
+  };
 
-    const onError = (error: RuleResponse, formInput: FormControl) => {
-        console.log(error); // will be triggered only if there is an error
-    }
+  const onError = (error: RuleResponse, formInput: FormControl) => {
+    console.log(error); // will be triggered only if there is an error
+  };
 
-    return (
-        <Form collectValuesFromDOM onSubmit={performLogin}>
-            <EmailInput name="email" onError={onError} required />
-            <br />
-            <input type="password" name="password" placeholder="Password" />
-            <br />
-            <button>Login</button>
-        </Form>
-    )
+  return (
+    <Form collectValuesFromDOM onSubmit={performLogin}>
+      <EmailInput name="email" onError={onError} required />
+      <br />
+      <input type="password" name="password" placeholder="Password" />
+      <br />
+      <button>Login</button>
+    </Form>
+  );
 }
 ```
 
@@ -714,29 +700,29 @@ By default, the validation occurs on `onChange` prop, but you may set it on `onB
 
 ```tsx
 // LoginPage.tsx
-import React from 'react';
-import EmailInput from './EmailInput';
-import { RuleResponse } from '@mongez/validator';
-import { Form, FormInterface, FormControl } from '@mongez/react-form';
+import React from "react";
+import EmailInput from "./EmailInput";
+import { RuleResponse } from "@mongez/validator";
+import { Form, FormInterface, FormControl } from "@mongez/react-form";
 
 export default function LoginPage() {
-    const performLogin = (e: React.FormEvent, form: FormInterface) => {
-        //
-    };
+  const performLogin = (e: React.FormEvent, form: FormInterface) => {
+    //
+  };
 
-    const onError = (error: RuleResponse, formInput: FormControl) => {
-        console.log(error); // will be triggered only if there is an error
-    }
+  const onError = (error: RuleResponse, formInput: FormControl) => {
+    console.log(error); // will be triggered only if there is an error
+  };
 
-    return (
-        <Form collectValuesFromDOM onSubmit={performLogin}>
-            <EmailInput validateOn="blur" name="email" onError={onError} required />
-            <br />
-            <input type="password" name="password" placeholder="Password" />
-            <br />
-            <button>Login</button>
-        </Form>
-    )
+  return (
+    <Form collectValuesFromDOM onSubmit={performLogin}>
+      <EmailInput validateOn="blur" name="email" onError={onError} required />
+      <br />
+      <input type="password" name="password" placeholder="Password" />
+      <br />
+      <button>Login</button>
+    </Form>
+  );
 }
 ```
 
@@ -748,33 +734,33 @@ We can also trigger form validation using `form.validate()` method.
 
 ```tsx
 // LoginPage.tsx
-import React from 'react';
-import EmailInput from './EmailInput';
-import { RuleResponse } from '@mongez/validator';
-import { Form, FormInterface, FormControl } from '@mongez/react-form';
+import React from "react";
+import EmailInput from "./EmailInput";
+import { RuleResponse } from "@mongez/validator";
+import { Form, FormInterface, FormControl } from "@mongez/react-form";
 
 export default function LoginPage() {
-    const form = React.useRef();
+  const form = React.useRef();
 
-    React.useEffect(() => {
-        setTimeout(() => {
-            form.current.validate();
-        }, 2000);
-    }, []);
+  React.useEffect(() => {
+    setTimeout(() => {
+      form.current.validate();
+    }, 2000);
+  }, []);
 
-    const performLogin = (e: React.FormEvent, form: FormInterface) => {
-        //
-    };
+  const performLogin = (e: React.FormEvent, form: FormInterface) => {
+    //
+  };
 
-    return (
-        <Form ref={form} collectValuesFromDOM onSubmit={performLogin}>
-            <EmailInput validateOn="blur" name="email" required />
-            <br />
-            <input type="password" name="password" placeholder="Password" />
-            <br />
-            <button>Login</button>
-        </Form>
-    )
+  return (
+    <Form ref={form} collectValuesFromDOM onSubmit={performLogin}>
+      <EmailInput validateOn="blur" name="email" required />
+      <br />
+      <input type="password" name="password" placeholder="Password" />
+      <br />
+      <button>Login</button>
+    </Form>
+  );
 }
 ```
 
@@ -788,32 +774,81 @@ In some situations we need to validate only certain inputs, for example when wor
 
 ```tsx
 // LoginPage.tsx
-import React from 'react';
-import EmailInput from './EmailInput';
-import { RuleResponse } from '@mongez/validator';
-import { Form, FormInterface, FormControl } from '@mongez/react-form';
+import React from "react";
+import EmailInput from "./EmailInput";
+import { RuleResponse } from "@mongez/validator";
+import { Form, FormInterface, FormControl } from "@mongez/react-form";
 
 export default function LoginPage() {
-    const form = React.useRef();
+  const form = React.useRef();
 
-    const performLogin = (e: React.FormEvent, form: FormInterface) => {
-        //
-    };
+  const performLogin = (e: React.FormEvent, form: FormInterface) => {
+    //
+  };
 
-    const validateEmail = () => {
-        form.current.validate(['email']);
-    }
+  const validateEmail = () => {
+    form.current.validate(["email"]);
+  };
 
-    return (
-        <Form ref={form} collectValuesFromDOM onSubmit={performLogin}>
-            <EmailInput validateOn="blur" name="email" required />
-            <br />
-            <input type="password" name="password" placeholder="Password" />
-            <br />
-            <button>Login</button>
-            <button type="button" onCLick={validateEmail}>Validate Email Only </button>
-        </Form>
-    )
+  return (
+    <Form ref={form} collectValuesFromDOM onSubmit={performLogin}>
+      <EmailInput validateOn="blur" name="email" required />
+      <br />
+      <input type="password" name="password" placeholder="Password" />
+      <br />
+      <button>Login</button>
+      <button type="button" onCLick={validateEmail}>
+        Validate Email Only{" "}
+      </button>
+    </Form>
+  );
+}
+```
+
+## Validate only visible elements
+
+> Added in V 1.2.0
+
+You may trigger form validation only for the visible form elements in the DOM, this can be useful if form elements are hidden under tabs or stepper but not removed from the DOM.
+
+```tsx
+// LoginPage.tsx
+import React from "react";
+import EmailInput from "./EmailInput";
+import { RuleResponse } from "@mongez/validator";
+import { Form, FormInterface, FormControl } from "@mongez/react-form";
+
+export default function LoginPage() {
+  const form = React.useRef();
+
+  const performLogin = (e: React.FormEvent, form: FormInterface) => {
+    //
+  };
+
+  const validate = () => {
+    form.current.validateVisible(); // this will only validate the email input
+    // the password input will not be triggered for validation
+  };
+
+  return (
+    <Form ref={form} collectValuesFromDOM onSubmit={performLogin}>
+      <EmailInput validateOn="blur" name="email" required />
+      <br />
+      <input
+        type="password"
+        style={{
+          display: "none",
+        }}
+        name="password"
+        placeholder="Password"
+      />
+      <br />
+      <button>Login</button>
+      <button type="button" onCLick={validate}>
+        Validate Email Only{" "}
+      </button>
+    </Form>
+  );
 }
 ```
 
@@ -824,41 +859,43 @@ We used `useFormInput` for handling many cases along with registering to the for
 ```tsx
 // PasswordInput.tsx
 
-import React from 'react';
+import React from "react";
 import { emailRule } from "@mongez/validator";
-import { useForm } from '@mongez/react-form';
+import { useForm } from "@mongez/react-form";
 
-export default function PasswordInput({defaultValue, value, onChange, ...otherProps}) {
-    const [internalValue, setValue] = React.useState(value || defaultValue);
-    const formContext = useForm();
+export default function PasswordInput({
+  defaultValue,
+  value,
+  onChange,
+  ...otherProps
+}) {
+  const [internalValue, setValue] = React.useState(value || defaultValue);
+  const formContext = useForm();
 
-    React.useEffect(() => {
-        const { form } = formContext;
+  React.useEffect(() => {
+    const { form } = formContext;
 
-        form.register({
-            name: props.name,
-            value: internalValue,
-            id: props.id,
-            control: 'input',
-            changeValue: newValue => {
-                setValue(newValue)
-            },
-            reset: () => {
-                setValue('')
-            },
+    form.register({
+      name: props.name,
+      value: internalValue,
+      id: props.id,
+      control: "input",
+      changeValue: (newValue) => {
+        setValue(newValue);
+      },
+      reset: () => {
+        setValue("");
+      },
+    });
+  }, []);
 
-        });
-    }, []);
+  return (
+    <>
+      <input type="password" value={value} onChange={onChange} name={name} />
 
-    return (
-        <>
-        <input type="password" value={value} onChange={onChange} name={name} />
-
-        {error && 
-            <span>{error.errorMessage}</span>
-        }
-        </>
-    )
+      {error && <span>{error.errorMessage}</span>}
+    </>
+  );
 }
 ```
 
@@ -868,33 +905,33 @@ Form can be submitted as well directly using `form.submit` method.
 
 ```tsx
 // LoginPage.tsx
-import React from 'react';
-import EmailInput from './EmailInput';
-import { RuleResponse } from '@mongez/validator';
-import { Form, FormInterface, FormControl } from '@mongez/react-form';
+import React from "react";
+import EmailInput from "./EmailInput";
+import { RuleResponse } from "@mongez/validator";
+import { Form, FormInterface, FormControl } from "@mongez/react-form";
 
 export default function LoginPage() {
-    const form = React.useRef();
+  const form = React.useRef();
 
-    const performLogin = (e: React.FormEvent, form: FormInterface) => {
-        // triggered from the useEffect hook        
-    };
+  const performLogin = (e: React.FormEvent, form: FormInterface) => {
+    // triggered from the useEffect hook
+  };
 
-    React.useEffect(() => {
-        setTimeout(() => {
-            form.current.submit();
-        }, 2000);
-    }, []);
+  React.useEffect(() => {
+    setTimeout(() => {
+      form.current.submit();
+    }, 2000);
+  }, []);
 
-    return (
-        <Form ref={form} onSubmit={performLogin}>
-            <EmailInput validateOn="blur" name="email" required />
-            <br />
-            <input type="password" name="password" placeholder="Password" />
-            <br />
-            <button>Login</button>
-        </Form>
-    )
+  return (
+    <Form ref={form} onSubmit={performLogin}>
+      <EmailInput validateOn="blur" name="email" required />
+      <br />
+      <input type="password" name="password" placeholder="Password" />
+      <br />
+      <button>Login</button>
+    </Form>
+  );
 }
 ```
 
@@ -966,8 +1003,8 @@ You may also set what inputs to be reset only by passing the input name to **res
 
 ```tsx
 const resetForm = () => {
-    form.current.reset(['email', 'username']);
-}
+  form.current.reset(["email", "username"]);
+};
 ```
 
 If using `ResetFormButton` component then pass it as an array `resetOnly`
@@ -985,34 +1022,34 @@ We can also disable all registered form inputs to be disabled.
 
 ```tsx
 // LoginPage.tsx
-import React from 'react';
-import EmailInput from './EmailInput';
-import { RuleResponse } from '@mongez/validator';
-import { Form, FormInterface, FormControl } from '@mongez/react-form';
-import { login } from './../services/auth';
+import React from "react";
+import EmailInput from "./EmailInput";
+import { RuleResponse } from "@mongez/validator";
+import { Form, FormInterface, FormControl } from "@mongez/react-form";
+import { login } from "./../services/auth";
 
 export default function LoginPage() {
-    const performLogin = (e: React.FormEvent, form: FormInterface) => {
-        //
-        form.disable(); // disable
-        // send ajax request
-        login(form.values()).then(response => {
+  const performLogin = (e: React.FormEvent, form: FormInterface) => {
+    //
+    form.disable(); // disable
+    // send ajax request
+    login(form.values())
+      .then((response) => {})
+      .catch((error) => {
+        console.log(error.response.data.error);
+        form.disable(false);
+      });
+  };
 
-        }).catch(error => {
-            console.log(error.response.data.error);
-            form.disable(false);
-        });
-    };
-
-    return (
-        <Form ref={form} collectValuesFromDOM onSubmit={performLogin}>
-            <EmailInput validateOn="blur" name="email" required />
-            <br />
-            <input type="password" name="password" placeholder="Password" />
-            <br />
-            <button>Login</button>
-        </Form>
-    )
+  return (
+    <Form ref={form} collectValuesFromDOM onSubmit={performLogin}>
+      <EmailInput validateOn="blur" name="email" required />
+      <br />
+      <input type="password" name="password" placeholder="Password" />
+      <br />
+      <button>Login</button>
+    </Form>
+  );
 }
 ```
 
@@ -1026,34 +1063,34 @@ This can be achieved using `form.readOnly()` method/
 
 ```tsx
 // LoginPage.tsx
-import React from 'react';
-import EmailInput from './EmailInput';
-import { RuleResponse } from '@mongez/validator';
-import { Form, FormInterface, FormControl } from '@mongez/react-form';
-import { login } from './../services/auth';
+import React from "react";
+import EmailInput from "./EmailInput";
+import { RuleResponse } from "@mongez/validator";
+import { Form, FormInterface, FormControl } from "@mongez/react-form";
+import { login } from "./../services/auth";
 
 export default function LoginPage() {
-    const performLogin = (e: React.FormEvent, form: FormInterface) => {
-        //
-        form.readOnly(); // all inputs are considered to be readOnly now
-        // send ajax request
-        login(form.values()).then(response => {
+  const performLogin = (e: React.FormEvent, form: FormInterface) => {
+    //
+    form.readOnly(); // all inputs are considered to be readOnly now
+    // send ajax request
+    login(form.values())
+      .then((response) => {})
+      .catch((error) => {
+        console.log(error.response.data.error);
+        form.readOnly(false);
+      });
+  };
 
-        }).catch(error => {
-            console.log(error.response.data.error);
-            form.readOnly(false);
-        });
-    };
-
-    return (
-        <Form ref={form} collectValuesFromDOM onSubmit={performLogin}>
-            <EmailInput validateOn="blur" name="email" required />
-            <br />
-            <input type="password" name="password" placeholder="Password" />
-            <br />
-            <button>Login</button>
-        </Form>
-    )
+  return (
+    <Form ref={form} collectValuesFromDOM onSubmit={performLogin}>
+      <EmailInput validateOn="blur" name="email" required />
+      <br />
+      <input type="password" name="password" placeholder="Password" />
+      <br />
+      <button>Login</button>
+    </Form>
+  );
 }
 ```
 
@@ -1073,7 +1110,7 @@ We can get all form values either from registered form controls or from the dom 
 
 ```ts
 const formValues = form.values();
-// or 
+// or
 const formValues = form.toObject();
 ```
 
@@ -1094,7 +1131,7 @@ const formValues: string = form.toQueryString();
 Serializing Only certain form controls
 
 ```ts
-const formValues: string = form.toQueryString(['email', 'password']);
+const formValues: string = form.toQueryString(["email", "password"]);
 ```
 
 > `form.toString()` is an alias to this method.
@@ -1112,7 +1149,7 @@ const formValues: string = form.toJSON();
 To get only json string to certain form controls, pass an array of form controls to the method.
 
 ```ts
-const formValues: string = form.toJSON(['email', 'password']);
+const formValues: string = form.toJSON(["email", "password"]);
 ```
 
 ## Getting form control
@@ -1123,10 +1160,10 @@ You may get a direct access to any registered form control either by form contro
 
 ```js
 // getting the input by the name
-const usernameInput: FormControl = form.control('username');
+const usernameInput: FormControl = form.control("username");
 
 // or getting it by the id
-const passwordInput: FormControl = form.control('password-id', 'id');
+const passwordInput: FormControl = form.control("password-id", "id");
 ```
 
 If there is no matching value for that control, `null` will be returned instead.
@@ -1142,7 +1179,7 @@ const formControls = form.controls();
 You may also getting controls for the given names only
 
 ```ts
-const formControls = form.controls(['email', 'password']);
+const formControls = form.controls(["email", "password"]);
 ```
 
 ## Control Modes And Control Types
@@ -1153,7 +1190,7 @@ All inputs regardless its type or shape is considered to be a `input` control.
 All button regardless its type is considered to be a `button` control.
 
 ```ts
-type ControlMode = 'input' | 'button';
+type ControlMode = "input" | "button";
 ```
 
 The input attribute value is a more specific, it can be one of the following types.
@@ -1196,42 +1233,44 @@ Each registered form control has a `control`, by default it is `input`, you may 
 ```tsx
 // PasswordInput.tsx
 
-import React from 'react';
+import React from "react";
 import { emailRule } from "@mongez/validator";
-import { useForm } from '@mongez/react-form';
+import { useForm } from "@mongez/react-form";
 
-export default function PasswordInput({defaultValue, value, onChange, ...otherProps}) {
-    const [internalValue, setValue] = React.useState(value || defaultValue);
-    const formContext = useForm();
+export default function PasswordInput({
+  defaultValue,
+  value,
+  onChange,
+  ...otherProps
+}) {
+  const [internalValue, setValue] = React.useState(value || defaultValue);
+  const formContext = useForm();
 
-    React.useEffect(() => {
-        const { form } = formContext;
+  React.useEffect(() => {
+    const { form } = formContext;
 
-        form.register({
-            name: props.name,
-            value: internalValue,
-            id: props.id,
-            control: 'input',
-            type: 'password',
-            changeValue: newValue => {
-                setValue(newValue)
-            },
-            reset: () => {
-                setValue('')
-            },
+    form.register({
+      name: props.name,
+      value: internalValue,
+      id: props.id,
+      control: "input",
+      type: "password",
+      changeValue: (newValue) => {
+        setValue(newValue);
+      },
+      reset: () => {
+        setValue("");
+      },
+    });
+  }, []);
 
-        });
-    }, []);
+  return (
+    <>
+      <input type="password" value={value} onChange={onChange} name={name} />
 
-    return (
-        <>
-        <input type="password" value={value} onChange={onChange} name={name} />
-
-        {error && 
-            <span>{error.errorMessage}</span>
-        }
-        </>
-    )
+      {error && <span>{error.errorMessage}</span>}
+    </>
+  );
 }
 ```
 
@@ -1242,27 +1281,27 @@ This can be useful to filter controls based on their types.
 To list all controls based on its type, use `controlsOf` method.
 
 ```ts
-const inputControls = form.controlsOf('input');
+const inputControls = form.controlsOf("input");
 ```
 
 To get only `email` inputs, pass second argument as the input type
 
 ```ts
-const emailControls = form.controlsOf('input', 'email');
+const emailControls = form.controlsOf("input", "email");
 ```
 
 You may also use another shorthand method `form.inputs(type: ControlType): FormControl[]`
 
 ```ts
 const inputControls = form.inputs();
-const emailControls = form.inputs('email');
+const emailControls = form.inputs("email");
 ```
 
 Same as well with buttons
 
 ```ts
 const buttons = form.buttons();
-const submitButtons = form.buttons('submit');
+const submitButtons = form.buttons("submit");
 ```
 
 ## Executing operation on form controls
@@ -1272,18 +1311,20 @@ We saw that we can get our controls all or part of list using `form.controls`, w
 `form.each(callback: (formControl: FormControl) => void, formControlNames: string[]): FormControl[]`
 
 ```ts
-form.each(formControl => {
-    formControl.reset();
-})
-
+form.each((formControl) => {
+  formControl.reset();
+});
 ```
 
 You may also do it on certain inputs by passing array of control names as second argument.
 
 ```ts
-form.each(formControl => {
+form.each(
+  (formControl) => {
     formControl.reset();
-}, ['email', 'password']);
+  },
+  ["email", "password"]
+);
 ```
 
 ## More Form Hooks
@@ -1303,33 +1344,29 @@ This hook is very simple, interacts as a `React.useState` hook but with a twist,
 Before
 
 ```tsx
-import React from 'react';
+import React from "react";
 
 export default function MyComponent() {
-    const [value, setValue] = React.useState('');
+  const [value, setValue] = React.useState("");
 
-    const onChange = e => {
-        setValue(e.target.value);
-    }
+  const onChange = (e) => {
+    setValue(e.target.value);
+  };
 
-    return (
-        <input onChange={onChange} value={value} />
-    )
+  return <input onChange={onChange} value={value} />;
 }
 ```
 
 After
 
 ```tsx
-import React from 'react';
-import { useInputValue } from '@mongez/react-form';
+import React from "react";
+import { useInputValue } from "@mongez/react-form";
 
 export default function MyComponent() {
-    const [value, setValue] = useInputValue('');
+  const [value, setValue] = useInputValue("");
 
-    return (
-        <input onChange={setValue} value={value} />
-    )
+  return <input onChange={setValue} value={value} />;
 }
 ```
 
@@ -1382,29 +1419,28 @@ Whenever any form control's value is changed, the form control is marked as dirt
 This could be useful if you want to get only the updated form inputs.
 
 ```tsx
-const {id, name, formInput} = useFormInput(props);
+const { id, name, formInput } = useFormInput(props);
 
 // check if form input is dirty
 
 if (formInput.isDirty) {
-    // do something
+  // do something
 }
 ```
 
 Also, the form triggers a `dirty` event when any form input's value is changed.
-
 
 ## Getting form control old value
 
 Whenever any form control is marked as dirty, the `oldValue` key appears in the form control object as it stores the last value before current input value.
 
 ```tsx
-const {id, name, formInput} = useFormInput(props);
+const { id, name, formInput } = useFormInput(props);
 
 // check if form input is dirty
 
 if (formInput.isDirty) {
-    console.log(formInput.oldValue);
+  console.log(formInput.oldValue);
 }
 ```
 
@@ -1414,37 +1450,40 @@ The form is shipped with multiple events types that can be listened to from.
 
 ```tsx
 // LoginPage.tsx
-import React from 'react';
-import { EventSubscription } from '@mongez/events';
-import EmailInput from './EmailInput';
-import { RuleResponse } from '@mongez/validator';
-import { Form, FormInterface, FormControl } from '@mongez/react-form';
+import React from "react";
+import { EventSubscription } from "@mongez/events";
+import EmailInput from "./EmailInput";
+import { RuleResponse } from "@mongez/validator";
+import { Form, FormInterface, FormControl } from "@mongez/react-form";
 
 export default function LoginPage() {
-    const form = React.useRef();
-    React.useEffect(() => {
-        if (! form || ! form.current) return;
+  const form = React.useRef();
+  React.useEffect(() => {
+    if (!form || !form.current) return;
 
-        const subscription: EventSubscription = form.current.on('validating', () => {
-            // do something before form start validating on form submission
-        });
+    const subscription: EventSubscription = form.current.on(
+      "validating",
+      () => {
+        // do something before form start validating on form submission
+      }
+    );
 
-        return () => subscription.unsubscribe();
-    }, []);
+    return () => subscription.unsubscribe();
+  }, []);
 
-    const performLogin = (e: React.FormEvent, form: FormInterface) => {
-        //
-    };
+  const performLogin = (e: React.FormEvent, form: FormInterface) => {
+    //
+  };
 
-    return (
-        <Form ref={form} collectValuesFromDOM onSubmit={performLogin}>
-            <EmailInput validateOn="blur" name="email" required />
-            <br />
-            <input type="password" name="password" placeholder="Password" />
-            <br />
-            <button>Login</button>
-        </Form>
-    )
+  return (
+    <Form ref={form} collectValuesFromDOM onSubmit={performLogin}>
+      <EmailInput validateOn="blur" name="email" required />
+      <br />
+      <input type="password" name="password" placeholder="Password" />
+      <br />
+      <button>Login</button>
+    </Form>
+  );
 }
 ```
 
@@ -1453,8 +1492,8 @@ Here is the available list events
 1- `validating`: Triggered before form validation.
 
 ```ts
-form.on('validating', (formControlNames: string[], form) => {
-    // do something
+form.on("validating", (formControlNames: string[], form) => {
+  // do something
 });
 ```
 
@@ -1463,25 +1502,39 @@ form.on('validating', (formControlNames: string[], form) => {
 > Please note that this event is triggered after calling `onError` if passed to the **Form** component.
 
 ```ts
-form.on('validation', (validatedInputs: FormControl[], form) => {
-    // do something
+form.on("validation", (validatedInputs: FormControl[], form) => {
+  // do something
 });
 ```
 
 3- `disabling`: Triggered before disabling/enabling form using `form.disable()`
 
 ```ts
-form.on('disabling', (isDisabled: boolean, oldDisabledState: boolean, formControlNames: string[]) => {
+form.on(
+  "disabling",
+  (
+    isDisabled: boolean,
+    oldDisabledState: boolean,
+    formControlNames: string[]
+  ) => {
     // do something
-});
+  }
+);
 ```
 
 4- `disable`: Triggered after disabling/enabling form using `form.disable()`
 
 ```ts
-form.on('disable', (isDisabled: boolean, oldDisabledState: boolean, formControls: FormControl[]) => {
+form.on(
+  "disable",
+  (
+    isDisabled: boolean,
+    oldDisabledState: boolean,
+    formControls: FormControl[]
+  ) => {
     // do something
-});
+  }
+);
 ```
 
 5- `resetting`: Triggered before resetting form using `form.reset()`
@@ -1489,8 +1542,8 @@ form.on('disable', (isDisabled: boolean, oldDisabledState: boolean, formControls
 > If the **reset** method is called without any arguments, then `formControlNames` will be an empty array.
 
 ```ts
-form.on('resetting', (formControlNames: string[], form) => {
-    // do something
+form.on("resetting", (formControlNames: string[], form) => {
+  // do something
 });
 ```
 
@@ -1499,8 +1552,8 @@ form.on('resetting', (formControlNames: string[], form) => {
 > If the **reset** method is called without any arguments, then `formControls` will be the entire registered form controls.
 
 ```ts
-form.on('resetting', (formControls: FormControl[], form) => {
-    // do something
+form.on("resetting", (formControls: FormControl[], form) => {
+  // do something
 });
 ```
 
@@ -1509,8 +1562,8 @@ form.on('resetting', (formControls: FormControl[], form) => {
 > Please note that `submitting` event is triggered before `validating` event.
 
 ```ts
-form.on('submitting', (e: React.FormEvent, form) => {
-    // do something
+form.on("submitting", (e: React.FormEvent, form) => {
+  // do something
 });
 ```
 
@@ -1520,40 +1573,40 @@ form.on('submitting', (e: React.FormEvent, form) => {
 > The `submit` event is triggered after calling `onSubmit` either it is set or not.
 
 ```ts
-form.on('submit', (e: React.FormEvent, form) => {
-    // do something
+form.on("submit", (e: React.FormEvent, form) => {
+  // do something
 });
 ```
 
 9- `registering`: Triggered before registering form input to the form.
 
 ```ts
-form.on('registering', (formInput: FormControl, form) => {
-    // do something
+form.on("registering", (formInput: FormControl, form) => {
+  // do something
 });
 ```
 
 10- `register`: Triggered after registering form input to the form.
 
 ```ts
-form.on('register', (formInput: FormControl, form) => {
-    // do something
+form.on("register", (formInput: FormControl, form) => {
+  // do something
 });
 ```
 
 11- `unregistering`: Triggered before removing form input from the form.
 
 ```ts
-form.on('unregistering', (formInput: FormControl, form) => {
-    // do something
+form.on("unregistering", (formInput: FormControl, form) => {
+  // do something
 });
 ```
 
 12- `unregister`: Triggered after removing form input from the form.
 
 ```ts
-form.on('unregister', (formInput: FormControl, form) => {
-    // do something
+form.on("unregister", (formInput: FormControl, form) => {
+  // do something
 });
 ```
 
@@ -1564,8 +1617,8 @@ form.on('unregister', (formInput: FormControl, form) => {
 The `type` argument can be: `object` | `queryString` | `json`.
 
 ```ts
-form.on('serializing', (type, formControlNames: string[], form) => {
-    // do something
+form.on("serializing", (type, formControlNames: string[], form) => {
+  // do something
 });
 ```
 
@@ -1576,58 +1629,64 @@ form.on('serializing', (type, formControlNames: string[], form) => {
 The `type` argument can be: `object` | `queryString` | `json`.
 
 ```ts
-form.on('serialize', (type, values, formControlNames: string[], form) => {
-    // do something
+form.on("serialize", (type, values, formControlNames: string[], form) => {
+  // do something
 });
 ```
 
 15- `invalidControl`: Triggered when form control is validated and being not valid.
 
 ```ts
-form.on('invalidControl', (formControl: FormControl, form: FormInterface) => {
-    // do something
+form.on("invalidControl", (formControl: FormControl, form: FormInterface) => {
+  // do something
 });
 ```
 
 16- `validControl`: Triggered when form control is validated and being valid.
 
 ```ts
-form.on('validControl', (formControl: FormControl, form: FormInterface) => {
-    // do something
+form.on("validControl", (formControl: FormControl, form: FormInterface) => {
+  // do something
 });
 ```
 
 17- `invalidControls`: Triggered when at least one form control is not valid.
 
 ```ts
-form.on('invalidControls', (formControls: FormControl[], form: FormInterface) => {
+form.on(
+  "invalidControls",
+  (formControls: FormControl[], form: FormInterface) => {
     // do something
-});
+  }
+);
 ```
 
 18- `validControl`: Triggered when all form controls are valid.
 
 ```ts
-form.on('validControls', (formControls: FormControl[], form: FormInterface) => {
-    // do something
+form.on("validControls", (formControls: FormControl[], form: FormInterface) => {
+  // do something
 });
 ```
 
 19- `dirty`: Triggered when at least one form inputs value has been changed
 
 ```ts
-form.on('dirty', (isDirty: boolean, dirtyControls: FormControl[], form: FormInterface) => {
+form.on(
+  "dirty",
+  (isDirty: boolean, dirtyControls: FormControl[], form: FormInterface) => {
     // do something
-});
+  }
+);
 ```
-> Please note that the `dirty` event is triggered also when the form is reset as it will be triggered after `resetting` event directly.
 
+> Please note that the `dirty` event is triggered also when the form is reset as it will be triggered after `resetting` event directly.
 
 20- `change`: Triggered when form control's value has been changed.
 
 ```ts
-form.on('change', (formControl: FormControl, form: FormInterface) => {
-    // do something
+form.on("change", (formControl: FormControl, form: FormInterface) => {
+  // do something
 });
 ```
 
@@ -1638,28 +1697,26 @@ form.on('change', (formControl: FormControl, form: FormInterface) => {
 Alternatively, you may use `useFormEvent` hook as it works seamlessly inside React Components.
 
 ```tsx
-import { useState } from 'react';
-import { useFormEvent } from '@mongez/react-form';
+import { useState } from "react";
+import { useFormEvent } from "@mongez/react-form";
 
 export default function LoginButton() {
-    const [isDisabled, setDisabled] = useState(false);
+  const [isDisabled, setDisabled] = useState(false);
 
-    // if the form controls contain any invalid control, then disable the submit button
-    useFormEvent('invalidControls', () => setDisabled(true));
-    // if all form controls ar valid, then enable the submit button
-    useFormEvent('validControls', () => setDisabled(false));
+  // if the form controls contain any invalid control, then disable the submit button
+  useFormEvent("invalidControls", () => setDisabled(true));
+  // if all form controls ar valid, then enable the submit button
+  useFormEvent("validControls", () => setDisabled(false));
 
-    // Enable/Disable the button on form submission
-    useFormEvent('submit', (isSubmitted: boolean) => setDisabled(isSubmitted));
+  // Enable/Disable the button on form submission
+  useFormEvent("submit", (isSubmitted: boolean) => setDisabled(isSubmitted));
 
-    // or in easier way
-    useFormEvent('submit', setDisabled);
-    // If form is being disabled
-    useFormEvent('disable', setDisabled);
+  // or in easier way
+  useFormEvent("submit", setDisabled);
+  // If form is being disabled
+  useFormEvent("disable", setDisabled);
 
-    return (
-        <button disabled={isDisabled}>Login</button>
-    )
+  return <button disabled={isDisabled}>Login</button>;
 }
 ```
 
@@ -1667,6 +1724,9 @@ All registered events in `useFormEvent` are being unsubscribed once the componen
 
 ## Change Log
 
+- 1.2.0 (15 Jun 2022)
+- Fixed `validate` method to allow calling it without any parameters.
+- Added [validateVisible method](#validate-only-visible-elements)
 - 1.1.0 (16 May 2022)
   - Added `change` form event.
   - Added Dirty Form Controls.
