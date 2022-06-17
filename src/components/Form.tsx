@@ -229,20 +229,15 @@ export default class Form
    */
   public each(
     callback: (input: FormControl) => void,
-    formControlNames: FormControlType[] = []
+    formControls: FormControlType[] = []
   ): FormControl[] {
-    let formControls: FormControl[] = this.formControls;
-    if (formControlNames.length > 0) {
-      formControls = formControls.filter((formControl) =>
-        formControlNames.includes(formControl.name)
-      );
-    }
+    let controls = this.controls(formControls);
 
-    for (let input of formControls) {
+    for (let input of controls) {
       callback(input);
     }
 
-    return formControls;
+    return controls;
   }
 
   /**
