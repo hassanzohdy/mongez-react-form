@@ -192,7 +192,10 @@ export default function useFormInput(
         setError(null);
       },
       validate: validateInput,
-      disable,
+      disable(isDisabled: boolean) {
+        this.isDisabled = isDisabled;
+        disable(isDisabled);
+      },
       changeValue(newValue) {
         setInputValue(newValue);
       },
