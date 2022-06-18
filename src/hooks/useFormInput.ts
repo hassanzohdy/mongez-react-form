@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import useForm from "./useForm";
 import { translatable } from "./../utils";
 import { validate } from "@mongez/validator";
@@ -123,7 +123,8 @@ export default function useFormInput(
    */
   const setInputValue = (value: any) => {
     setValue(value);
-    validateInput(value);
+    formInput.value = value;
+    validateInput();
   };
 
   /**
@@ -131,8 +132,8 @@ export default function useFormInput(
    *
    * @returns {boolean}
    */
-  const validateInput = (inputValue?: string): InputError => {
-    let validatedInputValue = inputValue !== undefined ? inputValue : value;
+  const validateInput = (): InputError => {
+    let validatedInputValue = formInput.value;
 
     const validator = validate(validatedInputValue, props, rules);
 
@@ -203,7 +204,18 @@ export default function useFormInput(
     };
 
     return formInput;
-  }, [value, id, name, error, isDisabled, disable, isReadOnly]);
+  }, []);
+
+  useEffect(() => {
+    formInput.id = id;
+    formInput.name = name;
+    formInput.value = value;
+    formInput.isReadOnly = isReadOnly;
+    formInput.isDisabled = isDisabled;
+    formInput.error = error;
+    formInput.isValid = error === null;
+    formInput.props = props;
+  }, [value, id, name, isDisabled, isReadOnly, error, props]);
 
   if (props.ref) {
     props.ref.current = formInput;
@@ -219,7 +231,9 @@ export default function useFormInput(
 
     formProvider.register(formInput);
 
-    return () => formProvider.unregister(formInput);
+    return () => {
+      formProvider.unregister(formInput);
+    };
   }, [formProvider]);
 
   return {
