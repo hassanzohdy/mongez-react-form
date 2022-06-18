@@ -1,6 +1,6 @@
 import React from "react";
 import useForm from "./useForm";
-import { translatable } from "../utils";
+import { translatable } from "./../utils";
 import { validate } from "@mongez/validator";
 import {
   FormControl,
@@ -194,6 +194,7 @@ export default function useFormInput(
       validate: validateInput,
       disable(isDisabled: boolean) {
         this.isDisabled = isDisabled;
+
         disable(isDisabled);
       },
       changeValue(newValue) {
@@ -202,7 +203,7 @@ export default function useFormInput(
     };
 
     return formInput;
-  }, [value, id, name, error, isDisabled, isReadOnly]);
+  }, [value, id, name, error, isDisabled, disable, isReadOnly]);
 
   if (props.ref) {
     props.ref.current = formInput;
@@ -219,7 +220,7 @@ export default function useFormInput(
     formProvider.register(formInput);
 
     return () => formProvider.unregister(formInput);
-  }, [value, id, name, isReadOnly, isDisabled, error, props]);
+  }, [formProvider]);
 
   return {
     id,

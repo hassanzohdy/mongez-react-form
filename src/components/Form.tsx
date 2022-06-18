@@ -12,7 +12,7 @@ import {
   FormContextProps,
   FormControl,
   FormControlType,
-} from "../types";
+} from "./../types";
 import FormContext from "../contexts/FormContext";
 import { ControlMode, ControlType, getFormConfig } from "..";
 
@@ -146,25 +146,19 @@ export default class Form
     isDisabled: boolean = true,
     formControlNames: FormControlType[] = []
   ): void {
-    this.trigger(
-      "disabling",
-      isDisabled,
-      this.isBeingDisabled,
-      formControlNames,
-      this
-    );
+    const controls = this.controls(formControlNames);
+
+    this.trigger("disabling", isDisabled, this.isBeingDisabled, controls, this);
 
     this.isBeingDisabled = isDisabled;
 
-    const controls = this.each(
-      (input) => input.disable && input.disable(isDisabled),
-      formControlNames
-    );
-
-    const totalControlNames = controls.map((control) => control.name);
+    controls.forEach((control) => {
+      control.disable && control.disable(isDisabled);
+    });
 
     if (this.props.collectValuesFromDOM) {
       const elements = this.formElement.elements;
+      const totalControlNames = controls.map((control) => control.name);
 
       for (let element of elements as any) {
         if (
@@ -583,17 +577,14 @@ export default class Form
   public controls(formControls: FormControlType[] = []): FormControl[] {
     if (formControls?.length === 0) return this.formControls;
 
-    const formControlNames: FormControlType[] = formControls.map(
-      (formControl) => {
-        if (typeof formControl === "string") return formControl;
+    return formControls.map((formControl) => {
+      if (typeof formControl === "string")
+        return this.formControls.find(
+          (control) => formControl === control.name
+        );
 
-        return formControl.name;
-      }
-    );
-
-    return this.formControls.filter((formControl) => {
-      return formControlNames.includes(formControl.name);
-    });
+      return formControl;
+    }) as FormControl[];
   }
 
   /**

@@ -1724,6 +1724,8 @@ All registered events in `useFormEvent` are being unsubscribed once the componen
 
 ## Change Log
 
+- 1.2.4 (18 Jun 2022)
+  - Fixed form input registering.
 - 1.2.3 (18 Jun 2022)
   - Fixed `disable` method.
 - 1.2.2 (17 Jun 2022)
