@@ -9,6 +9,7 @@ import {
   ControlType,
   FormInputHook,
   UseFormInputOptions,
+  FormControlEvent,
 } from "./../types";
 import {
   useError,
@@ -20,6 +21,7 @@ import {
   usePlaceholder,
   useValue,
 } from "./form-hooks";
+import events, { EventSubscription } from "@mongez/events";
 
 const predefinedProps = [
   "id",
@@ -124,7 +126,17 @@ export default function useFormInput(
   const setInputValue = (value: any) => {
     setValue(value);
     formInput.value = value;
+    formInput.trigger("change", formInput.value, formInput);
+
+    formInput.trigger("validation.start", formInput);
     validateInput();
+    formInput.trigger("validation.end", formInput.isValid, formInput);
+
+    if (formInput.isValid) {
+      formInput.trigger("validation.success", formInput);
+    } else {
+      formInput.trigger("validation.error", formInput);
+    }
   };
 
   /**
@@ -168,6 +180,15 @@ export default function useFormInput(
       isReadOnly,
       props: props,
       readOnly,
+      on(event: FormControlEvent, callback): EventSubscription {
+        return events.subscribe(`form.control.${name}.${event}`, callback);
+      },
+      trigger(event: FormControlEvent, ...args): void {
+        return events.trigger(`form.control.${name}.${event}`, ...args);
+      },
+      unregister() {
+        events.unsubscribeNamespace(`form.control.${name}`);
+      },
       setError: (error: InputError) => {
         setError(error);
         if (error) {
@@ -191,12 +212,14 @@ export default function useFormInput(
       reset: () => {
         setInputValue("");
         setError(null);
+        formInput.trigger("reset", formInput);
       },
       validate: validateInput,
       disable(isDisabled: boolean) {
         this.isDisabled = isDisabled;
 
         disable(isDisabled);
+        formInput.trigger("disabled", isDisabled, formInput);
       },
       changeValue(newValue) {
         setInputValue(newValue);
@@ -232,6 +255,8 @@ export default function useFormInput(
     formProvider.register(formInput);
 
     return () => {
+      formInput.unregister();
+
       formProvider.unregister(formInput);
     };
   }, [formProvider]);

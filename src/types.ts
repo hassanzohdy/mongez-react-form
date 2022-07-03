@@ -207,12 +207,38 @@ export type FormControl = {
    */
   error?: RuleResponse | null;
   /**
+   * Form control event listener
+   */
+  on: (event: FormControlEvent, callback: any) => EventSubscription;
+  /**
+   * Trigger Event
+   */
+  trigger: (event: FormControlEvent, ...values: any[]) => void;
+
+  /**
+   * Unregister form control
+   */
+  unregister: () => void;
+  /**
    * Props list to this component
    */
   props?: any;
 };
 
 export type FormControlType = string | FormControl;
+
+/**
+ * Form control events that can be subscribed to by the form control
+ */
+export type FormControlEvent =
+  | "change"
+  | "reset"
+  | "disabled"
+  | "unregister"
+  | "validation.start"
+  | "validation.success"
+  | "validation.error"
+  | "validation.end";
 
 export type FormContextProps = null | {
   /**

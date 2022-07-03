@@ -261,6 +261,53 @@ Let's look at the available props in that object then see why this formInput exi
 
 ```ts
 import { RuleResponse } from "@mongez/validator";
+import { EventSubscription } from "@mongez/events";
+
+/**
+ * Available control modes
+ */
+type ControlMode = "input" | "button";
+
+/**
+ * Form control events that can be subscribed to by the form control
+ */
+type FormControlEvent =
+  | "change"
+  | "reset"
+  | "disabled"
+  | "unregister"
+  | "validation.start"
+  | "validation.success"
+  | "validation.error"
+  | "validation.end";
+
+/**
+ * Available control types
+ */
+type ControlType =
+  | "text"
+  | "color"
+  | "date"
+  | "time"
+  | "dateTime"
+  | "email"
+  | "checkbox"
+  | "radio"
+  | "hidden"
+  | "number"
+  | "password"
+  | "range"
+  | "search"
+  | "tel"
+  | "url"
+  | "week"
+  | "select"
+  | "autocomplete"
+  | "file"
+  | "image"
+  | "button"
+  | "reset"
+  | "submit";
 
 type FormControl = {
   /**
@@ -284,6 +331,10 @@ type FormControl = {
    */
   value?: any;
   /**
+   * Old Form control value
+   */
+  oldValue?: any;
+  /**
    * Triggered when form is changing disabling / enabling mode
    */
   disable?: (isDisabling: boolean) => void;
@@ -306,7 +357,7 @@ type FormControl = {
   /**
    * Set form input error
    */
-  setError?: (error: RuleResponse) => void;
+  setError: (error: RuleResponse) => void;
   /**
    * Determine whether the form input is valid, this is checked after calling the validate method
    */
@@ -320,6 +371,14 @@ type FormControl = {
    */
   isReadOnly?: boolean;
   /**
+   * Determine whether form input's value has been changed
+   */
+  isDirty?: boolean;
+  /**
+   * Focus on the element
+   */
+  focus?: (focus: boolean) => void;
+  /**
    * Triggered when form resets its values
    */
   reset?: () => void;
@@ -328,13 +387,26 @@ type FormControl = {
    */
   error?: RuleResponse | null;
   /**
+   * Form control event listener
+   */
+  on: (event: FormControlEvent, callback: any) => EventSubscription;
+  /**
+   * Trigger Event
+   */
+  trigger: (event: FormControlEvent, ...values: any[]) => void;
+
+  /**
+   * Unregister form control
+   */
+  unregister: () => void;
+  /**
    * Props list to this component
    */
   props?: any;
 };
 ```
 
-The main responsibility for the form input is to be registered in Form Class, so form can communicate with this component.
+The main responsibility for the form control is to be registered in Form Class, so form can communicate with this component.
 
 We'll see more details through the rest of the documentation.
 
@@ -694,7 +766,7 @@ export default function LoginPage() {
 }
 ```
 
-## Validating onBlur instead of onChange
+## Validating on blur instead of on change
 
 By default, the validation occurs on `onChange` prop, but you may set it on `onBlur` event instead using `validateOn` prop.
 
@@ -897,6 +969,142 @@ export default function PasswordInput({
     </>
   );
 }
+```
+
+## Form Control Events
+
+> Added in V 1.3.0
+
+Every form control has several events that you can subscribe to when it occurs, here are the available events:
+
+```ts
+/**
+ * Form control events that can be subscribed to by the form control
+ */
+export type FormControlEvent =
+  | "change"
+  | "reset"
+  | "disabled"
+  | "unregister"
+  | "validation.start"
+  | "validation.success"
+  | "validation.error"
+  | "validation.end";
+```
+
+This is useful when you want to listen for input change from another input and vice versa.
+
+```tsx
+// LoginPage.tsx
+import React from "react";
+import EmailInput from "./EmailInput";
+import { RuleResponse } from "@mongez/validator";
+import { Form, FormInterface, FormControl } from "@mongez/react-form";
+
+export default function LoginPage() {
+  const form = React.useRef();
+
+  const performLogin = (e: React.FormEvent, form: FormInterface) => {
+    // triggered from the useEffect hook
+  };
+
+  React.useEffect(() => {
+    const formControl = form.control("email");
+    const event = formControl.on(
+      "change",
+      (newValue: string, formControl: FormControl) => {
+        console.log(newValue); // will be triggered when the email input is changed
+      }
+    );
+
+    // Don't forget to unsubscribe when the component unmounts
+
+    return () => event.unsubscribe();
+  }, []);
+
+  return (
+    <Form ref={form} onSubmit={performLogin}>
+      <EmailInput validateOn="blur" name="email" required />
+      <br />
+      <input type="password" name="password" placeholder="Password" />
+      <br />
+      <button>Login</button>
+    </Form>
+  );
+}
+```
+
+Available events:
+
+- `change`: Triggered when value is changed, also when the form control value is reset, this event is triggered as well.
+
+> Please note the change event is triggered before the validation events
+
+```ts
+formControl.on("change", (newValue: string, formControl: FromControl) => {
+  //
+});
+```
+
+- `reset`: Triggered when value is reset.
+
+```ts
+formControl.on("reset", (formControl: FromControl) => {
+  //
+});
+```
+
+> Please note the reset event is triggered after `change` event.
+
+- `validation.start`: Triggered before validation starts.
+
+```ts
+formControl.on("validation.start", (formControl: FromControl) => {
+  //
+});
+```
+
+- `validation.end`: Triggered after validation ends.
+
+```ts
+formControl.on(
+  "validation.end",
+  (isValid: boolean, formControl: FromControl) => {
+    //
+  }
+);
+```
+
+- `validation.success`: Triggered when validation is valid.
+
+```ts
+formControl.on("validation.success", (formControl: FromControl) => {
+  //
+});
+```
+
+- `validation.error`: Triggered when validation is **not valid**.
+
+```ts
+formControl.on("validation.error", (formControl: FromControl) => {
+  //
+});
+```
+
+- `validation.unregister`: Triggered when form component is unmounted.
+
+```ts
+formControl.on("validation.unregister", (formControl: FromControl) => {
+  //
+});
+```
+
+- `validation.disabled`: Triggered when form disabled state is changed.
+
+```ts
+formControl.on('validation.disabled', (isDisabled: boolean formControl: FromControl) => {
+  //
+});
 ```
 
 ## Manually submitting form
@@ -1724,6 +1932,8 @@ All registered events in `useFormEvent` are being unsubscribed once the componen
 
 ## Change Log
 
+- 1.3.0 (3 July 2022)
+  - Added Form Control Events.
 - 1.2.4 (18 Jun 2022)
   - Fixed form input registering.
 - 1.2.3 (18 Jun 2022)
