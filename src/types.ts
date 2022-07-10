@@ -530,6 +530,14 @@ export type FormInputProps = {
    */
   id?: string;
   /**
+   * Override errors list
+   */
+  errors?:
+    | ((error: RuleResponse, formControl: FormControl) => string)
+    | {
+        [key: string]: string;
+      };
+  /**
    * Input ref
    */
   ref?: any;
@@ -607,7 +615,15 @@ export type FormInputProps = {
   /**
    * Triggered when input validation has an error
    */
-  onError?: (error: RuleResponse, formInput: FormControl) => void;
+  onError?: (error: RuleResponse, formInput: FormControl) => any;
+  /**
+   * Validate the form control, this will override the rules prop and disable the validation
+   * the validate prop will receive a form control object and return a null for non validation,
+   * or a RuleResponse object for error.
+   *
+   * The `onError` prop will be triggered though if the validation fails.
+   */
+  validate?: (formControl: FormControl) => InputError;
   /**
    * Input validation rules list
    */

@@ -4,6 +4,12 @@ import queryString from "query-string";
 import { Random, toInputName } from "@mongez/reinforcements";
 import events, { EventSubscription } from "@mongez/events";
 
+let activeForm: Form | null = null;
+
+export function getActiveForm(): Form | null {
+  return activeForm;
+}
+
 import {
   FormEventType,
   FormControlValues,
@@ -86,6 +92,21 @@ export default class Form
    * List of dirty controls
    */
   protected dirtyControls: FormControl[] = [];
+
+  /**
+   * {@inheritDoc}
+   */
+  public constructor(props: FormProps) {
+    super(props);
+    activeForm = this;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public componentWillUnmount() {
+    activeForm = null;
+  }
 
   /**
    * Mark the given form control as invalid control

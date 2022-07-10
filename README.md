@@ -543,7 +543,7 @@ OK let me tell you what's going on here.
 
 First of all, **Mongez React Form** uses [Mongez Validator](https://github.com/hassanzohdy/mongez-validator) for validation.
 
-Next we defined our rules list, which are required and email rules, this will validate the input value each time the user types anything against these two rules.
+Next we defined our rules list, which are `required` and `email` rules, this will validate the input value each time the user types anything against these two rules.
 
 Furthermore, we defined a `defaultProps` object which is accepted by `useFormInput` hook, that if there is no `rules` prop passed in the props then it will be taken from `defaultProps`.
 
@@ -757,6 +757,140 @@ export default function LoginPage() {
   return (
     <Form collectValuesFromDOM onSubmit={performLogin}>
       <EmailInput name="email" onError={onError} required />
+      <br />
+      <input type="password" name="password" placeholder="Password" />
+      <br />
+      <button>Login</button>
+    </Form>
+  );
+}
+```
+
+## The validate prop
+
+> Added in V1.4.0
+
+The `validate` prop will allow you to manually validate the input.
+
+> This will override the `rules` prop and it will be totally ignored when `validate` prop is passed
+
+```tsx
+// LoginPage.tsx
+import React from "react";
+import EmailInput from "./EmailInput";
+import Is from "@mongez/supportive-is";
+import { RuleResponse } from "@mongez/validator";
+import {
+  Form,
+  FormInterface,
+  FormControl,
+  InputError,
+} from "@mongez/react-form";
+
+export default function LoginPage() {
+  const performLogin = (e: React.FormEvent, form: FormInterface) => {
+    //
+  };
+
+  const validateEmail = (formControl: FormControl): InputError => {
+    if (!formControl.value) {
+      return {
+        type: "required",
+        hasError: true,
+        errorMessage: "The email input is required",
+      } as RuleResponse;
+    } else {
+      if (!Is.email(formControl.value)) {
+        return {
+          type: "email",
+          hasError: true,
+          errorMessage: "Invalid Email Address",
+        } as RuleResponse;
+      }
+    }
+
+    // return null means the input is valid
+    return null;
+  };
+
+  return (
+    <Form collectValuesFromDOM onSubmit={performLogin}>
+      <EmailInput name="email" validate={validateEmail} required />
+      <br />
+      <input type="password" name="password" placeholder="Password" />
+      <br />
+      <button>Login</button>
+    </Form>
+  );
+}
+```
+
+When the `validate` prop returns a `RuleResponse`, it will be passed to `onError` as well.
+
+## Custom error messages
+
+> Added in V1.4.0
+
+You can override the error messages that are being set by the `rules` list using `errors` prop.
+
+```tsx
+// LoginPage.tsx
+import React from "react";
+import EmailInput from "./EmailInput";
+import { RuleResponse } from "@mongez/validator";
+import { Form, FormInterface, FormControl } from "@mongez/react-form";
+
+export default function LoginPage() {
+  const performLogin = (e: React.FormEvent, form: FormInterface) => {
+    //
+  };
+
+  return (
+    <Form onSubmit={performLogin}>
+      <EmailInput
+        name="email"
+        errors={{
+          email: "This email is invalid",
+          required: "Email input can not be empty",
+        }}
+        required
+      />
+      <br />
+      <input type="password" name="password" placeholder="Password" />
+      <br />
+      <button>Login</button>
+    </Form>
+  );
+}
+```
+
+The `errors` props can receive an object to override error messages based on the `rule` response error type, or it can be used as a callback function for dynamic error messaging.
+
+```tsx
+// LoginPage.tsx
+import React from "react";
+import EmailInput from "./EmailInput";
+import { RuleResponse } from "@mongez/validator";
+import { Form, FormInterface, FormControl } from "@mongez/react-form";
+
+export default function LoginPage() {
+  const performLogin = (e: React.FormEvent, form: FormInterface) => {
+    //
+  };
+
+  return (
+    <Form onSubmit={performLogin}>
+      <EmailInput
+        name="email"
+        errors={(error: RuleResponse, formControl: FormControl) => {
+          if (error.type === "required") return "The email input is required";
+
+          if (error.type === "email") return "This email is invalid";
+
+          return "Some Other Error";
+        }}
+        required
+      />
       <br />
       <input type="password" name="password" placeholder="Password" />
       <br />
@@ -1932,7 +2066,10 @@ All registered events in `useFormEvent` are being unsubscribed once the componen
 
 ## Change Log
 
-- 1.3.0 (3 July 2022)
+- 1.4.0 (09 July 2022)
+  - Added `validate` prop to form control.
+  - Added `errors` prop to form control.
+- 1.3.0 (03 July 2022)
   - Added Form Control Events.
 - 1.2.4 (18 Jun 2022)
   - Fixed form input registering.
@@ -1949,7 +2086,7 @@ All registered events in `useFormEvent` are being unsubscribed once the componen
   - Added `change` form event.
   - Added Dirty Form Controls.
   - Added [useFormEvent Hook](#use-form-event-hook)
-- 1.0.11 (4 Mar 2022)
+- 1.0.11 (04 Mar 2022)
   - Fixed Bugs
 - 1.0.7 (26 Jan 2022)
   - Fixed Filtering form controls in `each` method.

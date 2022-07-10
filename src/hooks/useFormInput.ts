@@ -147,9 +147,20 @@ export default function useFormInput(
   const validateInput = (): InputError => {
     let validatedInputValue = formInput.value;
 
-    const validator = validate(validatedInputValue, props, rules);
+    let error: InputError;
 
-    if (validator.passes()) {
+    if (props.onValidate) {
+      error = props.onValidate(formInput);
+    } else {
+      const validator = validate(validatedInputValue, props, rules);
+      if (validator.passes()) {
+        error = null;
+      } else {
+        error = validator.getError();
+      }
+    }
+
+    if (error === null) {
       setError(null);
       formInput.isValid = true;
       if (formProvider) {
@@ -157,15 +168,34 @@ export default function useFormInput(
       }
       return null;
     } else {
-      const error = validator.getError();
-      error.errorMessage = translatable(error.errorMessage, "errorMessage");
+      const errors = props.errors;
+
+      if (errors) {
+        if (typeof errors === "function") {
+          error.errorMessage = errors(error, formInput);
+        } else {
+          error.errorMessage = errors[error.type];
+        }
+      } else {
+        error.errorMessage = translatable(error.errorMessage, "errorMessage");
+      }
+
       formInput.error = error;
       formInput.isValid = false;
+
+      if (props.onError) {
+        const output: any = props.onError(error, formInput);
+        if (output) {
+          error.errorMessage = output;
+        }
+      }
+
       setError(error);
-      props.onError && props.onError(error, formInput);
+
       if (formProvider) {
         formProvider.form.invalidControl(formInput);
       }
+
       return error;
     }
   };
