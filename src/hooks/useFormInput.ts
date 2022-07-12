@@ -90,6 +90,14 @@ export default function useFormInput(
     props.readOnly || false
   );
 
+  React.useEffect(() => {
+    disable(props.disabled);
+  }, [props.disabled]);
+
+  React.useEffect(() => {
+    readOnly(props.readOnly);
+  }, [props.readOnly]);
+
   const formProvider = useForm();
 
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -147,15 +155,13 @@ export default function useFormInput(
   const validateInput = (): InputError => {
     let validatedInputValue = formInput.value;
 
-    let error: InputError;
+    let error: InputError = null;
 
     if (props.onValidate) {
       error = props.onValidate(formInput);
     } else {
       const validator = validate(validatedInputValue, props, rules);
-      if (validator.passes()) {
-        error = null;
-      } else {
+      if (validator.fails()) {
         error = validator.getError();
       }
     }
@@ -166,38 +172,41 @@ export default function useFormInput(
       if (formProvider) {
         formProvider.form.validControl(formInput);
       }
-      return null;
-    } else {
-      const errors = props.errors;
 
-      if (errors) {
-        if (typeof errors === "function") {
-          error.errorMessage = errors(error, formInput);
-        } else {
-          error.errorMessage = errors[error.type];
-        }
+      return null;
+    }
+
+    const errors = props.errors;
+
+    if (errors) {
+      if (typeof errors === "function") {
+        error.errorMessage = errors(error, formInput);
+      } else if (errors[error.type] !== undefined) {
+        error.errorMessage = errors[error.type];
       } else {
         error.errorMessage = translatable(error.errorMessage, "errorMessage");
       }
-
-      formInput.error = error;
-      formInput.isValid = false;
-
-      if (props.onError) {
-        const output: any = props.onError(error, formInput);
-        if (output) {
-          error.errorMessage = output;
-        }
-      }
-
-      setError(error);
-
-      if (formProvider) {
-        formProvider.form.invalidControl(formInput);
-      }
-
-      return error;
+    } else {
+      error.errorMessage = translatable(error.errorMessage, "errorMessage");
     }
+
+    formInput.error = error;
+    formInput.isValid = false;
+
+    if (props.onError) {
+      const output: any = props.onError(error, formInput);
+      if (output) {
+        error.errorMessage = output;
+      }
+    }
+
+    setError(error);
+
+    if (formProvider) {
+      formProvider.form.invalidControl(formInput);
+    }
+
+    return error;
   };
 
   const formInput = React.useMemo(() => {

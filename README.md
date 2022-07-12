@@ -2064,8 +2064,43 @@ export default function LoginButton() {
 
 All registered events in `useFormEvent` are being unsubscribed once the component is unmounted.
 
+## Active Forms
+
+> Added in V1.5.0
+
+All forms are being tracked using the `activeForms` utilities, which means you can get the current active form from anywhere in the project using `getActiveForm` utility.
+
+```ts
+import { getActiveForm } from "@mongez/react-form";
+
+console.log(getActiveForm()); // null by default
+```
+
+By default the active form will be null until there is a form is mounted in the DOM, once there is a Form rendered you can get access to that form using the `getActiveForm` function.
+
+```tsx
+import { getActiveForm } from "@mongez/react-form";
+
+export default function LoginPage() {
+  React.useEffect(() => {
+    console.log(getActiveForm()); // will get the Form Component Which implements FormInterface
+  }, []);
+
+  return (
+    <>
+      <LoginFormComponent />
+    </>
+  );
+}
+```
+
+Sometimes we may open multiple forms in one page, for example a single page that displays the login form and the register form, we can access any form of them using the `getForm` utility by passing the form id to it.
+
 ## Change Log
 
+- 1.5.0 (12 July 2022)
+  - Added Active Forms.
+  - Fixed some bugs.
 - 1.4.0 (09 July 2022)
   - Added `validate` prop to form control.
   - Added `errors` prop to form control.

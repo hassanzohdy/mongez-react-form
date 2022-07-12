@@ -2,6 +2,13 @@ import React from "react";
 import { EventSubscription } from "@mongez/events";
 import { Rule, RuleResponse } from "@mongez/validator";
 
+/**
+ * Active forms list
+ */
+export type ActiveForms = {
+  [key: string]: FormInterface;
+};
+
 export type HiddenInputProps = {
   /**
    * Input name
@@ -438,6 +445,11 @@ export interface FormInterface {
    *
    */
   value: (FormControlName: string) => any;
+
+  /**
+   * Get form id
+   */
+  get id(): string;
 
   /**
    * Return form values as an object

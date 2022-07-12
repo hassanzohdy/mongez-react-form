@@ -4,12 +4,6 @@ import queryString from "query-string";
 import { Random, toInputName } from "@mongez/reinforcements";
 import events, { EventSubscription } from "@mongez/events";
 
-let activeForm: Form | null = null;
-
-export function getActiveForm(): Form | null {
-  return activeForm;
-}
-
 import {
   FormEventType,
   FormControlValues,
@@ -21,6 +15,11 @@ import {
 } from "./../types";
 import FormContext from "../contexts/FormContext";
 import { ControlMode, ControlType, getFormConfig } from "..";
+import {
+  addToFormsList,
+  removeActiveForm,
+  setActiveForm,
+} from "../active-form";
 
 export default class Form
   extends React.Component<FormProps>
@@ -34,7 +33,7 @@ export default class Form
   /**
    * Form id
    */
-  protected formId: string = Random.string(32);
+  protected formId: string = "";
 
   /**
    * Form event prefix
@@ -98,14 +97,19 @@ export default class Form
    */
   public constructor(props: FormProps) {
     super(props);
-    activeForm = this;
+
+    this.formId = props.id || "frm-" + Random.string(32);
+
+    setActiveForm(this);
+    addToFormsList(this);
   }
 
   /**
    * {@inheritDoc}
    */
   public componentWillUnmount() {
-    activeForm = null;
+    removeActiveForm(this);
+    removeActiveForm(this);
   }
 
   /**
@@ -281,6 +285,13 @@ export default class Form
    */
   public isValid(): boolean {
     return this.isValidForm;
+  }
+
+  /**
+   * Get form id
+   */
+  public get id(): string {
+    return this.formId;
   }
 
   /**
