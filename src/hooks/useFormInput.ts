@@ -50,13 +50,16 @@ export function useOtherProps(
   return React.useMemo(() => {
     const otherProps: any = {};
 
+    const excludedProps = [...predefinedProps, ...excludeAlso];
+
     for (const key in props) {
-      if (predefinedProps.includes(key) || excludeAlso.includes(key)) continue;
+      if (excludedProps.includes(key)) continue;
+
       otherProps[key] = props[key];
     }
 
     return otherProps;
-  }, [props]);
+  }, [props, excludeAlso]);
 }
 
 export default function useFormInput(
