@@ -252,7 +252,7 @@ export default function useFormInput(
         }
       },
       reset: () => {
-        setInputValue("");
+        setInputValue(props.defaultValue);
         setError(null);
         formInput.trigger("reset", formInput);
       },
