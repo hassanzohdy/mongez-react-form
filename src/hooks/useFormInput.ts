@@ -252,7 +252,9 @@ export default function useFormInput(
         }
       },
       reset: () => {
-        setInputValue(props.defaultValue);
+        setInputValue(
+          props.defaultValue !== undefined ? props.defaultValue : ""
+        );
         setError(null);
         formInput.trigger("reset", formInput);
       },
