@@ -2098,6 +2098,8 @@ Sometimes we may open multiple forms in one page, for example a single page that
 
 ## Change Log
 
+- 1.5.2 (12 July 2022)
+  - Fixed form submission.
 - 1.5.1 (12 July 2022)
   - Fixed exclude props.
 - 1.5.0 (12 July 2022)

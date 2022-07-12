@@ -156,10 +156,10 @@ export default class Form
    */
   public submitting(submitting: boolean): void {
     this.isBeingSubmitted = submitting;
-    if (submitting === true) {
-      this.submit();
-    } else {
-      this.trigger("submitting", submitting, this);
+    this.trigger("submitting", submitting, this);
+
+    if (submitting === false) {
+      // Simulate form submit event
       this.trigger("submit", submitting, this);
     }
   }
@@ -356,6 +356,7 @@ export default class Form
         control.isDirty = false;
         control.oldValue = undefined;
       });
+
       this.dirtyControls = [];
     }
 
@@ -647,7 +648,7 @@ export default class Form
   /**
    * The onSubmit method that will be passed to the form element
    */
-  protected triggerSubmit(e: React.FormEvent, m: any): void {
+  protected triggerSubmit(e: React.FormEvent): void {
     e.preventDefault();
     e.stopPropagation();
 
@@ -657,7 +658,7 @@ export default class Form
 
     if (this.props.onSubmit) {
       this.submitting(true);
-      this.props.onSubmit(e, this as FormInterface);
+      this.props.onSubmit(e, this);
     }
 
     this.trigger("submit", e, this);
