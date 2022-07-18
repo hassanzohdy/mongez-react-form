@@ -46,11 +46,6 @@ export default class Form
   protected formControls: FormControl[] = [];
 
   /**
-   * Invalid inputs list
-   */
-  protected invalidInputs: FormControl[] = [];
-
-  /**
    * Determine whether form validation is valid
    */
   protected isValidForm: boolean = true;
@@ -83,7 +78,6 @@ export default class Form
 
   /**
    * Determine if current form's controls values have been changed
-   *
    */
   protected isDirtyForm: boolean = false;
 
@@ -121,6 +115,8 @@ export default class Form
 
     this.invalidControls.push(formControl);
 
+    this.isValidForm = false;
+
     this.trigger("invalidControl", formControl, this);
     this.trigger("invalidControls", this.invalidControls, this);
   }
@@ -140,6 +136,7 @@ export default class Form
     this.invalidControls.splice(controlIndex, 1);
 
     if (this.invalidControls.length === 0) {
+      this.isValidForm = true;
       this.trigger("validControls", this);
     }
   }
@@ -367,7 +364,6 @@ export default class Form
 
   /**
    * Determine if the given form control is dirty
-   *
    */
   public isDirtyControl(value: string, getBy: any) {
     return this.control(value, getBy)?.isDirty;
@@ -395,13 +391,14 @@ export default class Form
    * Trigger form validation
    */
   public validate(formControlNames: FormControlType[] = []): FormControl[] {
-    this.trigger("validating", formControlNames, this);
-    this.isValidForm = true;
-    this.invalidInputs = [];
-
     const validatedInputs: FormControl[] = [];
 
     const controls = this.controls(formControlNames);
+
+    this.trigger("validating", controls, this);
+
+    this.isValidForm = true;
+    this.invalidControls = [];
 
     for (const input of controls) {
       if (input.isDisabled) continue;
@@ -411,13 +408,12 @@ export default class Form
       input.validate && input.validate();
 
       if (input.isValid === false) {
-        this.isValidForm = false;
-        this.invalidInputs.push(input);
+        this.invalidControl(input);
       }
     }
 
     if (this.isValidForm === false && this.props.onError) {
-      this.props.onError(this.invalidInputs);
+      this.props.onError(this.invalidControls);
     }
 
     this.trigger("validation", validatedInputs, this);
