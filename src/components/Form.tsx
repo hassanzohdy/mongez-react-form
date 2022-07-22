@@ -110,12 +110,12 @@ export default class Form
    * Mark the given form control as invalid control
    */
   public invalidControl(formControl: FormControl): void {
+    this.isValidForm = false;
+
     if (this.invalidControls.find((control) => control.id === formControl.id))
       return;
 
     this.invalidControls.push(formControl);
-
-    this.isValidForm = false;
 
     this.trigger("invalidControl", formControl, this);
     this.trigger("invalidControls", this.invalidControls, this);
@@ -428,9 +428,13 @@ export default class Form
   public validateVisible(
     formControlNames: FormControlType[] = []
   ): FormControl[] {
-    let controls = this.controls(formControlNames).filter(
-      (control) => document.getElementById(control.id!)?.offsetParent !== null
-    );
+    let controls = this.controls(formControlNames).filter((control) => {
+      const visibleControlElement = control.visibleElement
+        ? control.visibleElement()
+        : document.getElementById(control.id!);
+
+      return visibleControlElement?.offsetParent !== null;
+    });
 
     return this.validate(controls);
   }

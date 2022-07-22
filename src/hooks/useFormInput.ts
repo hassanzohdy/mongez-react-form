@@ -75,6 +75,8 @@ export default function useFormInput(
 
   const inputRef = React.useRef<any>();
 
+  const visibleElementRef = React.useRef<any>();
+
   const otherProps = useOtherProps(
     baseProps,
     formInputOptions.excludeFromOtherProps || []
@@ -86,19 +88,19 @@ export default function useFormInput(
   const labelPosition = useLabelPosition(props);
 
   const [isDisabled, disable] = React.useState<boolean>(
-    props.disabled || false
+    Boolean(props.disabled)
   );
 
   const [isReadOnly, readOnly] = React.useState<boolean>(
-    props.readOnly || false
+    Boolean(props.readOnly)
   );
 
   React.useEffect(() => {
-    disable(props.disabled);
+    disable(Boolean(props.disabled));
   }, [props.disabled]);
 
   React.useEffect(() => {
-    readOnly(props.readOnly);
+    readOnly(Boolean(props.readOnly));
   }, [props.readOnly]);
 
   const formProvider = useForm();
@@ -259,6 +261,7 @@ export default function useFormInput(
         formInput.trigger("reset", formInput);
       },
       validate: validateInput,
+      visibleElement: () => visibleElementRef.current,
       disable(isDisabled: boolean) {
         this.isDisabled = isDisabled;
 
@@ -323,6 +326,7 @@ export default function useFormInput(
     setValue,
     type: props.type,
     required: props.required,
+    visibleElementRef,
     onChange,
     onBlur,
     otherProps,
