@@ -73,6 +73,8 @@ export default function useFormInput(
   const label = useLabel(props);
   const rules = useInputRules(props);
 
+  const initialStartRef = useRef<boolean>(false);
+
   const inputRef = React.useRef<any>();
 
   const visibleElementRef = React.useRef<any>();
@@ -293,6 +295,13 @@ export default function useFormInput(
 
   React.useEffect(() => {
     if (props.value === undefined) return;
+
+    // this will prevent trigger onChange event when component is mounted for the first time
+    if (initialStartRef.current === false) {
+      initialStartRef.current = true;
+      return;
+    }
+
     setInputValue(props.value);
   }, [props.value]);
 
