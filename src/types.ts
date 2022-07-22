@@ -1,6 +1,6 @@
-import React from "react";
 import { EventSubscription } from "@mongez/events";
 import { Rule, RuleResponse } from "@mongez/validator";
+import React from "react";
 
 /**
  * Active forms list
@@ -156,27 +156,27 @@ export type FormControl = {
   /**
    * Form input value
    */
-  value: any;
+  value?: any;
   /**
    * Old Form control value
    */
-  oldValue: any;
+  oldValue?: any;
   /**
    * Triggered when form is changing disabling / enabling mode
    */
-  disable: (isDisabling: boolean) => void;
+  disable?: (isDisabling: boolean) => void;
   /**
    * Triggered when form is changing read only mode
    */
-  readOnly: (isReadingOnly: boolean) => void;
+  readOnly?: (isReadingOnly: boolean) => void;
   /**
    * Triggered when form is changing a value to the form input
    */
-  changeValue: (newValue: any) => void;
+  changeValue?: (newValue: any) => void;
   /**
    * Triggered when form starts validation
    */
-  validate: (newValue?: string) => RuleResponse | null;
+  validate?: (newValue?: string) => RuleResponse | null;
   /**
    * Set form input error
    */
@@ -184,35 +184,35 @@ export type FormControl = {
   /**
    * Determine whether the form input is valid, this is checked after calling the validate method
    */
-  isValid: boolean;
+  isValid?: boolean;
   /**
    * Determine whether form input is disabled
    */
-  isDisabled: boolean;
+  isDisabled?: boolean;
   /**
    * Determine whether form input is in read only state
    */
-  isReadOnly: boolean;
+  isReadOnly?: boolean;
   /**
    * Determine whether form input's value has been changed
    */
-  isDirty: boolean;
+  isDirty?: boolean;
   /**
    * Focus on the element
    */
-  focus: (focus: boolean) => void;
+  focus?: (focus: boolean) => void;
   /**
    * Triggered when form resets its values
    */
-  reset: () => void;
+  reset?: () => void;
   /**
    * Form Input Error
    */
-  error: RuleResponse | null;
+  error?: RuleResponse | null;
   /**
    * Form control event listener
    */
-  on: (event: FormControlEvent, callback: any) => EventSubscription;
+  on?: (event: FormControlEvent, callback: any) => EventSubscription;
   /**
    * Trigger Event
    */
@@ -230,7 +230,7 @@ export type FormControl = {
   /**
    * Props list to this component
    */
-  props: any;
+  props?: any;
 };
 
 export type FormControlType = string | FormControl;
@@ -420,7 +420,7 @@ export interface FormInterface {
    */
   on: (
     event: FormEventType,
-    callback: (form: FormInterface) => void
+    callback: (form: FormInterface) => void,
   ) => EventSubscription;
   /**
    * Register new form input
@@ -646,14 +646,14 @@ export type FormInputProps = {
    */
   onChange?: (
     event: React.ChangeEvent<HTMLInputElement>,
-    formInput: FormControl
+    formInput: FormControl,
   ) => void;
   /**
    * A callback function triggered on input blue
    */
   onBlur?: (
     event: React.ChangeEvent<HTMLInputElement>,
-    formInput: FormControl
+    formInput: FormControl,
   ) => void;
   /**
    * Validate the input based on type of change

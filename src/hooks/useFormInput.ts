@@ -1,16 +1,16 @@
-import React, { useEffect, useRef } from "react";
-import useForm from "./useForm";
-import { translatable } from "./../utils";
+import events, { EventSubscription } from "@mongez/events";
 import { validate } from "@mongez/validator";
+import React, { useEffect, useRef } from "react";
 import {
+  ControlType,
   FormControl,
+  FormControlEvent,
+  FormInputHook,
   FormInputProps,
   InputError,
-  ControlType,
-  FormInputHook,
   UseFormInputOptions,
-  FormControlEvent,
 } from "./../types";
+import { translatable } from "./../utils";
 import {
   useError,
   useId,
@@ -21,7 +21,7 @@ import {
   usePlaceholder,
   useValue,
 } from "./form-hooks";
-import events, { EventSubscription } from "@mongez/events";
+import useForm from "./useForm";
 
 const predefinedProps = [
   "id",
@@ -45,7 +45,7 @@ const predefinedProps = [
 
 export function useOtherProps(
   props: FormInputProps,
-  excludeAlso: string[]
+  excludeAlso: string[],
 ): any {
   return React.useMemo(() => {
     const otherProps: any = {};
@@ -64,7 +64,7 @@ export function useOtherProps(
 
 export default function useFormInput(
   baseProps: FormInputProps,
-  formInputOptions: UseFormInputOptions = {}
+  formInputOptions: UseFormInputOptions = {},
 ): FormInputHook {
   const props: FormInputProps = baseProps;
 
@@ -81,7 +81,7 @@ export default function useFormInput(
 
   const otherProps = useOtherProps(
     baseProps,
-    formInputOptions.excludeFromOtherProps || []
+    formInputOptions.excludeFromOtherProps || [],
   );
 
   const placeholder = usePlaceholder(props);
@@ -90,11 +90,11 @@ export default function useFormInput(
   const labelPosition = useLabelPosition(props);
 
   const [isDisabled, disable] = React.useState<boolean>(
-    Boolean(props.disabled)
+    Boolean(props.disabled),
   );
 
   const [isReadOnly, readOnly] = React.useState<boolean>(
-    Boolean(props.readOnly)
+    Boolean(props.readOnly),
   );
 
   React.useEffect(() => {
@@ -188,8 +188,8 @@ export default function useFormInput(
     if (errors) {
       if (typeof errors === "function") {
         error.errorMessage = errors(error, formInput);
-      } else if (errors[error.type] !== undefined) {
-        error.errorMessage = errors[error.type];
+      } else if (errors[error.errorType] !== undefined) {
+        error.errorMessage = errors[error.errorType];
       } else {
         error.errorMessage = translatable(error.errorMessage, "errorMessage");
       }
@@ -257,7 +257,7 @@ export default function useFormInput(
       },
       reset: () => {
         setInputValue(
-          props.defaultValue !== undefined ? props.defaultValue : ""
+          props.defaultValue !== undefined ? props.defaultValue : "",
         );
         setError(null);
         formInput.trigger("reset", formInput);

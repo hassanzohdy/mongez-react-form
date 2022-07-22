@@ -1,25 +1,25 @@
-import React from "react";
+import events, { EventSubscription } from "@mongez/events";
+import { Random, toInputName } from "@mongez/reinforcements";
 import serialize from "form-serialize";
 import queryString from "query-string";
-import { Random, toInputName } from "@mongez/reinforcements";
-import events, { EventSubscription } from "@mongez/events";
+import React from "react";
 
-import {
-  FormEventType,
-  FormControlValues,
-  FormInterface,
-  FormProps,
-  FormContextProps,
-  FormControl,
-  FormControlType,
-} from "./../types";
-import FormContext from "../contexts/FormContext";
 import { ControlMode, ControlType, getFormConfig } from "..";
 import {
   addToFormsList,
   removeActiveForm,
   setActiveForm,
 } from "../active-form";
+import FormContext from "../contexts/FormContext";
+import {
+  FormContextProps,
+  FormControl,
+  FormControlType,
+  FormControlValues,
+  FormEventType,
+  FormInterface,
+  FormProps,
+} from "./../types";
 
 export default class Form
   extends React.Component<FormProps>
@@ -112,7 +112,7 @@ export default class Form
   public invalidControl(formControl: FormControl): void {
     this.isValidForm = false;
 
-    if (this.invalidControls.find((control) => control.id === formControl.id))
+    if (this.invalidControls.find(control => control.id === formControl.id))
       return;
 
     this.invalidControls.push(formControl);
@@ -126,7 +126,7 @@ export default class Form
    */
   public validControl(formControl: FormControl): void {
     let controlIndex: number = this.invalidControls.findIndex(
-      (control) => control.id === formControl.id
+      control => control.id === formControl.id,
     );
 
     if (controlIndex === -1) return;
@@ -166,7 +166,7 @@ export default class Form
    */
   public disable(
     isDisabled: boolean = true,
-    formControlNames: FormControlType[] = []
+    formControlNames: FormControlType[] = [],
   ): void {
     const controls = this.controls(formControlNames);
 
@@ -174,13 +174,13 @@ export default class Form
 
     this.isBeingDisabled = isDisabled;
 
-    controls.forEach((control) => {
+    controls.forEach(control => {
       control.disable && control.disable(isDisabled);
     });
 
     if (this.props.collectValuesFromDOM) {
       const elements = this.formElement.elements;
-      const totalControlNames = controls.map((control) => control.name);
+      const totalControlNames = controls.map(control => control.name);
 
       for (let element of elements as any) {
         if (
@@ -206,14 +206,14 @@ export default class Form
    */
   public readOnly(
     isReadOnly: boolean = true,
-    formControlNames: FormControlType[] = []
+    formControlNames: FormControlType[] = [],
   ): void {
     const controls = this.each(
-      (input) => input.readOnly && input.readOnly(isReadOnly),
-      formControlNames
+      input => input.readOnly && input.readOnly(isReadOnly),
+      formControlNames,
     );
 
-    const totalControlNames = controls.map((control) => control.name);
+    const totalControlNames = controls.map(control => control.name);
 
     if (this.props.collectValuesFromDOM) {
       for (let element of this.formElement.elements as any) {
@@ -245,7 +245,7 @@ export default class Form
    */
   public each(
     callback: (input: FormControl) => void,
-    formControls: FormControlType[] = []
+    formControls: FormControlType[] = [],
   ): FormControl[] {
     let controls = this.controls(formControls);
 
@@ -296,7 +296,7 @@ export default class Form
    */
   public on(
     event: FormEventType,
-    callback: (form: FormInterface) => void
+    callback: (form: FormInterface) => void,
   ): EventSubscription {
     return events.subscribe(`${this.formEventPrefix}.${event}`, callback);
   }
@@ -349,7 +349,7 @@ export default class Form
         this.dirtyControls.push(control);
       }
     } else {
-      this.dirtyControls.forEach((control) => {
+      this.dirtyControls.forEach(control => {
         control.isDirty = false;
         control.oldValue = undefined;
       });
@@ -374,7 +374,7 @@ export default class Form
    */
   public getDirtyControlIndex(control: FormControl): number {
     return this.dirtyControls.findIndex(
-      (dirtyControl) => dirtyControl.id === control.id
+      dirtyControl => dirtyControl.id === control.id,
     );
   }
 
@@ -412,7 +412,7 @@ export default class Form
       }
     }
 
-    if (this.isValidForm === false && this.props.onError) {
+    if (!this.isValidForm && this.props.onError) {
       this.props.onError(this.invalidControls);
     }
 
@@ -426,15 +426,17 @@ export default class Form
    * If formControlNames is passed, then it will be operated only on these names.
    */
   public validateVisible(
-    formControlNames: FormControlType[] = []
+    formControlNames: FormControlType[] = [],
   ): FormControl[] {
-    let controls = this.controls(formControlNames).filter((control) => {
-      const visibleControlElement = control.visibleElement
-        ? control.visibleElement()
-        : document.getElementById(control.id!);
+    let controls = this.controls(formControlNames).filter(
+      (control: FormControl) => {
+        const visibleControlElement = control.visibleElement
+          ? control.visibleElement()
+          : document.getElementById(control.id!);
 
-      return visibleControlElement?.offsetParent !== null;
-    });
+        return visibleControlElement?.offsetParent !== null;
+      },
+    );
 
     return this.validate(controls);
   }
@@ -457,7 +459,7 @@ export default class Form
    */
   public unregister(formControl: FormControl): void {
     const formControlIndex = this.formControls.findIndex(
-      (input) => input.id === formControl.id
+      input => input.id === formControl.id,
     );
 
     if (formControlIndex === -1) return;
@@ -483,13 +485,13 @@ export default class Form
    */
   public control(
     value: string,
-    getBy: "name" | "id" = "name"
+    getBy: "name" | "id" = "name",
   ): FormControl | null {
     if (getBy === "name") {
       value = toInputName(value);
     }
 
-    return this.formControls.find((input) => input[getBy] === value) || null;
+    return this.formControls.find(input => input[getBy] === value) || null;
   }
 
   /**
@@ -500,15 +502,14 @@ export default class Form
     this.dirty(false);
 
     const controls = this.each(
-      (input) => input.reset && input.reset(),
-      formControlNames
+      input => input.reset && input.reset(),
+      formControlNames,
     );
 
     if (formControlNames.length === 0) {
       this.isValidForm = true;
       this.isBeingSubmitted = false;
       this.isBeingDisabled = false;
-      this.invalidInputs = [];
       this.storedValuesList = {};
       this.isStoringValues = false;
 
@@ -610,11 +611,9 @@ export default class Form
   public controls(formControls: FormControlType[] = []): FormControl[] {
     if (formControls?.length === 0) return this.formControls;
 
-    return formControls.map((formControl) => {
+    return formControls.map(formControl => {
       if (typeof formControl === "string")
-        return this.formControls.find(
-          (control) => formControl === control.name
-        );
+        return this.formControls.find(control => formControl === control.name);
 
       return formControl;
     }) as FormControl[];
@@ -625,9 +624,9 @@ export default class Form
    */
   public controlsOf(control: ControlMode, type?: ControlType): FormControl[] {
     return this.formControls.filter(
-      (formControl) =>
+      formControl =>
         formControl.control === control &&
-        (type ? formControl.type === type : true)
+        (type ? formControl.type === type : true),
     );
   }
 
@@ -698,8 +697,7 @@ export default class Form
           id={id}
           noValidate={noValidate}
           onSubmit={this.triggerSubmit.bind(this) as any}
-          {...otherProps}
-        >
+          {...otherProps}>
           {children}
         </Component>
       </FormContext.Provider>

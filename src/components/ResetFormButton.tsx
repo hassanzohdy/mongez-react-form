@@ -1,7 +1,7 @@
-import React from "react";
-import useForm from "./../hooks/useForm";
+import React, { useCallback } from "react";
 import { useId } from "../hooks/form-hooks";
 import { FormControl, ResetFormButtonProps } from "../types";
+import useForm from "./../hooks/useForm";
 
 export default function ResetFormButton({
   resetOnly,
@@ -14,11 +14,13 @@ export default function ResetFormButton({
 
   React.useEffect(() => {
     const formControl: FormControl = {
+      trigger: () => {},
+      unregister: () => {},
       name: otherProps.name || "resetButton",
       control: "button",
       type: "reset",
       id: id,
-      setError: (error) => {},
+      setError: error => {},
       props: { resetOnly, component: Component, onClick, ...otherProps },
     };
 
@@ -27,12 +29,12 @@ export default function ResetFormButton({
     return () => formHandler?.form.unregister(formControl);
   }, []);
 
-  const reset = React.useCallback(
-    (e) => {
+  const reset = useCallback(
+    (e: any) => {
       formHandler?.form && formHandler.form.reset(resetOnly);
       onClick && onClick(e);
     },
-    [formHandler]
+    [formHandler],
   );
 
   return <Component type="button" onClick={reset} {...otherProps} id={id} />;

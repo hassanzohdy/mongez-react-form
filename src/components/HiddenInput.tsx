@@ -1,10 +1,8 @@
-import React from "react";
-import { useFormInput } from "../hooks";
 import { toInputName } from "@mongez/reinforcements";
 import { FormInputProps, HiddenInputProps } from "../types";
 
 export default function HiddenInput(props: HiddenInputProps & FormInputProps) {
-  const { name, value } = useFormInput(props);
+  const { name, value } = props;
 
   if (!name) return null;
 
@@ -17,7 +15,7 @@ export default function HiddenInput(props: HiddenInputProps & FormInputProps) {
       {value.map((singleValue: any) => (
         <input
           type="hidden"
-          key={singleValue}
+          key={String(singleValue)}
           name={toInputName(name)}
           value={String(singleValue)}
         />
