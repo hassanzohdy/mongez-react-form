@@ -293,7 +293,7 @@ export default function useFormInput(
 
   React.useEffect(() => {
     if (props.value === undefined) return;
-    setValue(props.value);
+    setInputValue(props.value);
   }, [props.value]);
 
   React.useEffect(() => {
