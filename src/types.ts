@@ -710,6 +710,11 @@ export type FormInputHook = FormInputProps & {
    * Visible element ref
    */
   visibleElementRef: React.RefObject<HTMLElement>;
+
+  /**
+   * Manually validate the input
+   */
+  validate?: (value: any) => void;
 };
 
 export type FormConfigurations = {

@@ -159,9 +159,7 @@ export default function useFormInput(
    *
    * @returns {boolean}
    */
-  const validateInput = (): InputError => {
-    let validatedInputValue = formInput.value;
-
+  const validateInput = (validatedInputValue = formInput.value): InputError => {
     let error: InputError = null;
 
     if (props.onValidate) {
@@ -341,5 +339,6 @@ export default function useFormInput(
     onChange,
     onBlur,
     otherProps,
+    validate: validateInput,
   } as FormInputHook;
 }
