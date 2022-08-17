@@ -45,7 +45,7 @@ const predefinedProps = [
 
 export function useOtherProps(
   props: FormInputProps,
-  excludeAlso: string[],
+  excludeAlso: string[]
 ): any {
   return React.useMemo(() => {
     const otherProps: any = {};
@@ -64,7 +64,7 @@ export function useOtherProps(
 
 export default function useFormInput(
   baseProps: FormInputProps,
-  formInputOptions: UseFormInputOptions = {},
+  formInputOptions: UseFormInputOptions = {}
 ): FormInputHook {
   const props: FormInputProps = baseProps;
 
@@ -81,7 +81,7 @@ export default function useFormInput(
 
   const otherProps = useOtherProps(
     baseProps,
-    formInputOptions.excludeFromOtherProps || [],
+    formInputOptions.excludeFromOtherProps || []
   );
 
   const placeholder = usePlaceholder(props);
@@ -90,11 +90,11 @@ export default function useFormInput(
   const labelPosition = useLabelPosition(props);
 
   const [isDisabled, disable] = React.useState<boolean>(
-    Boolean(props.disabled),
+    Boolean(props.disabled)
   );
 
   const [isReadOnly, readOnly] = React.useState<boolean>(
-    Boolean(props.readOnly),
+    Boolean(props.readOnly)
   );
 
   React.useEffect(() => {
@@ -257,7 +257,7 @@ export default function useFormInput(
       },
       reset: () => {
         setInputValue(
-          props.defaultValue !== undefined ? props.defaultValue : "",
+          props.defaultValue !== undefined ? props.defaultValue : ""
         );
         setError(null);
         formInput.trigger("reset", formInput);

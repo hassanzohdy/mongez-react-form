@@ -972,6 +972,46 @@ export default function LoginPage() {
 
 The previous example will trigger form validation after two seconds from component rendering.
 
+## Determine if form is valid
+
+We can also use `isValid()` method to check if the form is valid or not.
+
+```tsx
+// LoginPage.tsx
+import React from "react";
+import EmailInput from "./EmailInput";
+import { RuleResponse } from "@mongez/validator";
+import { Form, FormInterface, FormControl } from "@mongez/react-form";
+
+export default function LoginPage() {
+  const form = React.useRef();
+
+  React.useEffect(() => {
+    setTimeout(() => {
+      form.current.validate();
+
+      if (form.isValid()) {
+        alert('All Good, you can pass now!');
+      }
+    }, 2000);
+  }, []);
+
+  const performLogin = (e: React.FormEvent, form: FormInterface) => {
+    //
+  };
+
+  return (
+    <Form ref={form} collectValuesFromDOM onSubmit={performLogin}>
+      <EmailInput validateOn="blur" name="email" required />
+      <br />
+      <input type="password" name="password" placeholder="Password" />
+      <br />
+      <button>Login</button>
+    </Form>
+  );
+}
+```
+
 ## Validating only certain inputs
 
 In some situations we need to validate only certain inputs, for example when working with form wizards or steppers, just pass an array of names to `form.validate`.
@@ -2098,6 +2138,8 @@ Sometimes we may open multiple forms in one page, for example a single page that
 
 ## Change Log
 
+- 1.5.11 (17 Aug 2022)
+  - Fixed form `validControls` and `invalidControls` validation events trigger.
 - 1.5.3 (12 July 2022)
   - Fixed form control reset value.
 - 1.5.2 (12 July 2022)
