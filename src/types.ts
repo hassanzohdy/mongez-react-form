@@ -420,7 +420,7 @@ export interface FormInterface {
    */
   on: (
     event: FormEventType,
-    callback: (form: FormInterface) => void,
+    callback: (form: FormInterface) => void
   ) => EventSubscription;
   /**
    * Register new form input
@@ -435,6 +435,10 @@ export interface FormInterface {
    * If formControlNames is passed, then it will be operated only on these names.
    */
   reset: (formControlNames?: FormControlType[]) => void;
+  /**
+   * Check and trigger form validation state
+   */
+  checkIfIsValid: () => void;
   /**
    * Get all form values
    * If formControlNames is passed, then it will be operated only on these names.
@@ -646,14 +650,14 @@ export type FormInputProps = {
    */
   onChange?: (
     event: React.ChangeEvent<HTMLInputElement>,
-    formInput: FormControl,
+    formInput: FormControl
   ) => void;
   /**
    * A callback function triggered on input blue
    */
   onBlur?: (
     event: React.ChangeEvent<HTMLInputElement>,
-    formInput: FormControl,
+    formInput: FormControl
   ) => void;
   /**
    * Validate the input based on type of change

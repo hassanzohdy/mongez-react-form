@@ -175,9 +175,13 @@ export default function useFormInput(
 
     if (error === null) {
       setError(null);
+      const wasNotValid = formInput.isValid === false;
       formInput.isValid = true;
       if (formProvider) {
         formProvider.form.validControl(formInput);
+        if (wasNotValid) {
+          formProvider.form.checkValidity();
+        }
       }
 
       return null;

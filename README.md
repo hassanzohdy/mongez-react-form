@@ -2138,6 +2138,8 @@ Sometimes we may open multiple forms in one page, for example a single page that
 
 ## Change Log
 
+- 1.5.12 (17 Aug 2022)
+  - Added `checkIfIsValid` method to form interface
 - 1.5.11 (17 Aug 2022)
   - Fixed form `validControls` and `invalidControls` validation events trigger.
 - 1.5.3 (12 July 2022)

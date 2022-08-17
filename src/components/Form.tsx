@@ -77,6 +77,11 @@ export default class Form
   protected invalidControls: FormControl[] = [];
 
   /**
+   * List of valid controls
+   */
+  protected validControls: FormControl[] = [];
+
+  /**
    * Determine if current form's controls values have been changed
    */
   protected isDirtyForm: boolean = false;
@@ -112,6 +117,10 @@ export default class Form
   public invalidControl(formControl: FormControl): void {
     this.isValidForm = false;
 
+    this.validControls = this.validControls.filter(
+      (control) => control.id !== formControl.id
+    );
+
     if (this.invalidControls.find((control) => control.id === formControl.id))
       return;
 
@@ -124,15 +133,28 @@ export default class Form
    * Mark the given form control as valid control
    */
   public validControl(formControl: FormControl): void {
-    let controlIndex: number = this.invalidControls.findIndex(
-      (control) => control.id === formControl.id
-    );
-
-    if (controlIndex === -1) return;
-
     this.trigger("validControl", formControl, this);
 
-    this.invalidControls.splice(controlIndex, 1);
+    this.invalidControls = this.invalidControls.filter(
+      (control) => control.id !== formControl.id
+    );
+
+    this.validControls.push(formControl);
+
+    this.isValidForm = this.invalidControls.length === 0;
+  }
+
+  /**
+   * Check and trigger form validation state
+   */
+  public checkIfIsValid(): void {
+    this.isValidForm = this.invalidControls.length === 0;
+
+    if (this.isValidForm) {
+      this.trigger("validControls", this.validControls, this);
+    } else {
+      this.trigger("invalidControls", this.invalidControls, this);
+    }
   }
 
   /**
@@ -392,6 +414,7 @@ export default class Form
     this.trigger("validating", controls, this);
 
     this.isValidForm = true;
+    this.validControls = [];
     this.invalidControls = [];
 
     for (const input of controls) {
@@ -408,14 +431,11 @@ export default class Form
       }
     }
 
-    this.isValidForm = this.invalidControls.length === 0;
-
     this.trigger("validation", validatedInputs, this);
 
-    if (this.isValidForm) {
-      this.trigger("validControls", controls, this);
-    } else {
-      this.trigger("invalidControls", this.invalidControls, this);
+    this.checkIfIsValid();
+
+    if (!this.isValidForm) {
       if (this.props.onError) {
         this.props.onError(this.invalidControls);
       }
