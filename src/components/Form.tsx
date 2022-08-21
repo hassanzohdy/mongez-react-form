@@ -400,7 +400,17 @@ export default class Form
   public submit(): void {
     if (!this.formElement) return;
 
-    this.formElement.requestSubmit();
+    if (this.formElement.requestSubmit) {
+      this.formElement.requestSubmit();
+    } else {
+      // polyfill for Edge and bloody safari
+      const submitter = document.createElement("input");
+      submitter.type = "submit";
+      submitter.style.display = "none";
+      this.formElement.appendChild(submitter);
+      submitter.click();
+      this.formElement.removeChild(submitter);
+    }
   }
 
   /**
