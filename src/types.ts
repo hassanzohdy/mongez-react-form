@@ -217,12 +217,10 @@ export type FormControl = {
    * Trigger Event
    */
   trigger: (event: FormControlEvent, ...values: any[]) => void;
-
   /**
    * Unregister form control
    */
   unregister: () => void;
-
   /**
    * Determine the visible element
    */
@@ -231,6 +229,10 @@ export type FormControl = {
    * Props list to this component
    */
   props?: any;
+  /**
+   * Input Initial value
+   */
+  initialValue?: any;
 };
 
 export type FormControlType = string | FormControl;
@@ -642,6 +644,13 @@ export type FormInputProps = {
    */
   validate?: (formControl: FormControl) => InputError;
   /**
+   * If set to true, the validation will be triggered on input change
+   * wether it is controlled or uncontrolled input
+   *
+   * @default true
+   */
+  validateOnChange?: boolean;
+  /**
    * Input validation rules list
    */
   rules?: Rule[];
@@ -650,7 +659,8 @@ export type FormInputProps = {
    */
   onChange?: (
     event: React.ChangeEvent<HTMLInputElement>,
-    formInput: FormControl
+    formInput: FormControl,
+    validate?: () => InputError
   ) => void;
   /**
    * A callback function triggered on input blue
@@ -710,7 +720,14 @@ export type FormInputHook = FormInputProps & {
    * Visible element ref
    */
   visibleElementRef: React.RefObject<HTMLElement>;
-
+  /**
+   * Determine if the input's value has been updated
+   */
+  isDirty: boolean;
+  /**
+   * Alias to isDirty
+   */
+  isTouched: boolean;
   /**
    * Manually validate the input
    */

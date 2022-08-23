@@ -110,15 +110,20 @@ export default function useFormInput(
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value: string = e.target.value;
 
+    if (String(value) !== String(formInput.initialValue)) {
+      formInput.isDirty = true;
+    }
+
     if (props.value === undefined) {
       if (props.validateOn !== "blur") {
         setInputValue(value);
       } else {
         setValue(value);
+        formInput.value = value;
       }
     }
 
-    props.onChange && props.onChange(e, formInput);
+    props.onChange && props.onChange(e, formInput, validateInput);
   };
 
   const onBlur = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -130,6 +135,8 @@ export default function useFormInput(
       } else {
         setValue(value);
       }
+    } else if ([true, undefined].includes(props.validateOnChange)) {
+      validateInput(value);
     }
 
     props.onBlur && props.onBlur(e, formInput);
@@ -143,15 +150,7 @@ export default function useFormInput(
     formInput.value = value;
     formInput.trigger("change", formInput.value, formInput);
 
-    formInput.trigger("validation.start", formInput);
     validateInput();
-    formInput.trigger("validation.end", formInput.isValid, formInput);
-
-    if (formInput.isValid) {
-      formInput.trigger("validation.success", formInput);
-    } else {
-      formInput.trigger("validation.error", formInput);
-    }
   };
 
   /**
@@ -160,6 +159,8 @@ export default function useFormInput(
    * @returns {boolean}
    */
   const validateInput = (validatedInputValue = formInput.value): InputError => {
+    formInput.trigger("validation.start", formInput);
+
     let error: InputError = null;
 
     if (props.onValidate) {
@@ -178,6 +179,10 @@ export default function useFormInput(
         formProvider.form.validControl(formInput);
         formProvider.form.checkIfIsValid();
       }
+
+      formInput.trigger("validation.end", formInput.isValid, formInput);
+
+      formInput.trigger("validation.success", formInput);
 
       return null;
     }
@@ -213,12 +218,17 @@ export default function useFormInput(
       formProvider.form.checkIfIsValid();
     }
 
+    formInput.trigger("validation.end", formInput.isValid, formInput);
+
+    formInput.trigger("validation.error", formInput);
+
     return error;
   };
 
   const formInput = React.useMemo(() => {
     const formInput: FormControl = {
       value,
+      initialValue: value !== undefined ? value : "",
       id,
       name,
       control: "input",
@@ -256,9 +266,7 @@ export default function useFormInput(
         }
       },
       reset: () => {
-        setInputValue(
-          props.defaultValue !== undefined ? props.defaultValue : ""
-        );
+        setInputValue(formInput.initialValue);
         setError(null);
         formInput.trigger("reset", formInput);
       },
@@ -339,6 +347,8 @@ export default function useFormInput(
     onChange,
     onBlur,
     otherProps,
+    isDirty: formInput.isDirty,
+    isTouched: formInput.isDirty,
     validate: validateInput,
   } as FormInputHook;
 }
