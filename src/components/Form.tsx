@@ -38,7 +38,7 @@ export default class Form
   /**
    * Form event prefix
    */
-  protected formEventPrefix: string = `form.${this.formId}`;
+  protected formEventPrefix: string = "";
 
   /**
    * Form Controls
@@ -98,6 +98,8 @@ export default class Form
     super(props);
 
     this.formId = props.id || "frm-" + Random.string(32);
+
+    this.formEventPrefix = `form.${this.formId}`;
 
     setActiveForm(this);
     addToFormsList(this);
