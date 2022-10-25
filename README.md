@@ -2,10 +2,9 @@
 
 A Powerful React form handler to handle react forms regardless your desired UI.
 
-Mongez React Form is an agnostic UI framework, which means it provides you with utilities to handle form and form components and the UI is on your own.
+Mongez React Form is an agnostic UI framework Form Handler, which means it provides you with utilities to handle form and form controls and the UI is on your own.
 
-> There will be separate packages to handle popular UI frameworks such as Material UI and Semantic, but this will another topic in another day.
-> This documentation will be in a Typescript syntax for better illustration.
+> This documentation will be in Typescript for better illustration.
 
 ## Table Of Contents
 
@@ -58,11 +57,14 @@ Or
 
 `npm i @mongez/react-form`
 
+This package depends on [Mongez Localization](https://github.com/hassanzohdy/mongez-localization) and [Mongez Validator](https://github.com/hassanzohdy/mongez-validator) for validation and message conversion.
+
 ## Usage
 
 For form validation messages, do not forget to import your locale validation object into Mongez Localization.
 
 ```ts
+// anywhere early in your app 
 import { enTranslation } from "@mongez/validator";
 import { extend } from "@mongez/localization";
 

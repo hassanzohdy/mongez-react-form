@@ -1,9 +1,9 @@
-import React from "react";
-import { translatable } from "../utils";
-import { getFormConfig } from "../configurations";
-import { InputError, FormInputProps } from "../types";
-import { Rule } from "@mongez/validator";
 import { Random, toInputName } from "@mongez/reinforcements";
+import { Rule } from "@mongez/validator";
+import React from "react";
+import { getFormConfig } from "../configurations";
+import { FormInputProps, InputError } from "../types";
+import { translatable } from "../utils";
 
 export function useLabel(props: FormInputProps) {
   return React.useMemo(() => translatable(props.label, "label"), [props.label]);
@@ -31,7 +31,10 @@ export function useId(props: FormInputProps) {
   return React.useMemo(() => props.id || Random.id(), [props.id]);
 }
 
-export function useValue<T>(props: FormInputProps, initialValue = "") {
+export function useValue<T>(
+  props: FormInputProps,
+  initialValue = ""
+): [T, React.Dispatch<React.SetStateAction<T>>] {
   const [value, setValue] = React.useState<T>(() => {
     if (![undefined, null].includes(props.value)) return props.value;
 
