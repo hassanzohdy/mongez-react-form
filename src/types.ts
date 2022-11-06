@@ -735,7 +735,7 @@ export type FormInputHook = FormInputProps & {
   /**
    * Visible element ref
    */
-  visibleElementRef: React.RefObject<HTMLElement>;
+  visibleElementRef: any;
   /**
    * Determine if the input's value has been updated
    */
@@ -748,6 +748,14 @@ export type FormInputHook = FormInputProps & {
    * Manually validate the input
    */
   validate?: (value: any) => void;
+  /**
+   * Determine if input is checked
+   */
+  isChecked?: boolean;
+  /**
+   * Update checked state
+   */
+  setChecked?: (checked: boolean) => void;
 };
 
 export type FormConfigurations = {

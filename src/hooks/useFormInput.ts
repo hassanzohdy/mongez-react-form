@@ -227,6 +227,7 @@ export default function useFormInput(
 
   const formInput = React.useMemo(() => {
     const formInput: FormControl = {
+      _isChecked: null,
       value,
       initialValue: value !== undefined ? value : "",
       id,
@@ -280,6 +281,7 @@ export default function useFormInput(
         return inputRef.current;
       },
       get isChecked() {
+        if (this._isChecked === null) return this._isChecked;
         return inputRef.current?.checked;
       },
       validate: validateInput,
@@ -362,5 +364,9 @@ export default function useFormInput(
     isDirty: formInput.isDirty,
     isTouched: formInput.isDirty,
     validate: validateInput,
+    isChecked: formInput.isChecked,
+    setChecked: (checked: boolean) => {
+      formInput._isChecked = checked;
+    },
   } as FormInputHook;
 }
