@@ -200,7 +200,11 @@ export type FormControl = {
   /**
    * Focus on the element
    */
-  focus: (focus: boolean) => void;
+  focus: (focus?: boolean) => void;
+  /**
+   * Trigger blur event on the element
+   */
+  blur: () => void;
   /**
    * Triggered when form resets its values
    */
@@ -233,6 +237,18 @@ export type FormControl = {
    * Input Initial value
    */
   initialValue: any;
+  /**
+   * Get form input element
+   */
+  element: HTMLElement;
+  /**
+   * Check if the input's value is marked as checked
+   */
+  isChecked: boolean;
+  /**
+   * Check if the input is hidden or not
+   */
+  isHidden: boolean;
 };
 
 export type FormControlType = string | FormControl;

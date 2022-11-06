@@ -1,6 +1,6 @@
 {
     "name": "@mongez/react-form",
-    "version": "1.5.19",
+    "version": "1.5.20",
     "description": "A Powerful React form handler.",
     "main": "src/index.ts",
     "dependencies": {
@@ -8,7 +8,7 @@
         "form-serialize": "0.7.2",
         "query-string": "^7.1.0",
         "@mongez/validator": "^1.0.x",
-        "@mongez/reinforcements": "^2.0.x"
+        "@mongez/reinforcements": "^2.x.x"
     },
     "repository": {
         "type": "git",

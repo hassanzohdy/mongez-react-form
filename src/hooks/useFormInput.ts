@@ -256,6 +256,9 @@ export default function useFormInput(
       isValid: error === null,
       isDirty: false,
       oldValue: undefined,
+      blur: () => {
+        inputRef.current?.blur();
+      },
       focus: (focus: boolean = true) => {
         if (!inputRef.current) return;
 
@@ -265,10 +268,19 @@ export default function useFormInput(
           inputRef.current.blur();
         }
       },
+      get isHidden() {
+        return visibleElementRef.current?.hidden;
+      },
       reset: () => {
         setInputValue(formInput.initialValue);
         setError(null);
         formInput.trigger("reset", formInput);
+      },
+      get element() {
+        return inputRef.current;
+      },
+      get isChecked() {
+        return inputRef.current?.checked;
       },
       validate: validateInput,
       visibleElement: () => visibleElementRef.current,

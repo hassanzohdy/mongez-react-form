@@ -327,35 +327,31 @@ type FormControl = {
   /**
    * Form input id, used as a form input flag determiner
    */
-  id?: string;
+  id: string;
   /**
    * Form input value
    */
-  value?: any;
+  value: any;
   /**
    * Old Form control value
    */
-  oldValue?: any;
+  oldValue: any;
   /**
    * Triggered when form is changing disabling / enabling mode
    */
-  disable?: (isDisabling: boolean) => void;
+  disable: (isDisabling: boolean) => void;
   /**
    * Triggered when form is changing read only mode
    */
-  readOnly?: (isReadingOnly: boolean) => void;
+  readOnly: (isReadingOnly: boolean) => void;
   /**
    * Triggered when form is changing a value to the form input
    */
-  changeValue?: (newValue: any) => void;
-  /**
-   * Triggered when form input value is changed
-   */
-  onChange?: (newValue: any) => void;
+  changeValue: (newValue: any) => void;
   /**
    * Triggered when form starts validation
    */
-  validate?: (newValue?: string) => RuleResponse | null;
+  validate: (newValue?: string) => RuleResponse | null;
   /**
    * Set form input error
    */
@@ -363,31 +359,35 @@ type FormControl = {
   /**
    * Determine whether the form input is valid, this is checked after calling the validate method
    */
-  isValid?: boolean;
+  isValid: boolean;
   /**
    * Determine whether form input is disabled
    */
-  isDisabled?: boolean;
+  isDisabled: boolean;
   /**
    * Determine whether form input is in read only state
    */
-  isReadOnly?: boolean;
+  isReadOnly: boolean;
   /**
    * Determine whether form input's value has been changed
    */
-  isDirty?: boolean;
+  isDirty: boolean;
   /**
    * Focus on the element
    */
-  focus?: (focus: boolean) => void;
+  focus: (focus?: boolean) => void;
+  /**
+   * Trigger blur event on the element
+   */
+  blur: () => void;
   /**
    * Triggered when form resets its values
    */
-  reset?: () => void;
+  reset: () => void;
   /**
    * Form Input Error
    */
-  error?: RuleResponse | null;
+  error: RuleResponse | null;
   /**
    * Form control event listener
    */
@@ -396,15 +396,30 @@ type FormControl = {
    * Trigger Event
    */
   trigger: (event: FormControlEvent, ...values: any[]) => void;
-
   /**
    * Unregister form control
    */
   unregister: () => void;
   /**
+   * Determine the visible element
+   */
+  visibleElement: () => HTMLElement;
+  /**
    * Props list to this component
    */
-  props?: any;
+  props: any;
+  /**
+   * Input Initial value
+   */
+  initialValue: any;
+  /**
+   * Get form input element
+   */
+  element: HTMLElement;
+  /**
+   * Check if the input's value is marked as checked
+   */
+  isChecked: boolean;
 };
 ```
 
@@ -2140,6 +2155,11 @@ Sometimes we may open multiple forms in one page, for example a single page that
 
 ## Change Log
 
+- 1.5.20 (06 Nov 2022)
+  - Added `formControl.element` to get the form control element.
+  - Added `formControl.isChecked` to check if the form control is checked or not.
+  - Added `formControl.blur` to blur the form control.
+  - Added `formControl.isHidden` to check if the form control is hidden or not.
 - 1.5.12 (17 Aug 2022)
   - Added `checkIfIsValid` method to form interface
 - 1.5.11 (17 Aug 2022)
