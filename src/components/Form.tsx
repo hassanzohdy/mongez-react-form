@@ -418,12 +418,19 @@ export default class Form
   /**
    * Trigger form validation
    */
-  public validate(formControlNames: FormControlType[] = []): FormControl[] {
+  public validate(
+    formControlNames: FormControlType[] = []
+  ): FormControl[] | false {
     const validatedInputs: FormControl[] = [];
 
     const controls = this.controls(formControlNames);
 
-    this.trigger("validating", controls, this);
+    const eventResponse = this.triggerAll("validating", controls, this);
+
+    if (eventResponse.results.includes(false)) {
+      this.isValidForm = false;
+      return false;
+    }
 
     this.isValidForm = true;
     this.validControls = [];

@@ -2155,6 +2155,8 @@ Sometimes we may open multiple forms in one page, for example a single page that
 
 ## Change Log
 
+- 1.5.25 (13 Nov 2022)
+  - Feat: when `validating` trigger callbacks returns `false` then the form will be marked as invalid and won't be submitted.
 - 1.5.20 (06 Nov 2022)
   - Added `formControl.element` to get the form control element.
   - Added `formControl.isChecked` to check if the form control is checked or not.

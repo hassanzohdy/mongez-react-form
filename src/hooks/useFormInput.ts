@@ -155,8 +155,6 @@ export default function useFormInput(
 
   /**
    * Validate input value and return true if input value is valid, otherwise set error response and return false
-   *
-   * @returns {boolean}
    */
   const validateInput = (validatedInputValue = formInput.value): InputError => {
     formInput.trigger("validation.start", formInput);
@@ -175,6 +173,7 @@ export default function useFormInput(
     if (error === null) {
       setError(null);
       formInput.isValid = true;
+      formInput.error = null;
       if (formProvider) {
         formProvider.form.validControl(formInput);
         formProvider.form.checkIfIsValid();
@@ -227,7 +226,6 @@ export default function useFormInput(
 
   const formInput = React.useMemo(() => {
     const formInput: FormControl = {
-      _isChecked: null,
       value,
       initialValue: value !== undefined ? value : "",
       id,
@@ -273,6 +271,7 @@ export default function useFormInput(
         return visibleElementRef.current?.hidden;
       },
       reset: () => {
+        formInput.trigger("resetting", formInput);
         setInputValue(formInput.initialValue);
         setError(null);
         formInput.trigger("reset", formInput);
@@ -281,7 +280,6 @@ export default function useFormInput(
         return inputRef.current;
       },
       get isChecked() {
-        if (this._isChecked === null) return this._isChecked;
         return inputRef.current?.checked;
       },
       validate: validateInput,
@@ -366,7 +364,9 @@ export default function useFormInput(
     validate: validateInput,
     isChecked: formInput.isChecked,
     setChecked: (checked: boolean) => {
-      formInput._isChecked = checked;
+      if (inputRef.current) {
+        inputRef.current.checked = checked;
+      }
     },
   } as FormInputHook;
 }

@@ -259,6 +259,7 @@ export type FormControlType = string | FormControl;
 export type FormControlEvent =
   | "change"
   | "reset"
+  | "resetting"
   | "disabled"
   | "unregister"
   | "validation.start"
@@ -390,7 +391,7 @@ export interface FormInterface {
    * Trigger form validation
    * If formControlNames is passed, then it will be operated only on these names.
    */
-  validate: (formControlNames?: FormControlType[]) => FormControl[];
+  validate: (formControlNames?: FormControlType[]) => FormControl[] | false;
   /**
    * Trigger form validation only for visible elements in the dom
    * If formControlNames is passed, then it will be operated only on these names.
