@@ -1,9 +1,10 @@
-import React from "react";
 import { toInputName } from "@mongez/reinforcements";
+import React from "react";
+import useFormInput from "../hooks/useFormInput";
 import { FormInputProps, HiddenInputProps } from "../types";
 
 export default function HiddenInput(props: HiddenInputProps & FormInputProps) {
-  const { name, value } = props;
+  const { name, value } = useFormInput(props);
 
   if (!name) return null;
 

@@ -8,7 +8,7 @@ import {
   FormInputHook,
   FormInputProps,
   InputError,
-  UseFormInputOptions,
+  UseFormInputOptions
 } from "./../types";
 import { translatable } from "./../utils";
 import {
@@ -19,7 +19,7 @@ import {
   useLabelPosition,
   useName,
   usePlaceholder,
-  useValue,
+  useValue
 } from "./form-hooks";
 import useForm from "./useForm";
 
