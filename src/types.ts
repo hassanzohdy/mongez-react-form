@@ -1,6 +1,5 @@
 import { EventSubscription } from "@mongez/events";
-import { Rule, RuleResponse } from "@mongez/validator";
-import React from "react";
+import React, { ReactNode } from "react";
 
 /**
  * Active forms list
@@ -13,24 +12,43 @@ export type HiddenInputProps = {
   /**
    * Input name
    */
-  name?: string;
+  name: string;
   /**
    * Input value
    */
   value?: any;
+  /**
+   * Default value
+   */
+  defaultValue?: any;
 };
 
-export type FormProps = {
+export type FormSubmitOptions = {
   /**
-   * Form Id
+   * Form instance
    */
-  id?: string;
+  form: FormInterface;
   /**
-   * Form no validate prop
-   *
-   * @default true
+   * Form submit event
+   * Will be undefined if the form is submitted programmatically
    */
-  noValidate?: boolean;
+  event?: React.FormEvent;
+  /**
+   * Form values
+   */
+  values: Record<string, any>;
+  /**
+   * Get form values as FormData
+   */
+  formData: FormData;
+};
+
+// Form props will be default form element props + the following
+
+export type FormProps = Omit<
+  React.FormHTMLAttributes<HTMLFormElement>,
+  "onSubmit"
+> & {
   /**
    * Triggered when form validation results to error
    */
@@ -38,103 +56,45 @@ export type FormProps = {
   /**
    * Triggered when form validation is passed and now its in the submit process
    */
-  onSubmit?: (e: React.FormEvent, form: FormInterface) => void;
-  /**
-   * Triggered when form validation starts
-   */
-  onValidating?: any;
-  /**
-   * Form class
-   */
-  className?: string;
+  onSubmit: (options: FormSubmitOptions) => void;
   /**
    * Form element
    *
    * @default form
    */
-  component?: React.FC<any> | React.ComponentClass<any, any>;
+  component?: React.ComponentType<any>;
   /**
-   * If set to true, then all values in the form will be kept even if form inputs are unmounted
-   * Useful with form wizard or steppers
+   * Whether to ignore empty values
    *
    * @default false
    */
-  keepValues?: boolean;
+  ignoreEmpty?: boolean;
+};
+
+export type FormControlChangeOptions = {
   /**
-   * Collect form input values from dom elements instead of registered inputs
+   * Set current checked value
+   * It's recommended to use `setChecked` method instead
+   */
+  checked?: boolean;
+  /**
+   * Whether to update the state or not
    *
-   * @default false
+   * @default true
    */
-  collectValuesFromDOM?: boolean;
+  updateState?: boolean;
   /**
-   * Form Children list
+   * Whether to perform form control validation or not
+   *
+   * @default true
    */
-  children?: React.ReactNode;
-  /**
-   * Any other props
-   */
+  validate?: boolean;
   [key: string]: any;
 };
 
-/**
- * Reset form button props
- */
-export type ResetFormButtonProps = {
-  /**
-   * Button component
-   *
-   * @default 'button'
-   */
-  component?: ReactComponent | string;
-  /**
-   * The onClick props
-   */
-  onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
-  /**
-   * Determine what inputs to be reset, if not passed or passed as empty array
-   * Then all form controls will be cleared
-   *
-   * @default []
-   */
-  resetOnly?: string[];
-  /**
-   * Other props
-   */
-  [key: string]: any;
+export type FormControlChange = FormControlChangeOptions & {
+  formControl: FormControl;
 };
-
-/**
- * Available control modes
- */
-export type ControlMode = "input" | "button";
-
-/**
- * Available control types
- */
-export type ControlType =
-  | "text"
-  | "color"
-  | "date"
-  | "time"
-  | "dateTime"
-  | "email"
-  | "checkbox"
-  | "radio"
-  | "hidden"
-  | "number"
-  | "password"
-  | "range"
-  | "search"
-  | "tel"
-  | "url"
-  | "week"
-  | "select"
-  | "autocomplete"
-  | "file"
-  | "image"
-  | "button"
-  | "reset"
-  | "submit";
 
 export type FormControl = {
   /**
@@ -142,13 +102,9 @@ export type FormControl = {
    */
   name: string;
   /**
-   * Form control mode
-   */
-  control: ControlMode;
-  /**
    * Form control type
    */
-  type: ControlType;
+  type: string;
   /**
    * Form input id, used as a form input flag determiner
    */
@@ -158,49 +114,29 @@ export type FormControl = {
    */
   value: any;
   /**
-   * Old Form control value
+   * Input Initial value
    */
-  oldValue: any;
-  /**
-   * Triggered when form is changing disabling / enabling mode
-   */
-  disable: (isDisabling: boolean) => void;
-  /**
-   * Triggered when form is changing read only mode
-   */
-  readOnly: (isReadingOnly: boolean) => void;
-  /**
-   * Triggered when form is changing a value to the form input
-   */
-  changeValue: (newValue: any) => void;
+  initialValue: any;
   /**
    * Triggered when form starts validation
    */
-  validate: (newValue?: string) => RuleResponse | null;
+  validate: () => Promise<boolean>;
   /**
    * Set form input error
    */
-  setError: (error: RuleResponse) => void;
+  setError: (error: React.ReactNode) => void;
+  /**
+   * Determine if current control is visible in the browser
+   */
+  isVisible: () => boolean;
   /**
    * Determine whether the form input is valid, this is checked after calling the validate method
    */
   isValid: boolean;
   /**
-   * Determine whether form input is disabled
-   */
-  isDisabled: boolean;
-  /**
-   * Determine whether form input is in read only state
-   */
-  isReadOnly: boolean;
-  /**
-   * Determine whether form input's value has been changed
-   */
-  isDirty: boolean;
-  /**
    * Focus on the element
    */
-  focus: (focus?: boolean) => void;
+  focus: () => void;
   /**
    * Trigger blur event on the element
    */
@@ -212,43 +148,75 @@ export type FormControl = {
   /**
    * Form Input Error
    */
-  error: RuleResponse | null;
-  /**
-   * Form control event listener
-   */
-  on: (event: FormControlEvent, callback: any) => EventSubscription;
-  /**
-   * Trigger Event
-   */
-  trigger: (event: FormControlEvent, ...values: any[]) => void;
+  error: React.ReactNode;
   /**
    * Unregister form control
    */
   unregister: () => void;
   /**
-   * Determine the visible element
-   */
-  visibleElement: () => HTMLElement;
-  /**
    * Props list to this component
    */
   props: any;
   /**
-   * Input Initial value
-   */
-  initialValue: any;
-  /**
-   * Get form input element
-   */
-  element: HTMLElement;
-  /**
    * Check if the input's value is marked as checked
    */
-  isChecked: boolean;
+  checked: boolean;
   /**
-   * Check if the input is hidden or not
+   * Set checked value
    */
-  isHidden: boolean;
+  setChecked: (checked: boolean) => void;
+  /**
+   * Initial checked value
+   */
+  initialChecked: boolean;
+  /**
+   * Determine if form control is multiple
+   */
+  multiple: boolean;
+  /**
+   * Collect form control value
+   */
+  collectValue: () => any;
+  /**
+   * Check if input is collectable
+   */
+  isCollectable: () => boolean;
+  /**
+   * Determine if form control is controlled
+   */
+  isControlled: boolean;
+  /**
+   * Change form control value and any other related values
+   */
+  change: (value: any, changeOptions?: FormControlChangeOptions) => void;
+  /**
+   * Determine if form control is rendered
+   */
+  rendered: boolean;
+  /**
+   * Input Ref
+   */
+  inputRef: any;
+  /**
+   * Visible element ref
+   */
+  visibleElementRef: any;
+  /**
+   * Listen when form control value is changed
+   */
+  onChange: (callback: (value: FormControlChange) => void) => EventSubscription;
+  /**
+   * Listen when form control is destroyed
+   */
+  onDestroy: (callback: () => void) => EventSubscription;
+  /**
+   * Disable/Enable form control
+   */
+  disable: (disable: boolean) => void;
+  /**
+   * Determine if form control is disabled
+   */
+  disabled: boolean;
 };
 
 export type FormControlType = string | FormControl;
@@ -267,20 +235,7 @@ export type FormControlEvent =
   | "validation.error"
   | "validation.end";
 
-export type FormContextProps = null | {
-  /**
-   * Form component
-   */
-  form: FormInterface;
-  /**
-   * Register new form input
-   */
-  register: (formInput: FormControl) => void;
-  /**
-   * Unregister form input from the form
-   */
-  unregister: (formInput: FormControl) => void;
-};
+export type FormContextProps = null | FormInterface;
 
 /**
  * Returns when calling form.values() or form.toObject() to list all form inputs with its values
@@ -366,17 +321,21 @@ export type FormEventType =
    */
   | "change"
   /**
-   * Triggered before form serializing form inputs as object or string
+   * Triggered before form values are collected
    */
-  | "serializing"
+  | "collecting"
   /**
-   * Triggered after form serialization form inputs as object or string
+   * Triggered after form values are collected
    */
-  | "serialize";
+  | "collected"
+  /**
+   * Triggered after form is initialized
+   */
+  | "init";
 
 export type ReactComponent =
-  | React.FC<FormInputProps>
-  | React.ComponentClass<FormInputProps, any>;
+  | React.FC<FormControlProps>
+  | React.ComponentClass<FormControlProps, any>;
 
 export interface FormInterface {
   /**
@@ -389,27 +348,18 @@ export interface FormInterface {
   submitting: (submitting: boolean) => void;
   /**
    * Trigger form validation
-   * If formControlNames is passed, then it will be operated only on these names.
    */
-  validate: (formControlNames?: FormControlType[]) => FormControl[] | false;
+  validate: (formControlNames?: FormControl[]) => Promise<FormControl[]>;
   /**
    * Trigger form validation only for visible elements in the dom
    * If formControlNames is passed, then it will be operated only on these names.
    */
-  validateVisible: (formControlNames?: FormControlType[]) => FormControl[];
+  validateVisible: () => Promise<FormControl[]>;
   /**
    * Trigger form disable/enable state
    * If formControlNames is passed, then it will be operated only on these names.
    */
-  disable: (isDisabled: boolean, formControlNames?: FormControlType[]) => void;
-  /**
-   * Determine whether the form is disabled
-   */
-  isDisabled: () => boolean;
-  /**
-   * Determine whether the form is enabled
-   */
-  isEnabled: () => boolean;
+  disable: (isDisabled: boolean) => this;
   /**
    * Determine whether the form is being submitted
    */
@@ -419,21 +369,13 @@ export interface FormInterface {
    */
   isValid: () => boolean;
   /**
-   * Determine whether form controls'values has been changed, at least one
-   */
-  isDirty?: () => boolean;
-  /**
    * Change form input value using its name
    */
-  changeValue: (name: string, value: any) => void;
+  change: (name: string, value: any) => void;
   /**
    * Manually submit form
    */
   submit: () => void;
-  /**
-   * Determine whether to keep storing input values even if it is unregistered
-   */
-  keepValues: (keepValues: boolean) => void;
   /**
    * Form events method
    */
@@ -450,10 +392,13 @@ export interface FormInterface {
    */
   unregister: (formInput: FormControl) => void;
   /**
-   * Trigger form resetting
-   * If formControlNames is passed, then it will be operated only on these names.
+   * Reset form values and validation state
    */
-  reset: (formControlNames?: FormControlType[]) => void;
+  reset: () => this;
+  /**
+   * Reset form errors
+   */
+  resetErrors: () => this;
   /**
    * Check and trigger form validation state
    */
@@ -462,39 +407,16 @@ export interface FormInterface {
    * Get all form values
    * If formControlNames is passed, then it will be operated only on these names.
    */
-  values: (formControlNames?: FormControlType[]) => FormControlValues;
-
+  values: (formControlNames?: string[]) => FormControlValues;
   /**
    * Get value for the given control
    *
    */
   value: (FormControlName: string) => any;
-
   /**
    * Get form id
    */
   get id(): string;
-
-  /**
-   * Return form values as an object
-   * If formControlNames is passed, then it will be operated only on these names.
-   */
-  toObject: (formControlNames?: FormControlType[]) => FormControlValues;
-  /**
-   * Return form values as a query string
-   * If formControlNames is passed, then it will be operated only on these names.
-   */
-  toString: (formControlNames?: FormControlType[]) => string;
-  /**
-   * Return form values as a query string
-   * If formControlNames is passed, then it will be operated only on these names.
-   */
-  toQueryString: (formControlNames?: FormControlType[]) => string;
-  /**
-   * Return form values as json syntax
-   * If formControlNames is passed, then it will be operated only on these names.
-   */
-  toJSON: (formControlNames?: FormControlType[]) => string;
   /**
    * Get input by input value
    *
@@ -504,7 +426,7 @@ export interface FormInterface {
   /**
    * Get form controls list or only the given names
    */
-  controls: (formControlNames?: FormControlType[]) => FormControl[];
+  controls: (formControlNames?: string[]) => FormControl[];
   /**
    * Mark the given form control as invalid control
    */
@@ -515,91 +437,86 @@ export interface FormInterface {
   validControl: (formControl: FormControl) => void;
 }
 
+export type InputRuleOptions = {
+  /**
+   * Current value
+   */
+  value: any;
+  /**
+   * Form input name
+   */
+  name: string;
+  /**
+   * Form Control
+   */
+  formControl: FormControl;
+  /**
+   * Form instance
+   */
+  form: FormInterface | null;
+  [key: string]: any;
+};
+
+export type InputRuleResult = React.ReactNode | undefined;
+
+export type InputRule = (
+  options: InputRuleOptions
+) => InputRuleResult | Promise<InputRuleResult>;
+
 export type ErrorMessages = {
   [errorName: string]: string;
 };
 
-export type FormInputClasses = {
-  /**
-   * Error message class
-   */
-  errorMessage?: string;
-  /**
-   * Input class
-   */
-  input?: string;
-  /**
-   * Label class
-   */
-  label?: string;
-  /**
-   * Icon class
-   */
-  icon?: string;
-  /**
-   * root class
-   */
-  root?: string;
-  /**
-   * Other classes
-   */
-  [otherClass: string]: any;
-};
-
-/**
- * Label position
- */
-export type LabelPosition = "top" | "inline";
+export type ErrorKeys = ErrorMessages;
 
 export type ValidateOn = "change" | "blur";
 
-export type UseFormInputOptions = {
+export type FormControlOptions = {
   /**
-   * List of props to be excluded from the otherProps object
+   * Callback used to determine if input's value should be collected when calling form.values()
    */
-  excludeFromOtherProps?: string[];
+  isCollectable?: (formControl: FormControl) => boolean;
+  /**
+   * Manually return the value that should be collected
+   */
+  collectValue?: (formControl: FormControl) => any;
+  /**
+   * Set unchecked value to be sent
+   * If not set and input is not checked, then it will not be sent
+   */
+  uncheckedValue?: any;
+  /**
+   * Determine whether to collect unchecked value
+   */
+  collectUnchecked?: boolean;
+  /**
+   * Transform input value before setting it
+   */
+  transformValue?: (value: any) => any;
 };
 
-export type FormInputProps = {
+export type FormControlProps = {
+  /**
+   * Input name attribute, allows dot notation syntax
+   * i.e user.name is valid, will be transformed into user[name]
+   */
+  name: string;
   /**
    * Input id attribute
    */
   id?: string;
   /**
-   * Override errors list
-   */
-  errors?:
-    | ((error: RuleResponse, formControl: FormControl) => string)
-    | {
-        [key: string]: string;
-      };
-  /**
-   * Input ref
-   */
-  ref?: any;
-  /**
-   * Determine whether the input should be auto focused
-   */
-  autoFocus?: boolean;
-  /**
-   * Input name attribute, allows dot notation syntax
-   * i.e user.name is valid, will be transformed into user[name]
-   */
-  name?: string;
-  /**
-   * Form control type
-   *
-   * @default 'input'
-   */
-  control?: string;
-  /**
    * Override error messages
    */
-  errorMessages?: ErrorMessages;
+  errors?: ErrorMessages;
   /**
-   * List of available classes
+   * Error keys
+   * Used only when errorMessages is not set
+   * Error key is the key that will be replaced on the validation error message.
+   * Each rule can have its own error key.
+   * But they all have `name` as default error key.
    */
-  classes?: FormInputClasses;
+  errorKeys?: ErrorKeys;
   /**
    * Input value, used with onChange
    */
@@ -627,65 +544,27 @@ export type FormInputProps = {
   /**
    * Input placeholder
    */
-  placeholder?: React.ReactNode;
+  placeholder?: string;
   /**
    * Input label
    */
   label?: React.ReactNode;
   /**
-   * Label position
-   *
-   * @default top
-   */
-  labelPosition?: LabelPosition;
-  /**
-   * Input icon attribute
-   */
-  icon?: React.ReactNode;
-  /**
-   * Icon position, works only with when icon prop is passed
-   *
-   * @default start
-   */
-  iconPosition?: "start" | "end";
-  /**
    * Triggered when input validation has an error
    */
-  onError?: (error: RuleResponse, formInput: FormControl) => any;
+  onError?: (error: React.ReactNode) => any;
   /**
-   * Validate the form control, this will override the rules prop and disable the validation
-   * the validate prop will receive a form control object and return a null for non validation,
-   * or a RuleResponse object for error.
-   *
-   * The `onError` prop will be triggered though if the validation fails.
+   * Add manual validation
    */
-  validate?: (formControl: FormControl) => InputError;
-  /**
-   * If set to true, the validation will be triggered on input change
-   * wether it is controlled or uncontrolled input
-   *
-   * @default true
-   */
-  validateOnChange?: boolean;
+  validate?: (options: InputRuleOptions) => React.ReactNode;
   /**
    * Input validation rules list
    */
-  rules?: Rule[];
+  rules?: InputRule[];
   /**
    * A callback function triggered on input value changes
    */
-  onChange?: (
-    event: React.ChangeEvent<HTMLInputElement>,
-    formInput: FormControl,
-    validate?: () => InputError
-  ) => void;
-  /**
-   * A callback function triggered on input blue
-   */
-  onBlur?: (
-    event: React.ChangeEvent<HTMLInputElement>,
-    formInput: FormControl
-  ) => void;
+  onChange?: (value: any, options?: FormControlChangeOptions) => void;
   /**
    * Validate the input based on type of change
    *
@@ -698,169 +577,88 @@ export type FormInputProps = {
   [key: string]: any;
 };
 
-export type InputError = RuleResponse | null;
-
-export type FormInputHook = FormInputProps & {
+export type FormControlHook = {
+  /**
+   * Input id
+   */
+  id: string;
+  /**
+   * Input name
+   */
+  name: string;
+  /**
+   * Input type
+   */
+  type: string;
+  /**
+   * Input value
+   */
+  value: any;
   /**
    * Input error
    */
-  error: RuleResponse;
+  error: ReactNode;
   /**
    * Set input error
    */
-  setError: (error: InputError) => void;
+  setError: (error: React.ReactNode) => void;
   /**
    * Input Ref
    */
-  inputRef?: any;
-  /**
-   * Input reference
-   */
-  ref: any;
-  /**
-   * Set input value
-   */
-  setValue: (newValue: any) => void;
-  /**
-   * Triggered when input's value is changed
-   */
-  onChange: (e: any) => void;
-  /**
-   * Form input handler
-   */
-  formInput: FormControl;
-  /**
-   * Other props that will be passed to the component
-   */
-  otherProps: any;
+  inputRef: any;
   /**
    * Visible element ref
    */
   visibleElementRef: any;
   /**
-   * Determine if the input's value has been updated
+   * Form input handler
    */
-  isDirty: boolean;
-  /**
-   * Alias to isDirty
-   */
-  isTouched: boolean;
+  formControl: FormControl;
   /**
    * Manually validate the input
    */
-  validate?: (value: any) => void;
+  validate: (value: any) => void;
   /**
    * Determine if input is checked
    */
-  isChecked?: boolean;
+  checked: boolean;
   /**
    * Update checked state
    */
-  setChecked?: (checked: boolean) => void;
+  setChecked: (checked: boolean) => void;
+  /**
+   * Other props passed to the input
+   */
+  otherProps: any;
+  /**
+   * Change value
+   */
+  changeValue: (value: any, otherOptions?: FormControlChangeOptions) => void;
+  /**
+   * Determine if form control is disabled
+   */
+  disabled: boolean;
+  /**
+   * Disable form control
+   */
+  disable: () => void;
+  /**
+   * Enable form control
+   */
+  enable: () => void;
 };
 
 export type FormConfigurations = {
   /**
-   * Translatable types
+   * Whether to ignore empty values when calling form.values()
+   *
+   * @default false
    */
-  translation?: {
-    /**
-     * If set to true, then all props in `translate` property will be translated
-     *
-     * @default true
-     */
-    enabled?: boolean;
-    /**
-     * List of translatable props
-     */
-    translate?: {
-      /**
-       * Translate placeholder of passed as a string
-       */
-      placeholder?: boolean;
-      /**
-       * Translate label of passed as a string
-       */
-      label?: boolean;
-      /**
-       * If set to true, then error messages coming from @mongez/validator will be translated.
-       * Don't forget to import validation translation list otherwise this will have no effect.
-       */
-      errorMessage?: boolean;
-    };
-    /**
-     * Translation function
-     */
-    translationFunction?: Function;
-  };
-  components?: {
-    formComponent?: ReactComponent;
-    formErrorComponent?: ReactComponent;
-    formInputComponent?: ReactComponent;
-    inputLabelComponent?: ReactComponent;
-    inputLabelInlineComponent?: ReactComponent;
-    inputLabelTopComponent?: ReactComponent;
-    submitButtonComponent?: ReactComponent;
-    resetButtonComponent?: ReactComponent;
-    textInputComponent?: ReactComponent;
-    urlInputComponent?: ReactComponent;
-    searchInputComponent?: ReactComponent;
-    numberInputComponent?: ReactComponent;
-    hiddenInputComponent?: ReactComponent;
-    emailInputComponent?: ReactComponent;
-    selectInputComponent?: ReactComponent;
-    checkboxInputComponent?: ReactComponent;
-    radioInputComponent?: ReactComponent;
-    switchInputComponent?: ReactComponent;
-    autoCompleteInputComponent?: ReactComponent;
-    colorInputComponent?: ReactComponent;
-    textareaInputComponent?: ReactComponent;
-    fileInputComponent?: ReactComponent;
-    imageInputComponent?: ReactComponent;
-    datepickerInputComponent?: ReactComponent;
-    timepickerInputComponent?: ReactComponent;
-    dateTimePickerInputComponent?: ReactComponent;
-    markdownInputComponent?: ReactComponent;
-    richTextInputComponent?: ReactComponent;
-    chipInputComponent?: ReactComponent;
-    dragAndDropInputComponent?: ReactComponent;
-  };
-  input?: {
-    /**
-     * Default label position
-     */
-    labelPosition?: LabelPosition;
-    /**
-     * Default rules list
-     */
-    rules?: {
-      /**
-       * List of form input rules that will be used as default rules with FormInput Component
-       */
-      list?: Rule[];
-    };
-    /**
-     * Validate the input based on type of change
-     *
-     * @default change
-     */
-    validateOn?: ValidateOn;
-    /**
-     * Determine whether to enable translation in the following keys list
-     */
-    translate?: {
-      /**
-       * Determine whether to translate the given placeholder (If string)
-       *
-       * @default true
-       */
-      placeholder?: boolean;
-      /**
-       * Determine whether to translate the given label (If string)
-       *
-       * @default true
-       */
-      label?: boolean;
-    };
-  };
+  ignoreEmptyValues?: boolean;
+  /**
+   * Set form component
+   *
+   * @default `form`
+   */
+  formComponent?: ReactComponent;
 };

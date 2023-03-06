@@ -2,52 +2,9 @@
 
 A Powerful React form handler to handle react forms regardless your desired UI.
 
-Mongez React Form is an agnostic UI framework Form Handler, which means it provides you with utilities to handle form and form controls and the UI is on your own.
+Mongez React Form is a headless UI framework Form Handler, meaning it provides you with handlers to handle form and form controls and the UI is on your own.
 
 > This documentation will be in Typescript for better illustration.
-
-## Table Of Contents
-
-- [Mongez React Form](#mongez-react-form)
-  - [Table Of Contents](#table-of-contents)
-  - [Installation](#installation)
-  - [Usage](#usage)
-  - [Form Context](#form-context)
-  - [useForm Hook](#useform-hook)
-  - [Create a heavy form input](#create-a-heavy-form-input)
-  - [The FormInput Object](#the-forminput-object)
-    - [The id attribute](#the-id-attribute)
-  - [The name attribute](#the-name-attribute)
-    - [Controlled Vs Uncontrolled Component](#controlled-vs-uncontrolled-component)
-  - [Input Validation](#input-validation)
-    - [Display error message](#display-error-message)
-  - [Manually validating component](#manually-validating-component)
-  - [The onError prop](#the-onerror-prop)
-  - [Validating onBlur instead of onChange](#validating-onblur-instead-of-onchange)
-  - [Manually validate the form](#manually-validate-the-form)
-  - [Validating only certain inputs](#validating-only-certain-inputs)
-  - [Manually registering form control](#manually-registering-form-control)
-  - [Manually submitting form](#manually-submitting-form)
-  - [Reset Form](#reset-form)
-  - [Disable Form elements](#disable-form-elements)
-  - [Mark form elements as readOnly](#mark-form-elements-as-readonly)
-  - [Form Serializers](#form-serializers)
-    - [Getting all form values](#getting-all-form-values)
-    - [Getting form values as query string](#getting-form-values-as-query-string)
-    - [Getting form values as JSON](#getting-form-values-as-json)
-  - [Getting form control](#getting-form-control)
-  - [Getting form controls list](#getting-form-controls-list)
-  - [Control Modes And Control Types](#control-modes-and-control-types)
-  - [Defining form control mode and control type](#defining-form-control-mode-and-control-type)
-  - [Getting controls based on its control type](#getting-controls-based-on-its-control-type)
-  - [Executing operation on form controls](#executing-operation-on-form-controls)
-  - [More Form Hooks](#more-form-hooks)
-    - [Use input value hook](#use-input-value-hook)
-    - [Use Id Hook](#use-id-hook)
-    - [Use Name Hook](#use-name-hook)
-  - [Form Events](#form-events)
-  - [Change Log](#change-log)
-  - [TODO](#todo)
 
 ## Installation
 
@@ -57,273 +14,79 @@ Or
 
 `npm i @mongez/react-form`
 
-This package depends on [Mongez Localization](https://github.com/hassanzohdy/mongez-localization) and [Mongez Validator](https://github.com/hassanzohdy/mongez-validator) for validation and message conversion.
-
 ## Usage
 
-For form validation messages, do not forget to import your locale validation object into Mongez Localization.
+The package here has two main anchors, `Form` component and `useFormControl` hook.
+
+`Form` component is the wrapper for the entire form, it will handle the form submission and data collection.
+
+`useFormControl` hook is the hook that will be used to register the form control in the form, it is responsible for handling data and validation.
+
+## Example
+
+Let's see a basic example, let's create `TextInput` component
+
+```tsx
+// src/components/TextInput.tsx
+import { useFormControl, FormControlProps } from "@mongez/react-form";
+
+export default function TextInput(props: FormControlProps) {
+  const { value, changeValue } = useFormControl(props);
+
+  return (
+    <input
+      type="text"
+      value={value}
+      onChange={e => {
+        changeValue(e.target.value);
+      }}
+    />
+  );
+}
+```
+
+Here we defined our `TextInput`, that receives props, then we use `useFormControl` hook to get our form control data and register it in the form, for now we just need to get `value` and `changeValue` from the hook.
+
+Now let's use it in our `App.tsx`
+
+```tsx
+// src/App.tsx
+import { Form } from "@mongez/react-form";
+import TextInput from "./components/TextInput";
+
+export default function App() {
+  return (
+    <Form
+      onSubmit={{ values } => {
+        console.log(values);
+      }}
+    >
+      <TextInput name="firstName" />
+      <TextInput name="lastName" />
+      <button>Submit</button>
+    </Form>
+  );
+}
+```
+
+The only required prop for any `formControl` is the `name`, it does not have to be `unique`.
+
+Now once we click on the submit button, the `onSubmit` callback will be called with the form data, which is an object that contains all form controls values.
+
+## Form Controls
+
+Any component that uses `useFormControl` hook will be considered as a form control, and it will be registered in the form and it will generate a `formControl` instance, which has the following properties:
 
 ```ts
-// anywhere early in your app 
-import { enTranslation } from "@mongez/validator";
-import { extend } from "@mongez/localization";
-
-extend("en", enTranslation);
-```
-
-Please check [Validation Messages Section](https://github.com/hassanzohdy/mongez-validator#validation-messages) which contains all available locales and current available rules list.
-
-Now, Let's start with our main component, the `Form` component.
-
-```tsx
-// LoginPage.tsx
-import React from "react";
-import { Form } from "@mongez/react-form";
-
-export default function LoginPage() {
-  const performLogin = (e: React.FormEvent) => {
-    //
-  };
-
-  return (
-    <Form onSubmit={performLogin}>
-      <input type="email" name="email" placeholder="Email Address" />
-      <br />
-      <input type="password" name="password" placeholder="Password" />
-      <br />
-      <button>Login</button>
-    </Form>
-  );
-}
-```
-
-So far nothing special happens here, a simple form with two inputs, except that `Form` do some extra functions than the normal `form`.
-
-The first feature here is `Form` **prevents default behavior** that submits the form, the form will be submitted but not no redirection happens.
-
-Now let's get the form inputs values.
-
-```tsx
-// LoginPage.tsx
-import React from "react";
-import { Form } from "@mongez/react-form";
-
-export default function LoginPage() {
-  const performLogin = (e: React.FormEvent) => {
-    //
-  };
-
-  return (
-    <Form collectValuesFromDOM onSubmit={performLogin}>
-      <input type="email" name="email" placeholder="Email Address" />
-      <br />
-      <input type="password" name="password" placeholder="Password" />
-      <br />
-      <button>Login</button>
-    </Form>
-  );
-}
-```
-
-The only thing that is added here is `collectValuesFromDOM` which collects all inputs values from the dom directly if input has `name` attribute.
-
-```tsx
-// LoginPage.tsx
-import React from "react";
-import { Form, FormInterface } from "@mongez/react-form";
-
-export default function LoginPage() {
-  const performLogin = (e: React.FormEvent, form: FormInterface) => {
-    console.log(form.values()); // {email: written-value, password: written-value }
-  };
-
-  return (
-    <Form collectValuesFromDOM onSubmit={performLogin}>
-      <input type="email" name="email" placeholder="Email Address" />
-      <br />
-      <input type="password" name="password" placeholder="Password" />
-      <br />
-      <button>Login</button>
-    </Form>
-  );
-}
-```
-
-In this step, the `onSubmit` accepts two arguments, the event handler which is the default one, and the `Form class` as second argument.
-
-We called `form.values()`, this method collects values from the dom inputs and return an object that has all values, for the time being this works thanks to `collectValuesFromDOM` otherwise it will return an empty object.
-
-## Form Context
-
-You may access the form class from any child component using `FormContext`
-
-```tsx
-// LoginPage.tsx
-import React from "react";
-import EmailInput from "./EmailInput";
-import { Form, FormInterface } from "@mongez/react-form";
-
-export default function LoginPage() {
-  const performLogin = (e: React.FormEvent, form: FormInterface) => {
-    console.log(form.values()); // {email: written-value, password: written-value }
-  };
-
-  return (
-    <Form collectValuesFromDOM onSubmit={performLogin}>
-      <EmailInput name="email" placeholder="Email Address" />
-      <br />
-      <input type="password" name="password" placeholder="Password" />
-      <br />
-      <button>Login</button>
-    </Form>
-  );
-}
-```
-
-```tsx
-// EmailInput.tsx
-import React from "react";
-import { FormContext } from "@mongez/react-form";
-
-export default function EmailInput(props) {
-  const { form } = React.useContext(FormContext);
-
-  return <input type="email" {...props} />;
-}
-```
-
-> Please note that if there is no `Form` component in the parent tree, then `FormContext` will return **null**.
-
-## useForm Hook
-
-Another way to access form class is to use `useForm` hook.
-
-```tsx
-// EmailInput.tsx
-import React from "react";
-import { useForm } from "@mongez/react-form";
-
-export default function EmailInput(props) {
-  const { form } = useForm();
-
-  return <input type="email" {...props} />;
-}
-```
-
-> Please note that if there is no `Form` component in the parent tree, then `useForm` will return **null**.
-
-## Create a heavy form input
-
-Now let's go more deeper, Let's update our `EmailInput` component using `useFormInput` Hook.
-
-```tsx
-// EmailInput.tsx
-import React from "react";
-import { useFormInput } from "@mongez/react-form";
-
-export default function EmailInput(props) {
-  const { name, id } = useFormInput(props);
-
-  console.log(id, name); // something like el-6BUxp8 email
-
-  return <input type="email" name={name} />;
-}
-```
-
-```tsx
-// LoginPage.tsx
-import React from "react";
-import EmailInput from "./EmailInput";
-import { Form, FormInterface } from "@mongez/react-form";
-
-export default function LoginPage() {
-  const performLogin = (e: React.FormEvent, form: FormInterface) => {
-    //
-  };
-
-  return (
-    <Form collectValuesFromDOM onSubmit={performLogin}>
-      <EmailInput name="email" />
-      <br />
-      <input type="password" name="password" placeholder="Password" />
-      <br />
-      <button>Login</button>
-    </Form>
-  );
-}
-```
-
-This will automatically register the component to our `Form Class` so we can collect its value from it directly.
-
-## The FormInput Object
-
-Each component uses `useFormInput` hook gets a `FormControl` object declared in `formInput` variable.
-
-Let's look at the available props in that object then see why this formInput exists.
-
-```ts
-import { RuleResponse } from "@mongez/validator";
-import { EventSubscription } from "@mongez/events";
-
-/**
- * Available control modes
- */
-type ControlMode = "input" | "button";
-
-/**
- * Form control events that can be subscribed to by the form control
- */
-type FormControlEvent =
-  | "change"
-  | "reset"
-  | "disabled"
-  | "unregister"
-  | "validation.start"
-  | "validation.success"
-  | "validation.error"
-  | "validation.end";
-
-/**
- * Available control types
- */
-type ControlType =
-  | "text"
-  | "color"
-  | "date"
-  | "time"
-  | "dateTime"
-  | "email"
-  | "checkbox"
-  | "radio"
-  | "hidden"
-  | "number"
-  | "password"
-  | "range"
-  | "search"
-  | "tel"
-  | "url"
-  | "week"
-  | "select"
-  | "autocomplete"
-  | "file"
-  | "image"
-  | "button"
-  | "reset"
-  | "submit";
-
 type FormControl = {
   /**
    * Form input name, it must be unique
    */
   name: string;
   /**
-   * Form control mode
-   */
-  control: ControlMode;
-  /**
    * Form control type
    */
-  type: ControlType;
+  type: string;
   /**
    * Form input id, used as a form input flag determiner
    */
@@ -333,49 +96,29 @@ type FormControl = {
    */
   value: any;
   /**
-   * Old Form control value
+   * Input Initial value
    */
-  oldValue: any;
-  /**
-   * Triggered when form is changing disabling / enabling mode
-   */
-  disable: (isDisabling: boolean) => void;
-  /**
-   * Triggered when form is changing read only mode
-   */
-  readOnly: (isReadingOnly: boolean) => void;
-  /**
-   * Triggered when form is changing a value to the form input
-   */
-  changeValue: (newValue: any) => void;
+  initialValue: any;
   /**
    * Triggered when form starts validation
    */
-  validate: (newValue?: string) => RuleResponse | null;
+  validate: () => Promise<boolean>;
   /**
    * Set form input error
    */
-  setError: (error: RuleResponse) => void;
+  setError: (error: React.ReactNode) => void;
+  /**
+   * Determine if current control is visible in the browser
+   */
+  isVisible: () => boolean;
   /**
    * Determine whether the form input is valid, this is checked after calling the validate method
    */
   isValid: boolean;
   /**
-   * Determine whether form input is disabled
-   */
-  isDisabled: boolean;
-  /**
-   * Determine whether form input is in read only state
-   */
-  isReadOnly: boolean;
-  /**
-   * Determine whether form input's value has been changed
-   */
-  isDirty: boolean;
-  /**
    * Focus on the element
    */
-  focus: (focus?: boolean) => void;
+  focus: () => void;
   /**
    * Trigger blur event on the element
    */
@@ -387,1745 +130,1581 @@ type FormControl = {
   /**
    * Form Input Error
    */
-  error: RuleResponse | null;
-  /**
-   * Form control event listener
-   */
-  on: (event: FormControlEvent, callback: any) => EventSubscription;
-  /**
-   * Trigger Event
-   */
-  trigger: (event: FormControlEvent, ...values: any[]) => void;
+  error: React.ReactNode;
   /**
    * Unregister form control
    */
   unregister: () => void;
   /**
-   * Determine the visible element
-   */
-  visibleElement: () => HTMLElement;
-  /**
    * Props list to this component
    */
   props: any;
   /**
-   * Input Initial value
-   */
-  initialValue: any;
-  /**
-   * Get form input element
-   */
-  element: HTMLElement;
-  /**
    * Check if the input's value is marked as checked
    */
-  isChecked: boolean;
+  checked: boolean;
+  /**
+   * Set checked value
+   */
+  setChecked: (checked: boolean) => void;
+  /**
+   * Initial checked value
+   */
+  initialChecked: boolean;
+  /**
+   * Determine if form control is multiple
+   */
+  multiple: boolean;
+  /**
+   * Collect form control value
+   */
+  collectValue: () => any;
+  /**
+   * Check if input is collectable
+   */
+  isCollectable: () => boolean;
+  /**
+   * Determine if form control is controlled
+   */
+  isControlled: boolean;
+  /**
+   * Change form control value and any other related values
+   */
+  change: (value: any, changeOptions?: FormControlChangeOptions) => void;
+  /**
+   * Determine if form control is rendered
+   */
+  rendered: boolean;
+  /**
+   * Input Ref
+   */
+  inputRef: any;
+  /**
+   * Visible element ref
+   */
+  visibleElementRef: any;
+  /**
+   * Listen when form control value is changed
+   */
+  onChange: (callback: (value: FormControlChange) => void) => EventSubscription;
+  /**
+   * Listen when form control is destroyed
+   */
+  onDestroy: (callback: () => void) => EventSubscription;
+  /**
+   * Disable/Enable form control
+   */
+  disable: (disable: boolean) => void;
+  /**
+   * Determine if form control is disabled
+   */
+  disabled: boolean;
+}
+```
+
+## Input name
+
+The `name` prop is the only required prop for any form control, it is used to identify the form control in the form, and will be used to get the form control value from the form data.
+
+The input name supports a `dot` notation, which means you can create a nested object using the `dot` notation.
+
+Most of the time you won't need to get the input name as it is being stored internally in the form control hook, but you can get it using `name` property, for example:
+
+```tsx
+<Form>
+  <TextInput name="user.firstName" />
+  <TextInput name="user.lastName" />
+</Form>
+```
+
+The above example will generate the following form data:
+
+```ts
+{
+  user: {
+    firstName: "John",
+    lastName: "Doe"
+  }
+}
+```
+
+> You may use `user[name]` notation instead of `user.name` notation, it will be converted into `user.name` but it is not recommended to use it.
+
+## Input type
+
+Input type is also required when passing props to the form control hook, for example:
+
+```tsx
+// src/components/TextInput.tsx
+import { useFormControl, FormControlProps } from "@mongez/react-form";
+
+export default function TextInput(props: FormControlProps) {
+  const { value, changeValue } = useFormControl(props);
+
+  return (
+    <input
+      value={value}
+      onChange={e => {
+        changeValue(e.target.value);
+      }}
+    />
+  );
+}
+
+TextInput.defaultProps = {
+  type: "text"
 };
 ```
 
-The main responsibility for the form control is to be registered in Form Class, so form can communicate with this component.
+The type will be passed to the form control, if not defined it will be set to `text` by default.
 
-We'll see more details through the rest of the documentation.
+## Controlled and Uncontrolled input values
 
-### The id attribute
-
-In this example, we used `useFormInput` and return an object that has `name` and `id` props, but why did `id` prop is returned?
-
-`useFormInput` wil generate a unique id for the component if no `id` prop is passed, which will be something like `el-aW313EDq`.
-
-## The name attribute
-
-But why to get the name from `useFormInput` rather than getting it from `props` object directly?
-
-`useFormInput` will manipulate the name if passed to the component props as it allows using `dot.notation` syntax.
-
-> Behind the scenes, this is handled using [toInputName](https://github.com/hassanzohdy/reinforcements#to-input-name) utility in **Mongez Reinforcements**.
+You can pass `value` and `onChange` props to any form control, which means you can control the form control value from outside the form control, for example:
 
 ```tsx
-// LoginPage.tsx
-import React from "react";
-import EmailInput from "./EmailInput";
-import { Form, FormInterface } from "@mongez/react-form";
+// src/App.tsx
+import { Form } from "@mongez/react-form";
+import TextInput from "./components/TextInput";
 
-export default function LoginPage() {
-  const performLogin = (e: React.FormEvent, form: FormInterface) => {
-    //
+export default function App() {
+  const [value, changeValue] = useState("");
+
+  const submitForm = ({ values }) => {
+    console.log(values);
   };
 
   return (
-    <Form collectValuesFromDOM onSubmit={performLogin}>
-      <EmailInput name="user.email" />
-      <br />
-      <input type="password" name="password" placeholder="Password" />
-      <br />
-      <button>Login</button>
-    </Form>
-  );
-}
-```
-
-The email input will be changed into `user[name]` which is a more standard name attribute.
-
-### Controlled Vs Uncontrolled Component
-
-`useFormInput` allows you to use both types of components, however, there will other feature that comes with both types, the value validation.
-
-Uncontrolled Component
-
-```tsx
-// LoginPage.tsx
-import React from "react";
-import EmailInput from "./EmailInput";
-import { Form, FormInterface } from "@mongez/react-form";
-
-export default function LoginPage() {
-  const performLogin = (e: React.FormEvent, form: FormInterface) => {
-    //
-  };
-
-  return (
-    <Form collectValuesFromDOM onSubmit={performLogin}>
-      <EmailInput name="email" defaultValue="Initial Email Value" />
-      <br />
-      <input type="password" name="password" placeholder="Password" />
-      <br />
-      <button>Login</button>
-    </Form>
-  );
-}
-```
-
-Controlled Component
-
-```tsx
-// LoginPage.tsx
-import React from "react";
-import EmailInput from "./EmailInput";
-import { Form, FormInterface } from "@mongez/react-form";
-
-export default function LoginPage() {
-  const [email, setEmail] = React.useState("");
-
-  const performLogin = (e: React.FormEvent, form: FormInterface) => {
-    //
-  };
-
-  return (
-    <Form collectValuesFromDOM onSubmit={performLogin}>
-      <EmailInput
-        name="email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
+    <Form onSubmit={submitForm}>
+      <TextInput
+        name="firstName"
+        value={value}
+        onChange={value => {
+          changeValue(value);
+        }}
       />
-      <br />
-      <input type="password" name="password" placeholder="Password" />
-      <br />
-      <button>Login</button>
+      <button>Submit</button>
     </Form>
+  );
+}
+```
+
+This will allow you control the input value from outside the form control, if you notice the `onChange` prop receives a direct value instead of an event object, this is because the form control will handle the event object and pass the value to the `onChange` prop.
+
+You can also pass `defaultValue` prop to any form control, which means you can set the initial value of the form control, for example:
+
+```tsx
+// src/App.tsx
+import { Form } from "@mongez/react-form";
+import TextInput from "./components/TextInput";
+
+export default function App() {
+  const submitForm = ({ values }) => {
+    console.log(values);
+  };
+
+  return (
+    <Form onSubmit={submitForm}>
+      <TextInput name="firstName" defaultValue="John" />
+      <button>Submit</button>
+    </Form>
+  );
+}
+```
+
+> Any form control is `controlled` internally, meaning that you'll always receive a `value` property from the `useFormControl` hook regardless of the input type, and you can change the value using the `changeValue` function.
+
+## Getting event and other options
+
+`onChange` as mentioned, dispatches the value directly, but you can also manage any other data that you receive from the `onChange` prop, for example:
+
+```tsx
+// src/components/TextInput.tsx
+import { useFormControl, FormControlProps } from "@mongez/react-form";
+
+export default function TextInput(props: FormControlProps) {
+  const { value, changeValue } = useFormControl(props);
+
+  return (
+    <input
+      value={value}
+      onChange={e => {
+        changeValue(e.target.value, {
+          event: e,
+          otherOption: "some value"
+        });
+      }}
+    />
+  );
+}
+```
+
+The `changeValue` function accepts a second argument which is an object that will be passed to the `onChange` prop, for example:
+
+Now you can receive the event and other options in the `onChange` prop in the second argument, for example:
+
+```tsx
+// src/App.tsx
+import { Form } from "@mongez/react-form";
+import TextInput from "./components/TextInput";
+
+
+export default function App() {
+  const [value, changeValue] = useState("");
+
+  const submitForm = ({ values }) => {
+    console.log(values);
+  };
+
+  return (
+    <Form onSubmit={submitForm}>
+      <TextInput
+        name="firstName"
+        value={value}
+        onChange={(value: string, options) => {
+          changeValue(value);
+          console.log(options.event); // that property we defined in the TextInput component
+        }}
+      />
+      <button>Submit</button>
+    </Form>
+  );
+}
+```
+
+## Checkbox inputs
+
+Any form control labeled with `type` equal to `checkbox` will have a slight difference in the `onChange` prop, for example:
+
+```tsx
+// src/components/Checkbox.tsx
+import { useFormControl, FormControlProps } from "@mongez/react-form";
+
+export default function Checkbox(props: FormControlProps) {
+  const { checked, setChecked } = useFormControl(props);
+
+  return (
+    <input
+      type="checkbox"
+      checked={checked}
+      onChange={e => {
+        setChecked(e.target.checked);
+      }}
+    />
+  );
+}
+```
+
+The `setChecked` function accepts a boolean value, which means you can pass the `checked` property of the event object to the `setChecked` function.
+
+You can now use the `Checkbox` component in the form, for example:
+
+```tsx
+// src/App.tsx
+import { Form } from "@mongez/react-form";
+import Checkbox from "./components/Checkbox";
+
+export default function App() {
+  const submitForm = ({ values }) => {
+    console.log(values);
+  };
+
+  return (
+    <Form onSubmit={submitForm}>
+      <Checkbox defaultChecked={true} name="rememberMe" />
+      <button>Submit</button>
+    </Form>
+  );
+}
+```
+
+Now if we want to control the check state, we can pass the `checked` and `onChange` props to the `Checkbox` component, for example:
+
+```tsx
+// src/App.tsx
+import { Form } from "@mongez/react-form";
+import Checkbox from "./components/Checkbox";
+
+export default function App() {
+  const [checked, setChecked] = useState(false);
+
+  const submitForm = ({ values }) => {
+    console.log(values);
+  };
+
+  return (
+    <Form onSubmit={submitForm}>
+      <Checkbox
+        checked={checked}
+        onChange={checked => {
+          setChecked(checked);
+        }}
+        name="rememberMe"
+      />
+      <button>Submit</button>
+    </Form>
+  );
+}
+```
+
+Here, the `checked` state is sent as the first argument, if you want to get the value, extract it from the second argument, for example:
+
+```tsx
+// src/App.tsx
+import { Form } from "@mongez/react-form";
+import Checkbox from "./components/Checkbox";
+
+export default function App() {
+  const [checked, setChecked] = useState(false);
+
+  const submitForm = ({ values }) => {
+    console.log(values);
+  };
+
+  return (
+    <Form onSubmit={submitForm}>
+      <Checkbox
+        checked={checked}
+        onChange={(checked, { value }) => {
+          setChecked(checked);
+          console.log(value); // 1
+        }}
+        name="rememberMe"
+      />
+      <button>Submit</button>
+    </Form>
+  );
+}
+```
+
+You can of course assign the value if the component is checked, for example:
+
+```tsx
+// src/components/Checkbox.tsx
+import { useFormControl, FormControlProps } from "@mongez/react-form";
+
+export default function Checkbox(props: FormControlProps) {
+  const { checked, setChecked } = useFormControl(props);
+
+  return (
+    <input
+      type="checkbox"
+      checked={value}
+      onChange={e => {
+        setChecked(e.target.checked);
+      }}
+    />
+  );
+}
+
+Checkbox.defaultProps = {
+  defaultValue: 1
+};
+```
+
+You can also set the `unchecked` value as well by passing it to `useFormControl` in the second argument object.
+
+```tsx
+// src/components/Checkbox.tsx
+import { useFormControl, FormControlProps } from "@mongez/react-form";
+
+export default function Checkbox(props: FormControlProps) {
+  const { checked, setChecked } = useFormControl(props, {
+    uncheckedValue: 0
+  });
+
+  return (
+    <input
+      type="checkbox"
+      checked={value}
+      onChange={e => {
+        setChecked(e.target.checked);
+      }}
+    />
+  );
+}
+
+Checkbox.defaultProps = {
+  defaultValue: 1
+};
+```
+
+## Form Control Id
+
+Each form control must have a `unique` id, if there is no id passed in the props list, the form control hook will generate a unique id and return it, for example:
+
+```tsx
+// src/components/TextInput.tsx
+import { useFormControl, FormControlProps } from "@mongez/react-form";
+
+export default function TextInput(props: FormControlProps) {
+  const { value, changeValue, id } = useFormControl(props);
+
+  return (
+    <input
+      type="text"
+      value={value}
+      id={id}
+      onChange={e => {
+        changeValue(e.target.value);
+      }}
+    />
+  );
+}
+```
+
+## Input Ref
+
+Passing `inputRef` to the input that we're working on is important for handling the input focus, blur and so on
+
+```tsx
+// src/components/TextInput.tsx
+import { useFormControl, FormControlProps } from "@mongez/react-form";
+import { useEffect } from "react";
+
+export default function TextInput(props: FormControlProps) {
+  const { value, changeValue, id, inputRef, formControl } = useFormControl(props);
+
+  useEffect(() => {
+    setTimeout(() => {
+      // focus the input after 1 second
+      // this requires the inputRef to be passed to the input
+      formControl.focus();
+    }, 1000);
+  }, []);
+
+  return (
+    <input
+      type="text"
+      value={value}
+      id={id}
+      ref={inputRef}
+      onChange={e => {
+        changeValue(e.target.value);
+      }}
+    />
+  );
+}
+```
+
+You can also perform  `blur` as well:
+
+```tsx
+// src/components/TextInput.tsx
+import { useFormControl, FormControlProps } from "@mongez/react-form";
+import { useEffect } from "react";
+
+export default function TextInput(props: FormControlProps) {
+  const { value, changeValue, id, inputRef, formControl } = useFormControl(props);
+
+  useEffect(() => {
+    setTimeout(() => {
+      // focus the input after 1 second
+      // this requires the inputRef to be passed to the input
+      formControl.focus();
+
+      setTimeout(() => {
+        // blur the input after focusing on it with 1 second
+        formControl.blur();
+      }, 1000);
+    }, 1000);
+  }, []);
+
+  return (
+    <input
+      type="text"
+      value={value}
+      id={id}
+      ref={inputRef}
+      onChange={e => {
+        changeValue(e.target.value);
+      }}
+    />
+  );
+}
+```
+
+## Disabled Prop
+
+Form control also preserves the `disabled` prop and return it directly, for example:
+
+```tsx
+// src/components/TextInput.tsx
+import { useFormControl, FormControlProps } from "@mongez/react-form";
+
+export default function TextInput(props: FormControlProps) {
+  const { value, changeValue, id, disabled } = useFormControl(props);
+
+  return (
+    <input
+      type="text"
+      value={value}
+      id={id}
+      disabled={disabled}
+      onChange={e => {
+        changeValue(e.target.value);
+      }}
+    />
+  );
+}
+```
+
+If you want to change the state of `disable` state, you can use `disable` and `enable` methods, for example:
+
+```tsx
+// src/components/TextInput.tsx
+import { useFormControl, FormControlProps } from "@mongez/react-form";
+
+export default function TextInput(props: FormControlProps) {
+  const { value, changeValue, id, disabled, disable, formControl } = useFormControl(props);
+
+  useEffect(() => {
+    setTimeout(() => {
+      // disable the input after 1 second
+      disable();
+      // or using the formControl
+      formControl.disable();
+    }, 1000);
+  }, []);
+
+  return (
+    <input
+      type="text"
+      value={value}
+      id={id}
+      disabled={disabled}
+      onChange={e => {
+        changeValue(e.target.value);
+      }}
+    />
+  );
+}
+```
+
+## Getting other props
+
+Apart from the previous props, any other prop will be sent to the input will be returned as `otherProps`, for example:
+
+```tsx
+// src/components/Checkbox.tsx
+import { useFormControl, FormControlProps } from "@mongez/react-form";
+
+export default function Checkbox(props: FormControlProps) {
+  const { checked, setChecked, otherProps } = useFormControl(props);
+
+  return (
+    <input
+      type="checkbox"
+      checked={value}
+      onChange={e => {
+        setChecked(e.target.checked);
+      }}
+      {...otherProps}
+    />
   );
 }
 ```
 
 ## Input Validation
 
-Let's get to the heavy part, the input validation, yet it is very simple.
+Now let's move to the validation part, we can split it into two parts, using `rules` or using manual validation.
+
+### Using rules
+
+First off, let's define the rules list that `could` be used for `TextInput` component, for example:
 
 ```tsx
-// EmailInput.tsx
-import React from "react";
-import { useFormInput } from "@mongez/react-form";
-import { emailRule, requiredRule } from "@mongez/validator";
+// src/components/TextInput.tsx
+import { Form, requiredRule } from "@mongez/react-form";
 
-const rules = [requiredRule, emailRule];
+export default function TextInput(props: FormControlProps) {
+  const { value, changeValue } = useFormControl(props);
 
-const defaultProps = {
-  rules,
-  type: "email", // required for emailRule
-};
-
-export default function EmailInput(props) {
-  const { name, error, id } = useFormInput(props);
-
-  console.log(error);
-
-  return <input type="email" name={name} />;
+  return (
+    <input
+      type="text"
+      value={value}
+      onChange={e => {
+        changeValue(e.target.value);
+      }}
+    />
+  );
 }
 
-EmailInput.defaultProps = defaultProps;
-```
-
-Hold on, what was that?
-
-OK let me tell you what's going on here.
-
-First of all, **Mongez React Form** uses [Mongez Validator](https://github.com/hassanzohdy/mongez-validator) for validation.
-
-Next we defined our rules list, which are `required` and `email` rules, this will validate the input value each time the user types anything against these two rules.
-
-Furthermore, we defined a `defaultProps` object which is accepted by `useFormInput` hook, that if there is no `rules` prop passed in the props then it will be taken from `defaultProps`.
-
-But for the previous snippet, nothing much will happen as we didn't pass the `onChange` and `value` props to the input element.
-
-```tsx
-// EmailInput.tsx
-import React from "react";
-import { useFormInput } from "@mongez/react-form";
-import { emailRule, requiredRule } from "@mongez/validator";
-
-const rules = [requiredRule, emailRule];
-
-const defaultProps = {
-  rules,
-  type: "email", // required for emailRule
+TextInput.defaultProps = {
+  rules: [requiredRule]
 };
-
-export default function EmailInput(props) {
-  const { name, error, value, onChange } = useFormInput(props);
-
-  return <input type="email" value={value} onChange={onChange} name={name} />;
-}
-
-EmailInput.defaultProps = defaultProps;
 ```
 
-So far the only rule that will be applied is `emailRule` as it validates only if the user inputs some text.
-
-Let's tell the validator to check for the input that should have a value.
+Here we defined the default `rules` that could run against the value change, now if we want to use it, we just have to pass `required` prop to the `TextInput` component, for example:
 
 ```tsx
-// LoginPage.tsx
-import React from "react";
-import EmailInput from "./EmailInput";
-import { Form, FormInterface } from "@mongez/react-form";
+// src/App.tsx
+import { Form } from "@mongez/react-form";
+import TextInput from "./components/TextInput";
 
-export default function LoginPage() {
-  const performLogin = (e: React.FormEvent, form: FormInterface) => {
-    //
+export default function App() {
+  const submitForm = ({ values }) => {
+    console.log(values);
   };
 
   return (
-    <Form collectValuesFromDOM onSubmit={performLogin}>
-      <EmailInput name="email" required />
-      <br />
-      <input type="password" name="password" placeholder="Password" />
-      <br />
-      <button>Login</button>
+    <Form onSubmit={submitForm}>
+    >
+      <TextInput name="name" required />
+      <button>Submit</button>
     </Form>
   );
 }
 ```
 
-We passed `required` prop, then the `requiredRule` now will work.
+Now if we submitted the form, it won't go to `onSubmit` method, because the `name` field is required, and it's empty.
+
+#### Displaying the error
+
+If the rule is `not valid`, then it will return the error message, so we can display it in the UI, for example:
 
 ```tsx
-// EmailInput.tsx
-import React from "react";
-import { useFormInput } from "@mongez/react-form";
-import { emailRule, requiredRule } from "@mongez/validator";
+// src/components/TextInput.tsx
+import { Form, requiredRule } from "@mongez/react-form";
 
-const rules = [requiredRule, emailRule];
-
-const defaultProps = {
-  rules,
-  type: "email", // required for emailRule
-};
-
-export default function EmailInput(props) {
-  const { name, error, value, onChange } = useFormInput(props);
-
-  console.log(error); // null for first render
-
-  return <input type="email" value={value} onChange={onChange} name={name} />;
-}
-
-EmailInput.defaultProps = defaultProps;
-```
-
-Now when the user types anything, the error key will return A rule Response error, just type anything and see the console.
-
-### Display error message
-
-Now let's display our error message in the dom.
-
-```tsx
-// EmailInput.tsx
-import React from "react";
-import { useFormInput } from "@mongez/react-form";
-import { emailRule, requiredRule } from "@mongez/validator";
-
-const rules = [requiredRule, emailRule];
-
-const defaultProps = {
-  rules,
-  type: "email", // required for emailRule
-};
-
-export default function EmailInput(props) {
-  const { name, error, value, onChange } = useFormInput(props);
+export default function TextInput(props: FormControlProps) {
+  const { value, changeValue, error } = useFormControl(props);
 
   return (
     <>
-      <input type="email" value={value} onChange={onChange} name={name} />
-
-      {error && <span>{error.errorMessage}</span>}
-    </>
-  );
-}
-
-EmailInput.defaultProps = defaultProps;
-```
-
-## Manually validating component
-
-You may also validate the component manually instead of using the rules.
-
-```tsx
-// EmailInput.tsx
-import React from "react";
-import Is from "@mongez/supportive-is";
-import { useFormInput } from "@mongez/react-form";
-
-export default function EmailInput(props) {
-  const { name, setValue, value, error, setError } = useFormInput(props);
-
-  const onChange = (e) => {
-    const newValue = e.target.value;
-    if (!newValue) {
-      setError({
-        hasError: true,
-        errorType: "required",
-        errorMessage: "This input is required",
-      });
-    } else if (!Is.email(newValue)) {
-      setError({
-        hasError: true,
-        errorType: "email",
-        errorMessage: "Invalid Email Address",
-      });
-    } else {
-      setError(null);
-    }
-
-    setValue(newValue);
-  };
-
-  return (
-    <>
-      <input type="email" value={value} onChange={onChange} name={name} />
-
-      {error && <span>{error.errorMessage}</span>}
-    </>
-  );
-}
-```
-
-In our previous example, we got introduced two new methods, `setValue` and `setError`, these methods are used to set the component value and error respectively.
-
-`setError` function accepts `null` for no errors and `RuleResponse` from [Mongez Validator](<[https://g](https://github.com/hassanzohdy/mongez-validator)>) for displaying an error.
-
-> It's recommended to use rules instead, this will make your code cleaner and easier to maintain.
-
-## The onError prop
-
-Now you may detect if the component catches an error from the its own rules using `onError`
-
-```tsx
-// EmailInput.tsx
-import React from "react";
-import { emailRule } from "@mongez/validator";
-import { useFormInput } from "@mongez/react-form";
-
-const defaultProps = {
-  rules: [emailRule],
-  type: "email",
-};
-
-export default function EmailInput(props) {
-  const { name, value, error, onChange } = useFormInput(props);
-
-  return (
-    <>
-      <input type="email" value={value} onChange={onChange} name={name} />
-
-      {error && <span>{error.errorMessage}</span>}
-    </>
-  );
-}
-
-EmailInput.defaultProps = defaultProps;
-```
-
-```tsx
-// LoginPage.tsx
-import React from "react";
-import EmailInput from "./EmailInput";
-import { RuleResponse } from "@mongez/validator";
-import { Form, FormInterface, FormControl } from "@mongez/react-form";
-
-export default function LoginPage() {
-  const performLogin = (e: React.FormEvent, form: FormInterface) => {
-    //
-  };
-
-  const onError = (error: RuleResponse, formInput: FormControl) => {
-    console.log(error); // will be triggered only if there is an error
-  };
-
-  return (
-    <Form collectValuesFromDOM onSubmit={performLogin}>
-      <EmailInput name="email" onError={onError} required />
-      <br />
-      <input type="password" name="password" placeholder="Password" />
-      <br />
-      <button>Login</button>
-    </Form>
-  );
-}
-```
-
-## The validate prop
-
-> Added in V1.4.0
-
-The `validate` prop will allow you to manually validate the input.
-
-> This will override the `rules` prop and it will be totally ignored when `validate` prop is passed
-
-```tsx
-// LoginPage.tsx
-import React from "react";
-import EmailInput from "./EmailInput";
-import Is from "@mongez/supportive-is";
-import { RuleResponse } from "@mongez/validator";
-import {
-  Form,
-  FormInterface,
-  FormControl,
-  InputError,
-} from "@mongez/react-form";
-
-export default function LoginPage() {
-  const performLogin = (e: React.FormEvent, form: FormInterface) => {
-    //
-  };
-
-  const validateEmail = (formControl: FormControl): InputError => {
-    if (!formControl.value) {
-      return {
-        type: "required",
-        hasError: true,
-        errorMessage: "The email input is required",
-      } as RuleResponse;
-    } else {
-      if (!Is.email(formControl.value)) {
-        return {
-          type: "email",
-          hasError: true,
-          errorMessage: "Invalid Email Address",
-        } as RuleResponse;
-      }
-    }
-
-    // return null means the input is valid
-    return null;
-  };
-
-  return (
-    <Form collectValuesFromDOM onSubmit={performLogin}>
-      <EmailInput name="email" validate={validateEmail} required />
-      <br />
-      <input type="password" name="password" placeholder="Password" />
-      <br />
-      <button>Login</button>
-    </Form>
-  );
-}
-```
-
-When the `validate` prop returns a `RuleResponse`, it will be passed to `onError` as well.
-
-## Custom error messages
-
-> Added in V1.4.0
-
-You can override the error messages that are being set by the `rules` list using `errors` prop.
-
-```tsx
-// LoginPage.tsx
-import React from "react";
-import EmailInput from "./EmailInput";
-import { RuleResponse } from "@mongez/validator";
-import { Form, FormInterface, FormControl } from "@mongez/react-form";
-
-export default function LoginPage() {
-  const performLogin = (e: React.FormEvent, form: FormInterface) => {
-    //
-  };
-
-  return (
-    <Form onSubmit={performLogin}>
-      <EmailInput
-        name="email"
-        errors={{
-          email: "This email is invalid",
-          required: "Email input can not be empty",
-        }}
-        required
-      />
-      <br />
-      <input type="password" name="password" placeholder="Password" />
-      <br />
-      <button>Login</button>
-    </Form>
-  );
-}
-```
-
-The `errors` props can receive an object to override error messages based on the `rule` response error type, or it can be used as a callback function for dynamic error messaging.
-
-```tsx
-// LoginPage.tsx
-import React from "react";
-import EmailInput from "./EmailInput";
-import { RuleResponse } from "@mongez/validator";
-import { Form, FormInterface, FormControl } from "@mongez/react-form";
-
-export default function LoginPage() {
-  const performLogin = (e: React.FormEvent, form: FormInterface) => {
-    //
-  };
-
-  return (
-    <Form onSubmit={performLogin}>
-      <EmailInput
-        name="email"
-        errors={(error: RuleResponse, formControl: FormControl) => {
-          if (error.type === "required") return "The email input is required";
-
-          if (error.type === "email") return "This email is invalid";
-
-          return "Some Other Error";
-        }}
-        required
-      />
-      <br />
-      <input type="password" name="password" placeholder="Password" />
-      <br />
-      <button>Login</button>
-    </Form>
-  );
-}
-```
-
-## Validating on blur instead of on change
-
-By default, the validation occurs on `onChange` prop, but you may set it on `onBlur` event instead using `validateOn` prop.
-
-```tsx
-// LoginPage.tsx
-import React from "react";
-import EmailInput from "./EmailInput";
-import { RuleResponse } from "@mongez/validator";
-import { Form, FormInterface, FormControl } from "@mongez/react-form";
-
-export default function LoginPage() {
-  const performLogin = (e: React.FormEvent, form: FormInterface) => {
-    //
-  };
-
-  const onError = (error: RuleResponse, formInput: FormControl) => {
-    console.log(error); // will be triggered only if there is an error
-  };
-
-  return (
-    <Form collectValuesFromDOM onSubmit={performLogin}>
-      <EmailInput validateOn="blur" name="email" onError={onError} required />
-      <br />
-      <input type="password" name="password" placeholder="Password" />
-      <br />
-      <button>Login</button>
-    </Form>
-  );
-}
-```
-
-> Accepted values: `change` | `blur`, default is `change`
-
-## Manually validate the form
-
-We can also trigger form validation using `form.validate()` method.
-
-```tsx
-// LoginPage.tsx
-import React from "react";
-import EmailInput from "./EmailInput";
-import { RuleResponse } from "@mongez/validator";
-import { Form, FormInterface, FormControl } from "@mongez/react-form";
-
-export default function LoginPage() {
-  const form = React.useRef();
-
-  React.useEffect(() => {
-    setTimeout(() => {
-      form.current.validate();
-    }, 2000);
-  }, []);
-
-  const performLogin = (e: React.FormEvent, form: FormInterface) => {
-    //
-  };
-
-  return (
-    <Form ref={form} collectValuesFromDOM onSubmit={performLogin}>
-      <EmailInput validateOn="blur" name="email" required />
-      <br />
-      <input type="password" name="password" placeholder="Password" />
-      <br />
-      <button>Login</button>
-    </Form>
-  );
-}
-```
-
-The previous example will trigger form validation after two seconds from component rendering.
-
-## Determine if form is valid
-
-We can also use `isValid()` method to check if the form is valid or not.
-
-```tsx
-// LoginPage.tsx
-import React from "react";
-import EmailInput from "./EmailInput";
-import { RuleResponse } from "@mongez/validator";
-import { Form, FormInterface, FormControl } from "@mongez/react-form";
-
-export default function LoginPage() {
-  const form = React.useRef();
-
-  React.useEffect(() => {
-    setTimeout(() => {
-      form.current.validate();
-
-      if (form.isValid()) {
-        alert('All Good, you can pass now!');
-      }
-    }, 2000);
-  }, []);
-
-  const performLogin = (e: React.FormEvent, form: FormInterface) => {
-    //
-  };
-
-  return (
-    <Form ref={form} collectValuesFromDOM onSubmit={performLogin}>
-      <EmailInput validateOn="blur" name="email" required />
-      <br />
-      <input type="password" name="password" placeholder="Password" />
-      <br />
-      <button>Login</button>
-    </Form>
-  );
-}
-```
-
-## Validating only certain inputs
-
-In some situations we need to validate only certain inputs, for example when working with form wizards or steppers, just pass an array of names to `form.validate`.
-
-> Please note this won't work with native DOM inputs as it must be registered in the form as form control.
-
-```tsx
-// LoginPage.tsx
-import React from "react";
-import EmailInput from "./EmailInput";
-import { RuleResponse } from "@mongez/validator";
-import { Form, FormInterface, FormControl } from "@mongez/react-form";
-
-export default function LoginPage() {
-  const form = React.useRef();
-
-  const performLogin = (e: React.FormEvent, form: FormInterface) => {
-    //
-  };
-
-  const validateEmail = () => {
-    form.current.validate(["email"]);
-  };
-
-  return (
-    <Form ref={form} collectValuesFromDOM onSubmit={performLogin}>
-      <EmailInput validateOn="blur" name="email" required />
-      <br />
-      <input type="password" name="password" placeholder="Password" />
-      <br />
-      <button>Login</button>
-      <button type="button" onCLick={validateEmail}>
-        Validate Email Only{" "}
-      </button>
-    </Form>
-  );
-}
-```
-
-## Validate only visible elements
-
-> Added in V 1.2.0
-
-You may trigger form validation only for the visible form elements in the DOM, this can be useful if form elements are hidden under tabs or stepper but not removed from the DOM.
-
-```tsx
-// LoginPage.tsx
-import React from "react";
-import EmailInput from "./EmailInput";
-import { RuleResponse } from "@mongez/validator";
-import { Form, FormInterface, FormControl } from "@mongez/react-form";
-
-export default function LoginPage() {
-  const form = React.useRef();
-
-  const performLogin = (e: React.FormEvent, form: FormInterface) => {
-    //
-  };
-
-  const validate = () => {
-    form.current.validateVisible(); // this will only validate the email input
-    // the password input will not be triggered for validation
-  };
-
-  return (
-    <Form ref={form} collectValuesFromDOM onSubmit={performLogin}>
-      <EmailInput validateOn="blur" name="email" required />
-      <br />
       <input
-        type="password"
-        style={{
-          display: "none",
+        type="text"
+        value={value}
+        onChange={e => {
+          changeValue(e.target.value);
         }}
-        name="password"
-        placeholder="Password"
       />
-      <br />
-      <button>Login</button>
-      <button type="button" onCLick={validate}>
-        Validate Email Only{" "}
-      </button>
-    </Form>
-  );
-}
-```
-
-## Manually registering form control
-
-We used `useFormInput` for handling many cases along with registering to the form, in some cases we might only need to register our component to the form without any additional helpers such as name dot notation or auto generating id if not passed.
-
-```tsx
-// PasswordInput.tsx
-
-import React from "react";
-import { emailRule } from "@mongez/validator";
-import { useForm } from "@mongez/react-form";
-
-export default function PasswordInput({
-  defaultValue,
-  value,
-  onChange,
-  ...otherProps
-}) {
-  const [internalValue, setValue] = React.useState(value || defaultValue);
-  const formContext = useForm();
-
-  React.useEffect(() => {
-    const { form } = formContext;
-
-    form.register({
-      name: props.name,
-      value: internalValue,
-      id: props.id,
-      control: "input",
-      changeValue: (newValue) => {
-        setValue(newValue);
-      },
-      reset: () => {
-        setValue("");
-      },
-    });
-  }, []);
-
-  return (
-    <>
-      <input type="password" value={value} onChange={onChange} name={name} />
-
-      {error && <span>{error.errorMessage}</span>}
+      {error && <span style={{
+        color: 'red'
+      }}>{error}</span>}
     </>
   );
 }
-```
 
-## Form Control Events
-
-> Added in V 1.3.0
-
-Every form control has several events that you can subscribe to when it occurs, here are the available events:
-
-```ts
-/**
- * Form control events that can be subscribed to by the form control
- */
-export type FormControlEvent =
-  | "change"
-  | "reset"
-  | "disabled"
-  | "unregister"
-  | "validation.start"
-  | "validation.success"
-  | "validation.error"
-  | "validation.end";
-```
-
-This is useful when you want to listen for input change from another input and vice versa.
-
-```tsx
-// LoginPage.tsx
-import React from "react";
-import EmailInput from "./EmailInput";
-import { RuleResponse } from "@mongez/validator";
-import { Form, FormInterface, FormControl } from "@mongez/react-form";
-
-export default function LoginPage() {
-  const form = React.useRef();
-
-  const performLogin = (e: React.FormEvent, form: FormInterface) => {
-    // triggered from the useEffect hook
-  };
-
-  React.useEffect(() => {
-    const formControl = form.control("email");
-    const event = formControl.on(
-      "change",
-      (newValue: string, formControl: FormControl) => {
-        console.log(newValue); // will be triggered when the email input is changed
-      }
-    );
-
-    // Don't forget to unsubscribe when the component unmounts
-
-    return () => event.unsubscribe();
-  }, []);
-
-  return (
-    <Form ref={form} onSubmit={performLogin}>
-      <EmailInput validateOn="blur" name="email" required />
-      <br />
-      <input type="password" name="password" placeholder="Password" />
-      <br />
-      <button>Login</button>
-    </Form>
-  );
-}
-```
-
-Available events:
-
-- `change`: Triggered when value is changed, also when the form control value is reset, this event is triggered as well.
-
-> Please note the change event is triggered before the validation events
-
-```ts
-formControl.on("change", (newValue: string, formControl: FromControl) => {
-  //
-});
-```
-
-- `reset`: Triggered when value is reset.
-
-```ts
-formControl.on("reset", (formControl: FromControl) => {
-  //
-});
-```
-
-> Please note the reset event is triggered after `change` event.
-
-- `validation.start`: Triggered before validation starts.
-
-```ts
-formControl.on("validation.start", (formControl: FromControl) => {
-  //
-});
-```
-
-- `validation.end`: Triggered after validation ends.
-
-```ts
-formControl.on(
-  "validation.end",
-  (isValid: boolean, formControl: FromControl) => {
-    //
-  }
-);
-```
-
-- `validation.success`: Triggered when validation is valid.
-
-```ts
-formControl.on("validation.success", (formControl: FromControl) => {
-  //
-});
-```
-
-- `validation.error`: Triggered when validation is **not valid**.
-
-```ts
-formControl.on("validation.error", (formControl: FromControl) => {
-  //
-});
-```
-
-- `validation.unregister`: Triggered when form component is unmounted.
-
-```ts
-formControl.on("validation.unregister", (formControl: FromControl) => {
-  //
-});
-```
-
-- `validation.disabled`: Triggered when form disabled state is changed.
-
-```ts
-formControl.on('validation.disabled', (isDisabled: boolean formControl: FromControl) => {
-  //
-});
-```
-
-## Manually submitting form
-
-Form can be submitted as well directly using `form.submit` method.
-
-```tsx
-// LoginPage.tsx
-import React from "react";
-import EmailInput from "./EmailInput";
-import { RuleResponse } from "@mongez/validator";
-import { Form, FormInterface, FormControl } from "@mongez/react-form";
-
-export default function LoginPage() {
-  const form = React.useRef();
-
-  const performLogin = (e: React.FormEvent, form: FormInterface) => {
-    // triggered from the useEffect hook
-  };
-
-  React.useEffect(() => {
-    setTimeout(() => {
-      form.current.submit();
-    }, 2000);
-  }, []);
-
-  return (
-    <Form ref={form} onSubmit={performLogin}>
-      <EmailInput validateOn="blur" name="email" required />
-      <br />
-      <input type="password" name="password" placeholder="Password" />
-      <br />
-      <button>Login</button>
-    </Form>
-  );
-}
-```
-
-## Reset Form
-
-To reset the form values, states, and changes, alongside with all registered form controls, we can use `form.reset()` method.
-
-`form.reset(formControlNames: string[]): FormControl[]`
-
-```tsx
-// LoginPage.tsx
-import React from 'react';
-import EmailInput from './EmailInput';
-import { RuleResponse } from '@mongez/validator';
-import { Form, FormInterface, FormControl } from '@mongez/react-form';
-
-export default function LoginPage() {
-    const form = React.useRef();
-    const performLogin = (e: React.FormEvent, form: FormInterface) => {
-        //
-    };
-
-    const resetForm = () => {
-        form.current.reset();
-    }
-
-    return (
-        <Form ref={form} collectValuesFromDOM onSubmit={performLogin}>
-            <EmailInput validateOn="blur" name="email" required />
-            <br />
-            <input type="password" name="password" placeholder="Password" />
-            <br />
-            <button>Login</button>
-            <button type="button" onClick={resetForm}>Reset<button>
-        </Form>
-    )
-}
-```
-
-Or event better, You may also use `ResetFormButton` component for shortage.
-
-```tsx
-// LoginPage.tsx
-import React from 'react';
-import EmailInput from './EmailInput';
-import { RuleResponse } from '@mongez/validator';
-import { Form, ResetFormButton, FormInterface, FormControl } from '@mongez/react-form';
-
-export default function LoginPage() {
-    const form = React.useRef();
-    const performLogin = (e: React.FormEvent, form: FormInterface) => {
-        //
-    };
-
-    return (
-        <Form ref={form} collectValuesFromDOM onSubmit={performLogin}>
-            <EmailInput validateOn="blur" name="email" required />
-            <br />
-            <input type="password" name="password" placeholder="Password" />
-            <br />
-            <button>Login</button>
-            <ResetFormButton>Reset<ResetFormButton>
-        </Form>
-    )
-}
-```
-
-You may also set what inputs to be reset only by passing the input name to **reset** method.
-
-```tsx
-const resetForm = () => {
-  form.current.reset(["email", "username"]);
+TextInput.defaultProps = {
+  rules: [requiredRule]
 };
 ```
 
-If using `ResetFormButton` component then pass it as an array `resetOnly`
+The error will appear based on current locale code from [Mongez Localization](https://github.com/hassanzohdy/mongez-localization)
+
+For now translation supports Six languages, `English`, `Arabic`, `French`, `Spanish`, `Italian` and `Germany` with locale codes `en`, `ar`, `fr`, `es`, `it` and `de` respectively.
+
+## Rules list
+
+Here are the available rules that you can use:
+
+- `requiredRule`: Check if the value is not empty.
+  - `null`, `undefined`, `''` and `[]` are considered empty.
+  - Requires `required` prop to be present.
+  - Translation Key: `validation.required`.
+- `minLengthRule`: Check if the value's length is greater than or equal to the `minLength` prop.
+  - Requires `minLength` prop to be present.
+  - Translation Key: `validation.minLength`, receives `:length` as a placeholder.
+  - `minLength` prop will be preserved from being passed to `otherProps`.
+  - Works with strings and arrays.
+- `maxLengthRule`: Check if the value's length is less than or equal to the `maxLength` prop.
+  - Requires `maxLength` prop to be present.
+  - Translation Key: `validation.maxLength`, receives `:length` as a placeholder.
+  - `maxLength` prop will be preserved from being passed to `otherProps`.
+  - Works with strings and arrays.
+- `lengthRule`: Check if the value's length is equal to the `length` prop.
+  - Requires `length` prop to be present.
+  - Translation Key: `validation.length`, receives `:length` as a placeholder.
+  - `length` prop will be preserved from being passed to `otherProps`.
+  - Works with strings and arrays.
+- `minRule`: Check if the value is greater than or equal to the `min` prop.
+  - Requires `min` prop to be present.
+  - Translation Key: `validation.min`, receives `:min` as a placeholder.
+  - `min` prop will be preserved from being passed to `otherProps`.
+  - Works with numbers.
+- `maxRule`: Check if the value is less than or equal to the `max` prop.
+  - Requires `max` prop to be present.
+  - Translation Key: `validation.max`, receives `:max` as a placeholder.
+  - `max` prop will be preserved from being passed to `otherProps`.
+  - Works with numbers.
+- `emailRule`: Check if the value is a valid email.
+  - Translation Key: `validation.email`.
+  - Requires `type` prop to be `email`.
+- `numberRule`: Check if the value is a valid number.
+  - Translation Key: `validation.number`.
+  - Requires `type` prop to be `number`.
+- `floatRule`: Check if the value is a valid float number.
+  - Translation Key: `validation.float`.
+  - Requires `type` prop to be `float`.
+- `integerRule`: Check if the value is a valid integer number.
+  - Translation Key: `validation.integer`.
+  - Requires `type` prop to be `integer`.
+- `patternRule`: Check if the value matches the `pattern` prop.
+  - Requires `pattern` prop to be present.
+  - Translation Key: `validation.pattern`, receives `:pattern` as a placeholder.
+  - `pattern` prop will be preserved from being passed to `otherProps`.
+- `alphabetRule`: Check if the value is a valid alphabet.
+  - Translation Key: `validation.alphabet`.
+  - Requires `type` prop to be `alphabet`.
+- `matchRule`:  Check if the value matches the value of the field with the name of the `match` prop.
+  - Requires `match` prop to be present.
+  - Translation Key: `validation.match`, receives `:matchingField` as a placeholder.
+  - `match` prop will be preserved from being passed to `otherProps`.
+
+Example of usage for each rule:
 
 ```tsx
+// src/App.tsx
+import { Form } from "@mongez/react-form";
+import TextInput from "./components/TextInput";
 
-<ResetFormButton resetOnly={['email', 'username']}>Reset<ResetFormButton>
-```
-
-## Disable Form elements
-
-We can also disable all registered form inputs to be disabled.
-
-`form.disable(isDisabled: boolean, formControlNames: string[] = []): void`
-
-```tsx
-// LoginPage.tsx
-import React from "react";
-import EmailInput from "./EmailInput";
-import { RuleResponse } from "@mongez/validator";
-import { Form, FormInterface, FormControl } from "@mongez/react-form";
-import { login } from "./../services/auth";
-
-export default function LoginPage() {
-  const performLogin = (e: React.FormEvent, form: FormInterface) => {
-    //
-    form.disable(); // disable
-    // send ajax request
-    login(form.values())
-      .then((response) => {})
-      .catch((error) => {
-        console.log(error.response.data.error);
-        form.disable(false);
-      });
+export default function App() {
+  const submitForm = ({ values }) => {
+    console.log(values);
   };
 
   return (
-    <Form ref={form} collectValuesFromDOM onSubmit={performLogin}>
-      <EmailInput validateOn="blur" name="email" required />
-      <br />
-      <input type="password" name="password" placeholder="Password" />
-      <br />
-      <button>Login</button>
+    <Form onSubmit={submitForm}>
+    >
+      <TextInput name="name" required />
+      <TextInput name="email" type="email" required />
+      <TextInput name="age" type="number" required />
+      <TextInput name="salary" type="float" required />
+      <TextInput name="phone" type="integer" required />
+      <TextInput name="password" type="password" required />
+      <TextInput name="confirmPassword" type="password" required match="password" />
+      <TextInput name="website" type="url" required />
+      <TextInput name="address" type="text" required minLength={10} maxLength={100} />
+      <TextInput name="zipCode" type="text" required length={5} />
+      <TextInput name="phone" type="text" required pattern={/^01[0-2|5]{1}[0-9]{8}$/} />
+      <TextInput name="name" required alphabet />
+      <button>Submit</button>
     </Form>
   );
 }
 ```
 
-You may also use `form.enable` as an alias to `form.disable(false)`.
-
-## Mark form elements as readOnly
-
-This can be achieved using `form.readOnly()` method/
-
-`form.readOnly(isReadOnly: boolean = true, formControlNames: string[] = []): void`
-
 ```tsx
-// LoginPage.tsx
-import React from "react";
-import EmailInput from "./EmailInput";
-import { RuleResponse } from "@mongez/validator";
-import { Form, FormInterface, FormControl } from "@mongez/react-form";
-import { login } from "./../services/auth";
+// src/components/TextInput.tsx
+import { Form, requiredRule, 
+  minLengthRule, maxLengthRule, lengthRule, emailRule, numberRule, floatRule, integerRule, patternRule, alphabetRule, matchRule } from "@mongez/react-form";
 
-export default function LoginPage() {
-  const performLogin = (e: React.FormEvent, form: FormInterface) => {
-    //
-    form.readOnly(); // all inputs are considered to be readOnly now
-    // send ajax request
-    login(form.values())
-      .then((response) => {})
-      .catch((error) => {
-        console.log(error.response.data.error);
-        form.readOnly(false);
-      });
-  };
-
-  return (
-    <Form ref={form} collectValuesFromDOM onSubmit={performLogin}>
-      <EmailInput validateOn="blur" name="email" required />
-      <br />
-      <input type="password" name="password" placeholder="Password" />
-      <br />
-      <button>Login</button>
-    </Form>
-  );
-}
-```
-
-## Form Serializers
-
-Another powered feature is that you can get form control values in variant ways using form serializers methods.
-
-- [form.values()](#getting-all-form-values) Getting all values as object.
-- [form.toJSON()](#getting-form-values-as-json) Getting all values as JSON.
-- [form.toQueryString()](#getting-form-values-as-query-string) Getting all values as query string.
-
-### Getting all form values
-
-We can get all form values either from registered form controls or from the dom directly using `form.values()`, it returns an object, the key is the form control name and the value is its corresponding value.
-
-`form.values(formControlNames: string[] = []): object`
-
-```ts
-const formValues = form.values();
-// or
-const formValues = form.toObject();
-```
-
-> Please keep in mind that if `collectValuesFromDOM` prop is enabled, then the DOM input values will be merged with values coming from registered form controls.
-
-`form.toObject()` is an alias to `form.values()`
-
-### Getting form values as query string
-
-This method returns a string in a query string format using [query-string package](https://www.npmjs.com/package/query-string).
-
-`form.toQueryString(formControlNames: string[] = []): string`
-
-```ts
-const formValues: string = form.toQueryString();
-```
-
-Serializing Only certain form controls
-
-```ts
-const formValues: string = form.toQueryString(["email", "password"]);
-```
-
-> `form.toString()` is an alias to this method.
-
-### Getting form values as JSON
-
-This can be done using `toJSON` method.
-
-`form.toJSON(formControlNames: string[] = []): string`
-
-```ts
-const formValues: string = form.toJSON();
-```
-
-To get only json string to certain form controls, pass an array of form controls to the method.
-
-```ts
-const formValues: string = form.toJSON(["email", "password"]);
-```
-
-## Getting form control
-
-You may get a direct access to any registered form control either by form control name or by its id.
-
-`form.control(value: string, searchIn: "name" | "id" | "control" = "name"): FormControl | null`
-
-```js
-// getting the input by the name
-const usernameInput: FormControl = form.control("username");
-
-// or getting it by the id
-const passwordInput: FormControl = form.control("password-id", "id");
-```
-
-If there is no matching value for that control, `null` will be returned instead.
-
-## Getting form controls list
-
-We can get all registered form controls using `form.controls()`
-
-```ts
-const formControls = form.controls();
-```
-
-You may also getting controls for the given names only
-
-```ts
-const formControls = form.controls(["email", "password"]);
-```
-
-## Control Modes And Control Types
-
-Each form control has two main attributes, `control` and `type`.
-
-All inputs regardless its type or shape is considered to be a `input` control.
-All button regardless its type is considered to be a `button` control.
-
-```ts
-type ControlMode = "input" | "button";
-```
-
-The input attribute value is a more specific, it can be one of the following types.
-
-```ts
-type ControlType =
-  | "text"
-  | "email"
-  | "checkbox"
-  | "radio"
-  | "number"
-  | "password"
-  | "hidden"
-  | "date"
-  | "time"
-  | "dateTime"
-  | "color"
-  | "range"
-  | "search"
-  | "tel"
-  | "url"
-  | "week"
-  | "select"
-  | "autocomplete"
-  | "file"
-  | "image"
-  | "button"
-  | "reset"
-  | "submit";
-```
-
-When registering new form, the `control` key must be provided and `input` key as well.
-
-## Defining form control mode and control type
-
-Each registered form control has a `control`, by default it is `input`, you may assign the form control type yourself by setting `control` attribute in form control object.
-
-> `useFormInput` hook is registering the control type as `input`, you may override it by passing `control` key in the passed props.
-
-```tsx
-// PasswordInput.tsx
-
-import React from "react";
-import { emailRule } from "@mongez/validator";
-import { useForm } from "@mongez/react-form";
-
-export default function PasswordInput({
-  defaultValue,
-  value,
-  onChange,
-  ...otherProps
-}) {
-  const [internalValue, setValue] = React.useState(value || defaultValue);
-  const formContext = useForm();
-
-  React.useEffect(() => {
-    const { form } = formContext;
-
-    form.register({
-      name: props.name,
-      value: internalValue,
-      id: props.id,
-      control: "input",
-      type: "password",
-      changeValue: (newValue) => {
-        setValue(newValue);
-      },
-      reset: () => {
-        setValue("");
-      },
-    });
-  }, []);
+export default function TextInput(props: FormControlProps) {
+  const { value, changeValue, error } = useFormControl(props);
 
   return (
     <>
-      <input type="password" value={value} onChange={onChange} name={name} />
-
-      {error && <span>{error.errorMessage}</span>}
+      <input
+        type="text"
+        value={value}
+        onChange={e => {
+          changeValue(e.target.value);
+        }}
+      />
+      {error && <span style={{
+        color: 'red'
+      }}>{error}</span>}
     </>
   );
 }
+
+TextInput.defaultProps = {
+  rules: [requiredRule, minLengthRule, maxLengthRule, lengthRule, emailRule, numberRule, floatRule, integerRule, patternRule, alphabetRule, matchRule]
+};
 ```
 
-This can be useful to filter controls based on their types.
+> This is just a demo, please make a component for each type separately, for example `EmailInput`, `NumberInput`, `FloatInput`, `IntegerInput`, `PasswordInput`, `UrlInput`, `AlphabetInput` and so on.
 
-## Getting controls based on its control type
+### Create custom rule
 
-To list all controls based on its type, use `controlsOf` method.
+You can of course create a custom rule to use it among your inputs, for example:
 
-```ts
-const inputControls = form.controlsOf("input");
-```
+```tsx
+// src/validation/phoneNumber.ts
+import { groupedTranslations } from "@mongez/localization";
 
-To get only `email` inputs, pass second argument as the input type
+export const phoneNumberRule = ({ value, type }) => {
+  if (!value || type !== 'phoneNumber') return;
 
-```ts
-const emailControls = form.controlsOf("input", "email");
-```
+  const regex = /^01[0-2|5]{1}[0-9]{8}$/;
 
-You may also use another shorthand method `form.inputs(type: ControlType): FormControl[]`
+  if (!regex.test(value)) {
+    return trans('validation.phoneNumber');
+  }
+}
 
-```ts
-const inputControls = form.inputs();
-const emailControls = form.inputs("email");
-```
+// don't forget to add the rule name
+phoneNumberRule.rule = 'phoneNumber';
 
-Same as well with buttons
-
-```ts
-const buttons = form.buttons();
-const submitButtons = form.buttons("submit");
-```
-
-## Executing operation on form controls
-
-We saw that we can get our controls all or part of list using `form.controls`, we can also perform an operation on controls directly using `each` method.
-
-`form.each(callback: (formControl: FormControl) => void, formControlNames: string[]): FormControl[]`
-
-```ts
-form.each((formControl) => {
-  formControl.reset();
+// now add the translation
+groupedTranslations('validation', {
+  phoneNumber: {
+    en: 'Phone number is invalid',
+    ar: 'رقم الهاتف غير صحيح'
+    fr: 'Le numéro de téléphone est invalide',
+    es: 'El número de teléfono no es válido',
+    it: 'Il numero di telefono non è valido',
+    de: 'Die Telefonnummer ist ungültig'
+  }
 });
 ```
 
-You may also do it on certain inputs by passing array of control names as second argument.
-
-```ts
-form.each(
-  (formControl) => {
-    formControl.reset();
-  },
-  ["email", "password"]
-);
-```
-
-## More Form Hooks
-
-Another useful hooks that can be used independently in your project.
-
-- [useInputValue Hook](#use-input-value-hook)
-- [useId Hook](#use-id-hook)
-- [useName Hook](#use-name-hook)
-
-### Use input value hook
-
-This hook is very simple, interacts as a `React.useState` hook but with a twist, it automatically detects the input value and update the state directly.
-
-`useInputValue<T>(initial): [value: T, setValue: React.SetStateAction<T>]`
-
-Before
+Now you can use it in your `TextInput` component
 
 ```tsx
-import React from "react";
+// src/components/TextInput.tsx
+import { Form, requiredRule } from "@mongez/react-form";
+import { phoneNumberRule } from "../validation/phoneNumber";
 
-export default function MyComponent() {
-  const [value, setValue] = React.useState("");
+export default function TextInput(props: FormControlProps) {
+  const { value, changeValue, type, error } = useFormControl(props);
 
-  const onChange = (e) => {
-    setValue(e.target.value);
-  };
-
-  return <input onChange={onChange} value={value} />;
-}
-```
-
-After
-
-```tsx
-import React from "react";
-import { useInputValue } from "@mongez/react-form";
-
-export default function MyComponent() {
-  const [value, setValue] = useInputValue("");
-
-  return <input onChange={setValue} value={value} />;
-}
-```
-
-It can work with almost any `onChange` event either in the native input elements or components from UI Frameworks like Material UI, Semantic UI, Ant Design and so on.
-
-### Use Id Hook
-
-The `useId` hook allows you to get a generated valid html id if the `id` prop is not passed.
-
-```tsx
-import React from 'react';
-import { useId } from '@mongez/react-form';
-
-export default function MyComponent(props) {
-    const id = useId(props);
-
-    return (
-        <input {...props} id={id} />
-    )
+  return (
+    <>
+      <input
+        type={type}
+        value={value}
+        onChange={e => {
+          changeValue(e.target.value);
+        }}
+      />
+      {error && <span style={{
+        color: 'red'
+      }}>{error}</span>}
+    </>
+  );
 }
 
-<MyComponent /> // <input id="id-fw4Ar23" />
-<MyComponent id="password-id" /> // <input id="password-id" />
+TextInput.defaultProps = {
+  rules: [requiredRule, phoneNumberRule]
+};
 ```
 
-### Use Name Hook
+And that's it!
 
-The `useName` hook allows you to get convert a `dot.notation` name syntax to more standard name.
-
-```tsx
-import React from 'react';
-import { useName } from '@mongez/react-form';
-
-export default function MyComponent(props) {
-    const name = useName(props);
-
-    return (
-        <input {...props} name={name} />
-    )
-}
-
-<MyComponent id="name" /> // <input name="name" />
-<MyComponent id="name.first" /> // <input name="name[first]" />
-```
-
-## Dirty Form
-
-Whenever any form control's value is changed, the form control is marked as dirty and the whole form as well.
-
-This could be useful if you want to get only the updated form inputs.
+Now for usage, you can use it like this:
 
 ```tsx
-const { id, name, formInput } = useFormInput(props);
+// src/App.tsx
+import { Form } from "@mongez/react-form";
+import TextInput from "./components/TextInput";
 
-// check if form input is dirty
-
-if (formInput.isDirty) {
-  // do something
-}
-```
-
-Also, the form triggers a `dirty` event when any form input's value is changed.
-
-## Getting form control old value
-
-Whenever any form control is marked as dirty, the `oldValue` key appears in the form control object as it stores the last value before current input value.
-
-```tsx
-const { id, name, formInput } = useFormInput(props);
-
-// check if form input is dirty
-
-if (formInput.isDirty) {
-  console.log(formInput.oldValue);
-}
-```
-
-## Form Events
-
-The form is shipped with multiple events types that can be listened to from.
-
-```tsx
-// LoginPage.tsx
-import React from "react";
-import { EventSubscription } from "@mongez/events";
-import EmailInput from "./EmailInput";
-import { RuleResponse } from "@mongez/validator";
-import { Form, FormInterface, FormControl } from "@mongez/react-form";
-
-export default function LoginPage() {
-  const form = React.useRef();
-  React.useEffect(() => {
-    if (!form || !form.current) return;
-
-    const subscription: EventSubscription = form.current.on(
-      "validating",
-      () => {
-        // do something before form start validating on form submission
-      }
-    );
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const performLogin = (e: React.FormEvent, form: FormInterface) => {
-    //
+export default function App() {
+  const submitForm = ({ values }) => {
+    console.log(values);
   };
 
   return (
-    <Form ref={form} collectValuesFromDOM onSubmit={performLogin}>
-      <EmailInput validateOn="blur" name="email" required />
-      <br />
-      <input type="password" name="password" placeholder="Password" />
-      <br />
-      <button>Login</button>
+    <Form onSubmit={submitForm}>
+      <TextInput name="name" required />
+      <TextInput name="phone" type="phoneNumber" required />
+      <button>Submit</button>
     </Form>
   );
 }
 ```
 
-Here is the available list events
-
-1- `validating`: Triggered before form validation.
-
-```ts
-form.on("validating", (formControlNames: string[], form) => {
-  // do something
-});
-```
-
-2- `validation`: Triggered after form validation, the first argument is the form controls that have been validated.
-
-> Please note that this event is triggered after calling `onError` if passed to the **Form** component.
-
-```ts
-form.on("validation", (validatedInputs: FormControl[], form) => {
-  // do something
-});
-```
-
-3- `disabling`: Triggered before disabling/enabling form using `form.disable()`
-
-```ts
-form.on(
-  "disabling",
-  (
-    isDisabled: boolean,
-    oldDisabledState: boolean,
-    formControlNames: string[]
-  ) => {
-    // do something
-  }
-);
-```
-
-4- `disable`: Triggered after disabling/enabling form using `form.disable()`
-
-```ts
-form.on(
-  "disable",
-  (
-    isDisabled: boolean,
-    oldDisabledState: boolean,
-    formControls: FormControl[]
-  ) => {
-    // do something
-  }
-);
-```
-
-5- `resetting`: Triggered before resetting form using `form.reset()`
-
-> If the **reset** method is called without any arguments, then `formControlNames` will be an empty array.
-
-```ts
-form.on("resetting", (formControlNames: string[], form) => {
-  // do something
-});
-```
-
-6- `reset`: Triggered after resetting form using `form.reset()`
-
-> If the **reset** method is called without any arguments, then `formControls` will be the entire registered form controls.
-
-```ts
-form.on("resetting", (formControls: FormControl[], form) => {
-  // do something
-});
-```
-
-7- `submitting`: Triggered before form submission using either on normal form submission or using `form.submit()` method.
-
-> Please note that `submitting` event is triggered before `validating` event.
-
-```ts
-form.on("submitting", (e: React.FormEvent, form) => {
-  // do something
-});
-```
-
-8- `submit`: Triggered after form submission using either on normal form submission or using `form.submit()` method.
-
-> Please note that `submit` event is triggered only if form is valid otherwise it won't be triggered.
-> The `submit` event is triggered after calling `onSubmit` either it is set or not.
-
-```ts
-form.on("submit", (e: React.FormEvent, form) => {
-  // do something
-});
-```
-
-9- `registering`: Triggered before registering form input to the form.
-
-```ts
-form.on("registering", (formInput: FormControl, form) => {
-  // do something
-});
-```
-
-10- `register`: Triggered after registering form input to the form.
-
-```ts
-form.on("register", (formInput: FormControl, form) => {
-  // do something
-});
-```
-
-11- `unregistering`: Triggered before removing form input from the form.
-
-```ts
-form.on("unregistering", (formInput: FormControl, form) => {
-  // do something
-});
-```
-
-12- `unregister`: Triggered after removing form input from the form.
-
-```ts
-form.on("unregister", (formInput: FormControl, form) => {
-  // do something
-});
-```
-
-13- `serializing`: Triggered before form serializing.
-
-> Please note that it will be triggered twice if serializing is `toQueryString` or `toJSON`.
-
-The `type` argument can be: `object` | `queryString` | `json`.
-
-```ts
-form.on("serializing", (type, formControlNames: string[], form) => {
-  // do something
-});
-```
-
-14- `serialize`: Triggered after form serializing.
-
-> Please note that it will be triggered twice if serializing is `toQueryString` or `toJSON`.
-
-The `type` argument can be: `object` | `queryString` | `json`.
-
-```ts
-form.on("serialize", (type, values, formControlNames: string[], form) => {
-  // do something
-});
-```
-
-15- `invalidControl`: Triggered when form control is validated and being not valid.
-
-```ts
-form.on("invalidControl", (formControl: FormControl, form: FormInterface) => {
-  // do something
-});
-```
-
-16- `validControl`: Triggered when form control is validated and being valid.
-
-```ts
-form.on("validControl", (formControl: FormControl, form: FormInterface) => {
-  // do something
-});
-```
-
-17- `invalidControls`: Triggered when at least one form control is not valid.
-
-```ts
-form.on(
-  "invalidControls",
-  (formControls: FormControl[], form: FormInterface) => {
-    // do something
-  }
-);
-```
-
-18- `validControl`: Triggered when all form controls are valid.
-
-```ts
-form.on("validControls", (formControls: FormControl[], form: FormInterface) => {
-  // do something
-});
-```
-
-19- `dirty`: Triggered when at least one form inputs value has been changed
-
-```ts
-form.on(
-  "dirty",
-  (isDirty: boolean, dirtyControls: FormControl[], form: FormInterface) => {
-    // do something
-  }
-);
-```
-
-> Please note that the `dirty` event is triggered also when the form is reset as it will be triggered after `resetting` event directly.
-
-20- `change`: Triggered when form control's value has been changed.
-
-```ts
-form.on("change", (formControl: FormControl, form: FormInterface) => {
-  // do something
-});
-```
-
-> Please note that the `dirty` event is triggered also when the form is reset as it will be triggered after `resetting` event directly.
-
-## Use Form Event Hook
-
-Alternatively, you may use `useFormEvent` hook as it works seamlessly inside React Components.
+Sometimes you may need a certain prop to be present as well, but this is needed only for validation, so we can added to `preservedProps` array to prevent it from being added to `otherProps` object
 
 ```tsx
+// src/rules/min.ts
+import { trans } from "@mongez/localization";
+
+export const minRule = ({ value, min, errorKeys }: any) => {
+  if (Number(value) < Number(min)) {
+    return trans("validation.min", { name: errorKeys.name, length: min });
+  }
+};
+
+// prevent the min prop from being added to otherProps
+minRule.preserveProps = ["min"];
+// don't forget to add the rule name
+minRule.rule = "min";
+```
+
+### Single Component Validation
+
+Sometimes, you may need to apply a certain validation only on a certain component call, this where you can use `validate` prop for that purpose.
+
+```tsx
+// src/App.tsx
+import TextInput from "./components/TextInput";
 import { useState } from "react";
-import { useFormEvent } from "@mongez/react-form";
 
-export default function LoginButton() {
-  const [isDisabled, setDisabled] = useState(false);
+export default function App() {
+  const validateUsername = ({ value }) => {
+    if (!value) return; // skip the validation if the value is empty
 
-  // if the form controls contain any invalid control, then disable the submit button
-  useFormEvent("invalidControls", () => setDisabled(true));
-  // if all form controls ar valid, then enable the submit button
-  useFormEvent("validControls", () => setDisabled(false));
+    const usernameRegex = /^[a-zA-Z0-9]+$/;
 
-  // Enable/Disable the button on form submission
-  useFormEvent("submit", (isSubmitted: boolean) => setDisabled(isSubmitted));
+    if (! usernameRegex.test(value)) {
+      return 'Username must be alphanumeric';
+    }
+  };
 
-  // or in easier way
-  useFormEvent("submit", setDisabled);
-  // If form is being disabled
-  useFormEvent("disable", setDisabled);
+  const submitForm = ({ values }) => {
+    console.log(values);
+  };
 
-  return <button disabled={isDisabled}>Login</button>;
+  return (
+    <Form onSubmit={submitForm}>
+      <TextInput name="name" required />
+      <TextInput name="username" validate={validateUsername} />
+      <button>Submit</button>
+    </Form>
+  );
 }
 ```
 
-All registered events in `useFormEvent` are being unsubscribed once the component is unmounted.
+You can also `async` the validation.
+
+```tsx
+// src/App.tsx
+import { Form } from "@mongez/react-form";
+import TextInput from "./components/TextInput";
+import { useState } from "react";
+import { checkUsername } from "./api";
+
+export default function App() {
+  const [isCheckingUsername, setIsCheckingUsername] = useState(false);
+
+  const validateUsername = ({ value }) => {
+    if (!value) return; // skip the validation if the value is empty
+
+    // check for username from api
+    setIsCheckingUsername(true);
+
+    try {
+      await checkUsername(value);
+    } catch (error) {
+      return error.message;
+    } finally {
+      setIsCheckingUsername(false);
+    }
+  };
+
+  const submitForm = ({ values }) => {
+    console.log(values);
+  };
+
+  return (
+    <Form onSubmit={submitForm}>
+      <TextInput name="name" required />
+      <TextInput name="username" validate={validateUsername} />
+      <button>Submit</button>
+    </Form>
+  );
+}
+```
+
+This will stop any other validator from being called until the `validateUsername` function is resolved.
+
+#### Customizing the error message
+
+There are multiple ways to override the error message:
+
+1. Overriding the translation errors.
+2. Changing the error keys per component call.
+3. Override rule error per component call.
+
+##### Overriding the translation errors
+
+You can override the translation errors from the translation list using `groupedTranslations` method from [Mongez Localization](https://github.com/hassanzohdy/mongez-localization), here is the current error messages list.
+
+```tsx
+// src/locales.ts
+import { groupedTranslations } from "@mongez/localization";
+
+export const validationTranslation = {
+  required: {
+    en: "This field is required",
+    ar: "هذا الحقل مطلوب",
+    fr: "Ce champ est requis",
+    es: "Este campo es obligatorio",
+    it: "Questo campo è obbligatorio",
+    de: "Dieses Feld ist erforderlich",
+  },
+  invalidEmailAddress: {
+    en: "Invalid Email Address",
+    ar: "بريد الكتروني خاطئ",
+    fr: "Adresse e-mail invalide",
+    es: "Dirección de correo electrónico no válida",
+    it: "Indirizzo email non valido",
+    de: "Ungültige E-Mail-Adresse",
+  },
+  url: {
+    en: "Invalid URL",
+    ar: "رابط غير صحيح",
+    fr: "URL invalide",
+    es: "URL no válida",
+    it: "URL non valido",
+    de: "Ungültige URL",
+  },
+  min: {
+    en: "Value can not be lower than :min",
+    ar: "القيمة يجب أن لا تقل عن :min",
+    fr: "La valeur ne peut pas être inférieure à :min",
+    es: "El valor no puede ser inferior a :min",
+    it: "Il valore non può essere inferiore a :min",
+    de: "Der Wert darf nicht kleiner sein als :min",
+  },
+  max: {
+    en: "Value can not be greater than :max",
+    ar: "القيمة يجب أن لا تزيد عن :max",
+    fr: "La valeur ne peut pas être supérieure à :max",
+    es: "El valor no puede ser superior a :max",
+    it: "Il valore non può essere superiore a :max",
+    de: "Der Wert darf nicht größer sein als :max",
+  },
+  matchElement: {
+    en: "This field is not matching with :matchingField",
+    ar: "هذا الحقل غير متطابق مع :matchingField",
+    fr: "Ce champ ne correspond pas à :matchingField",
+    es: "Este campo no coincide con :matchingField",
+    it: "Questo campo non corrisponde a :matchingField",
+    de: "Dieses Feld stimmt nicht mit :matchingField überein",
+  },
+  length: {
+    en: "This field should have :length characters",
+    ar: "حروف الحقل يجب ان تساوي :length",
+    fr: "Ce champ doit avoir :length caractères",
+    es: "Este campo debe tener :length caracteres",
+    it: "Questo campo deve avere :length caratteri",
+    de: "Dieses Feld sollte :length Zeichen haben",
+  },
+  minLength: {
+    en: "This field can not be less than :length characters",
+    ar: "هذا الحقل يجب ألا يقل عن :length حرف",
+    fr: "Ce champ ne peut pas être inférieur à :length caractères",
+    es: "Este campo no puede ser inferior a :length caracteres",
+    it: "Questo campo non può essere inferiore a :length caratteri",
+    de: "Dieses Feld darf nicht weniger als :length Zeichen haben",
+  },
+  maxLength: {
+    en: "This field can not be greater than :length characters",
+    ar: "هذا الحقل يجب ألا يزيد عن :length حرف",
+    fr: "Ce champ ne peut pas être supérieur à :length caractères",
+    es: "Este campo no puede ser superior a :length caracteres",
+    it: "Questo campo non può essere superiore a :length caratteri",
+    de: "Dieses Feld darf nicht mehr als :length Zeichen haben",
+  },
+  pattern: {
+    en: "This field is not matching with the :pattern",
+    ar: "هذا الحقل غير مطابق :pattern",
+    fr: "Ce champ ne correspond pas au :pattern",
+    es: "Este campo no coincide con el :pattern",
+    it: "Questo campo non corrisponde al :pattern",
+    de: "Dieses Feld stimmt nicht mit dem :pattern überein",
+  },
+  number: {
+    en: "This field accepts only numbers",
+    ar: "هذا الحقل لا يقبل غير أرقام فقط",
+    fr: "Ce champ ne peut contenir que des chiffres",
+    es: "Este campo solo acepta números",
+    it: "Questo campo accetta solo numeri",
+    de: "Dieses Feld akzeptiert nur Zahlen",
+  },
+  integer: {
+    en: "This field accepts only integer digits",
+    ar: "هذا الحقل لا يقبل غير أرقام صحيحة",
+    fr: "Ce champ ne peut contenir que des chiffres entiers",
+    es: "Este campo solo acepta dígitos enteros",
+    it: "Questo campo accetta solo cifre intere",
+    de: "Dieses Feld akzeptiert nur ganze Zahlen",
+  },
+  float: {
+    en: "This field accepts only integer or float digits",
+    ar: "هذا الحقل لا يقبل غير أرقام صحيحة او عشرية",
+    fr: "Ce champ ne peut contenir que des chiffres entiers ou décimaux",
+    es: "Este campo solo acepta dígitos enteros o decimales",
+    it: "Questo campo accetta solo cifre intere o decimali",
+    de: "Dieses Feld akzeptiert nur ganze oder Dezimalzahlen",
+  },
+  alphabet: {
+    en: "This field accepts only alphabets",
+    ar: "هذا الحقل لا يقبل غير أحرف فقط",
+    fr: "Ce champ ne peut contenir que des lettres",
+    es: "Este campo solo acepta letras",
+    it: "Questo campo accetta solo lettere",
+    de: "Dieses Feld akzeptiert nur Buchstaben",
+  },
+};
+
+groupedTranslations("validation", validationTranslation);
+```
+
+#### Changing the error keys per component call
+
+This coulld be useful for  some rules such as the`match` rule to override the error key with the matching field name.
+
+```tsx
+// srcc/App.tsx
+import { Form } from "@mongez/form";
+import { TextInput } from "@mongez/form";
+
+export default function App() {
+  return (
+    <Form>
+      <TextInput name="password" type="password" required minLength={8} />
+      <TextInput 
+        name="confirmPassword" 
+        match="password" 
+        type="password" 
+        errorKeys={{
+          matchingField: "Passowrd Input"
+        }}
+      />
+    </Form>
+  );
+}
+```
+
+If the passowrd input does not match the confirm password input, the error message will be:
+
+`This field is not matching with Passowrd Input`
+
+If you installed [Localization React](https://github.com/hassanzohdy/mongez-react-localization) package, yoou can get benefit from passing `jsx` element instead of just plain text.
+
+```tsx
+// srcc/App.tsx
+import { Form } from "@mongez/form";
+import { TextInput } from "@mongez/form";
+
+export default function App() {
+  return (
+    <Form>
+      <TextInput name="password" type="password" required minLength={8} />
+      <TextInput 
+        name="confirmPassword" 
+        match="password" 
+        type="password" 
+        errorKeys={{
+          matchingField: <span className="text-danger">Passowrd Input</span>
+        }}
+      />
+    </Form>
+  );
+}
+```
+
+#### Changing the error message per component call
+
+You can also change the entire error message, forr example when working withe `pattern` rule, you can pass the `pattern` prop as a `RegExp` object, and then pass the `errorMessages` prop to override the error message.
+
+```tsx
+// srcc/App.tsx
+import { Form } from "@mongez/form";
+import { TextInput } from "@mongez/form";
+
+export default function App() {
+  return (
+    <Form>
+      <TextInput 
+        name="username" 
+        placeholder="Username must accept only letters and numbers"
+        pattern={/^[a-zA-Z0-9]+$/}} 
+        errorMessages={{
+          pattern: "Username must accept only letters and numbers"
+        }}
+      />
+    </Form>
+  );
+}
+```
+
+It's recommended to use [trans](https://github.com/hassanzohdy/mongez-localization#translating-keywords) function if you're web application has multiple languages.
+
+```tsx
+// srcc/App.tsx
+import { Form } from "@mongez/form";
+import { trans } from "@mongez/localization";
+import { TextInput } from "@mongez/form";
+
+export default function App() {
+  return (
+    <Form>
+      <TextInput 
+        name="username" 
+        placeholder="Username must accept only letters and numbers"
+        pattern={/^[a-zA-Z0-9]+$/}} 
+        errorMessages={{
+          pattern: trans('usernamePatternError')
+        }}
+      />
+    </Form>
+  );
+}
+```
+
+## Form Submission
+
+The `onSubmit`prop is the only required prop for `Form` component, also, it will not be called until all form controls are **valid**.
+
+```tsx
+// src/App.tsx
+import { Form } from "@mongez/react-form";
+import TextInput from "./components/TextInput";
+import { useState } from "react";
+
+export default function App() {
+  const submitForm = ({ values }) => {
+    console.log(values);
+  };
+
+  return (
+    <Form onSubmit={submitForm}>
+      <TextInput name="name" required />
+      <TextInput name="username" />
+      <button>Submit</button>
+    </Form>
+  );
+}
+```
+
+If the form is not submitted **programatically**, you can gett `event` object from the `onSubmit` callback
+
+```tsx
+// src/App.tsx
+import { Form } from "@mongez/react-form";
+import TextInput from "./components/TextInput";
+
+export default function App() {
+  const submitForm = ({ values, event }) => {
+    const formElement = event.target;
+  };
+
+  return (
+    <Form onSubmit={submitForm}>
+      <TextInput name="name" required />
+      <TextInput name="username" />
+      <button>Submit</button>
+    </Form>
+  );
+}
+```
+
+> Don't use `event.preventDefault()` in the `onSubmit` callback, it will be called automatically.
+
+### Getting form values
+
+You can get the form values from the `onSubmit` callback using the `values` property.
+
+```tsx
+// src/App.tsx
+import { Form } from "@mongez/react-form";
+import TextInput from "./components/TextInput";
+
+export default function App() {
+  const submitForm = ({ values }) => {
+    console.log(values);
+  };
+
+  return (
+    <Form onSubmit={submitForm}>
+      <TextInput name="name" required />
+      <TextInput name="username" />
+      <button>Submit</button>
+    </Form>
+  );
+}
+```
+
+However, if you want to get it as `FormData`, use `formData` property instead.
+
+```tsx
+// src/App.tsx
+import { Form } from "@mongez/react-form";
+import TextInput from "./components/TextInput";
+import createAccount from "./services/createAccount";
+
+export default function App() {
+  const submitForm = ({ formData }) => {
+    createAccount(formData).then(response => {
+      //...
+    })
+  };
+
+  return (
+    <Form onSubmit={submitForm}>
+      <TextInput name="name" required />
+      <TextInput name="username" />
+      <button>Submit</button>
+    </Form>
+  );
+}
+```
+
+This is useful if you're working with `multipart/form-data` requests and want to send some files.
+
+### Ignoring Empty Values
+
+By default, the form will collect all form controls with its values regardlress of their values, but if you want to ignore empty values, you can pass `ignoreEmptyValues` prop to the `Form` component.
+
+Without using `ignoreEmptyValues` prop:
+
+```tsx
+// src/App.tsx
+import { Form } from "@mongez/react-form";
+import TextInput from "./components/TextInput";
+
+export default function App() {
+  const submitForm = ({ values }) => {
+    // if the username input is empty, it will be included in the values object with an empty string
+    console.log(values); // { name: "John Doe", username: "" }
+  };
+
+  return (
+    <Form onSubmit={submitForm}>
+      <TextInput name="name" required />
+      <TextInput name="username" />
+      <button>Submit</button>
+    </Form>
+  );
+}
+```
+
+```tsx
+// src/App.tsx
+import { Form } from "@mongez/react-form";
+import TextInput from "./components/TextInput";
+
+export default function App() {
+  const submitForm = ({ values }) => {
+    // if the username input is empty, it will not be included in the values object
+    console.log(values); // { name: "John Doe" }
+  };
+
+  return (
+    <Form onSubmit={submitForm} ignoreEmptyValues>
+      <TextInput name="name" required />
+      <TextInput name="username" />
+      <button>Submit</button>
+    </Form>
+  );
+}
+```
+
+### Getting form instance
+
+The last thing that you may receive from the `onSubmit` callback is the `form` instance, which is an object that implements `FormInterface`.
+
+```tsx
+// src/App.tsx
+import { Form } from "@mongez/react-form";
+import TextInput from "./components/TextInput";
+
+export default function App() {
+  const submitForm = ({ form }) => {
+    console.log(form);
+  };
+
+  return (
+    <Form onSubmit={submitForm}>
+      <TextInput name="name" required />
+      <TextInput name="username" />
+      <button>Submit</button>
+    </Form>
+  );
+}
+```
+
+You can get from the form instance:
+
+- `values()`: returns the entire form values from all registered form controls.
+- `value(formControlName: string)` : returns a specific form control value by its name.
+- `formData()`: returns the entire form values as `FormData` object.
+- `controls()`: returns all registered form controls.
+- `control(name: string)`: returns a specific form control by its name.
+- `isValid()`: returns `true` if all form controls are valid, otherwise, it returns `false`.
+- `submit()`: submits the form programatically.
+- `isSubmitting()`: returns `true` if the form is submitting, otherwise, it returns `false`.
+- `submitting(submitForm: boolean)`: sets the form submitting state.
+- `reset()`: resets the form to its initial state.
+- `resetErrors()`: resets all form controls errors.
+- `change(name: string, value: any)`: changes a specific form control value.
+- `id`: returns the form id.
+- `formElement`: returns the form element.
+
+### Set form component
+
+You can set the form component by using `component` prop.
+
+```tsx
+// src/App.tsx
+import { Form } from "@mongez/react-form";
+import TextInput from "./components/TextInput";
+
+export default function App() {
+  const submitForm = ({ values }) => {
+    console.log(values);
+  };
+
+  return (
+    <Form onSubmit={submitForm} component="form">
+      <TextInput name="name" required />
+      <TextInput name="username" />
+      <button>Submit</button>
+    </Form>
+  );
+}
+```
+
+> you ccan pass any React component, but it must receive a ref prop and be attached to the internal form element of that component.
+
+### Capturing form errors
+
+If you want to capture all invalid form contrls, use `onError` prop.
+
+```tsx
+// src/App.tsx
+import { Form } from "@mongez/react-form";
+import TextInput from "./components/TextInput";
+
+export default function App() {
+  const submitForm = ({ values }) => {
+    console.log(values);
+  };
+
+  const onError = (formControls) => {
+    const errors = formControls.map(control => control.error);
+    console.log(errors);
+  };
+
+  return (
+    <Form onSubmit={submitForm} onError={onError}>
+      <TextInput name="name" required />
+      <TextInput name="username" />
+      <button>Submit</button>
+    </Form>
+  );
+}
+```
+
+## useForm hook
+
+You can use `useForm` hook to get the form instance and submit the form programatically.
+
+```tsx
+// src/InternalComponent.tsx
+import { useForm } from "@mongez/react-form";
+import TextInput from "./components/TextInput";
+
+export default function InternalComponent() {
+  const form = useForm();
+
+  const submitForm = () => {
+    form?.submit();
+  }
+
+  return (
+      <TextInput name="name" onChange={submitForm} required />
+  );
+}
+```
+
+> You can use `useForm` hook only inside the `Form` component.
+
+If `useForm` is used outside the `Form` component, it will return `null`.
+
+## useSubmitButton hook
+
+Another good hook to use is `useSubmitButton`, this hook basically disables the submit button in certain scenarios
+
+- When the form has been submitted.
+- When there are invalid form controls.
+
+Also the buttion is switch to `enabled` state when the form is valid, or form is reset, or form submission is **false**.
+
+```tsx
+// src/App.tsx
+import { Form } from "@mongez/react-form";
+import TextInput from "./components/TextInput";
+import SubmitButton from "./components/SubmitButton";
+
+export default function App() {
+  const submitForm = ({ values }) => {
+    console.log(values);
+  };
+
+  return (
+    <Form onSubmit={submitForm}>
+      <TextInput name="name" required />
+      <TextInput name="username" />
+      <SubmitButton>Submit</SubmitButton>
+    </Form>
+  );
+}
+```
+
+```tsx
+// src/components/SubmitButton.tsx
+import { useSubmitButton } from "@mongez/react-form";
+
+export default function SubmitButton({ children }) {
+  const { disabled } = useSubmitButton();
+
+  return (
+    <button disabled={disabled}>{children}</button>
+  );
+}
+```
+
+It will be updated automatically.
+
+You can also get notified when the form is being submitted only besides the disabled state, it could be useful to display a loading indicator.
+
+```tsx
+// src/components/SubmitButton.tsx
+import { useSubmitButton } from "@mongez/react-form";
+
+export default function SubmitButton({ children }) {
+  const { disabled, isSubmitting } = useSubmitButton();
+
+  return (
+    <button disabled={disabled}>
+      {isSubmitting ? 'Loading...' : children}
+    </button>
+  );
+}
+```
+
+## Change form submitting state
+
+Let's take a scenario, where the form is submitted, an API request is sent to the server, and the form is being submitted, but the server returns an error, in this case we want to change the form submitting state to `false` so the user can submit the form again.
+
+```tsx
+// src/App.tsx
+import { Form } from "@mongez/react-form";
+import TextInput from "./components/TextInput";
+import SubmitButton from "./components/SubmitButton";
+import createAccount from "./services/createAccount";
+
+export default function App() {
+  const submitForm = ({ values }) => {
+    createAccount(values).then(response => {
+      //...
+    }).catch(error => {
+      form?.submitting(false);
+    })
+  };
+
+  return (
+    <Form onSubmit={submitForm}>
+      <TextInput name="name" required />
+      <TextInput name="username" />
+      <SubmitButton>Submit</SubmitButton>
+    </Form>
+  );
+}
+```
+
+This will change the form submitting state to `false` and the submit button will be enabled again.
 
 ## Active Forms
 
-> Added in V1.5.0
-
-All forms are being tracked using the `activeForms` utilities, which means you can get the current active form from anywhere in the project using `getActiveForm` utility.
+All forms are being tracked using the `Active Forms` utilities, which means you can get the current active form from anywhere in the project using `getActiveForm` utility.
 
 ```ts
 import { getActiveForm } from "@mongez/react-form";
@@ -2153,8 +1732,151 @@ export default function LoginPage() {
 
 Sometimes we may open multiple forms in one page, for example a single page that displays the login form and the register form, we can access any form of them using the `getForm` utility by passing the form id to it.
 
+```tsx
+import { getForm, Form } from "@mongez/react-form";
+
+export default function LoginPage() {
+  React.useEffect(() => {
+    console.log(getForm('login-form')); // will get the login form
+    console.log(getForm('register-form')); // will get the register form
+  }, []);
+
+  return (
+    <>
+    <Form id="login-form">
+      ...
+    </Form>
+    <Form id="register-form">
+      ...
+    </Form>
+    </>
+  );
+}
+```
+
+## Reset Form
+
+You can reset the form using `reset` method, this will return all form controls values to its initial value.
+
+```tsx
+// src/App.tsx
+import { Form, getActiveForm } from "@mongez/react-form";
+import TextInput from "./components/TextInput";
+import SubmitButton from "./components/SubmitButton";
+
+export default function App() {
+  const submitForm = ({ values }) => {
+    console.log(values);
+  };
+
+  const resetForm = () => {
+    const form = getActiveForm();
+
+    form?.reset();
+  };
+
+  return (
+    <Form onSubmit={submitForm}>
+      <TextInput name="name" required />
+      <TextInput name="username" />
+      <SubmitButton>Submit</SubmitButton>
+      <button onClick={resetForm}>Reset</button>
+    </Form>
+  );
+}
+```
+
+## Form Ref
+
+You can also get the form instance using the `ref` prop.
+
+```tsx
+// src/App.tsx
+import { Form } from "@mongez/react-form";
+import TextInput from "./components/TextInput";
+import SubmitButton from "./components/SubmitButton";
+import { useRef } from "react";
+
+export default function App() {
+  const formRef = useRef();
+
+  const submitForm = ({ values }) => {
+    console.log(values);
+  };
+
+  const resetForm = () => {
+    formRef.current.reset();
+  };
+
+  return (
+    <Form ref={formRef} onSubmit={submitForm}>
+      <TextInput name="name" required />
+      <TextInput name="username" />
+      <SubmitButton>Submit</SubmitButton>
+      <button onClick={resetForm}>Reset</button>
+    </Form>
+  );
+}
+```
+
+## Form Events
+
+You can listen to form events using the `on` method, it's basically the one that's used in [useSubmitButton hook](#usesubmitbutton-hook).
+
+```tsx
+// src/App.tsx
+import { Form } from "@mongez/react-form";
+import TextInput from "./components/TextInput";
+import SubmitButton from "./components/SubmitButton";
+import { useEffect } from "react";
+
+export default function App() {
+  const formRef = useRef();
+
+  const submitForm = ({ values }) => {
+    console.log(values);
+  };
+
+  useEffect(() => {
+    formRef.current.on('submitting', () => {
+      console.log('Form is being submitted');
+    });
+
+    formRef.current.on('submit', () => {
+      console.log('Form is submitted');
+    });
+  }, []);
+
+  return (
+    <Form ref={formRef} onSubmit={submitForm}>
+      <TextInput name="name" required />
+      <TextInput name="username" />
+      <SubmitButton>Submit</SubmitButton>
+    </Form>
+  );
+}
+```
+
+Here are the available events:
+
+- `submitting`: will be triggered when the form is being submitted, recives a `Boolean` value to indicate if the form is being submitted or not.
+- `submit`: will be triggered when the form is submitted, if form `submitting` is set to false, this event will be fired immediately.
+- `resetting`: will be triggered when the form is being reset, recives a `Boolean` value to indicate if the form is being reset or not.
+- `reset`: will be triggered when the form is reset.
+- `validating`: will be triggered when the form is being validated.
+- `invalidControls`: will be triggered when the form has invalid controls, recives an array of invalid controls.
+- `validControls`: will be triggered when the form has valid controls, recives an array of valid controls.
+- `validation`: will be triggered when the form is validated, recives a `Boolean` value to indicate if the form is valid or not, also recives an array of all controls that have been validated.
+
 ## Change Log
 
+- 2.0.0 (05 Mar 2023)
+  - Refactored code
+  - Replaced `useFormInput` with `useFormControl`
+  - Changed `onSubmit` callback options.
+  - Added `useSubmitButton` hook.
+  - Validation rules are now internally added in the package.
+  - Added `English` `Arabic` `French` `Italian` and `Spanish` translations.
 - 1.5.25 (13 Nov 2022)
   - Feat: when `validating` trigger callbacks returns `false` then the form will be marked as invalid and won't be submitted.
 - 1.5.20 (06 Nov 2022)
@@ -2190,20 +1912,12 @@ Sometimes we may open multiple forms in one page, for example a single page that
   - `validate` and `validateVisible` methods return the validated form controls.
 - 1.2.0 (15 Jun 2022)
 - Fixed `validate` method to allow calling it without any parameters.
-- Added [validateVisible method](#validate-only-visible-elements)
+- Added validateVisible method
 - 1.1.0 (16 May 2022)
   - Added `change` form event.
   - Added Dirty Form Controls.
-  - Added [useFormEvent Hook](#use-form-event-hook)
+  - Added useFormEvent Hook
 - 1.0.11 (04 Mar 2022)
   - Fixed Bugs
 - 1.0.7 (26 Jan 2022)
   - Fixed Filtering form controls in `each` method.
-  - Added **component** prop to `ResetFormButton`.
-  - Updated `ResetFormButton` props types.
-
-## TODO
-
-- Separate form dom elements `toObject` serializer as configuration.
-- Separate form `toQueryString` serializer as configuration.
-- Add input values change log.

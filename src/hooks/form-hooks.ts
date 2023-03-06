@@ -1,73 +1,57 @@
-import { Random, toInputName } from "@mongez/reinforcements";
-import { Rule } from "@mongez/validator";
-import React from "react";
-import { getFormConfig } from "../configurations";
-import { FormInputProps, InputError } from "../types";
-import { translatable } from "../utils";
+import React, { useMemo, useState } from "react";
+import { FormControlOptions, FormControlProps } from "../types";
 
-export function useLabel(props: FormInputProps) {
-  return React.useMemo(() => translatable(props.label, "label"), [props.label]);
-}
-
-export function useLabelPosition(props: FormInputProps) {
-  return React.useMemo(
-    () => props.labelPosition || getFormConfig("input.labelPosition", "inline"),
-    [props.labelPosition]
+export function useId(id?: string) {
+  return useMemo(
+    () => id || "input-" + Math.random().toString(36).substr(2, 9),
+    [id]
   );
-}
-
-export function usePlaceholder(props: FormInputProps) {
-  return React.useMemo(
-    () => translatable(props.placeholder, "placeholder"),
-    [props.placeholder]
-  );
-}
-
-export function useName(props: FormInputProps) {
-  return React.useMemo(() => toInputName(props.name || ""), [props.name]);
-}
-
-export function useId(props: FormInputProps) {
-  return React.useMemo(() => props.id || Random.id(), [props.id]);
 }
 
 export function useValue<T>(
-  props: FormInputProps,
-  initialValue = ""
+  props: FormControlProps,
+  options: FormControlOptions
 ): [T, React.Dispatch<React.SetStateAction<T>>] {
-  const [value, setValue] = React.useState<T>(() => {
-    if (![undefined, null].includes(props.value)) return props.value;
+  const [value, setValue] = useState<T>(() => {
+    if (![undefined, null].includes(props.value)) {
+      return options.transformValue?.(props.value);
+    }
 
     if (![undefined, null].includes(props.defaultValue))
-      return props.defaultValue;
+      return options.transformValue?.(props.defaultValue);
 
-    return initialValue || "";
+    return "";
   });
 
   return [value, setValue];
 }
 
-export function useError(): [InputError, (error: InputError) => void] {
-  const [error, errorUpdater] = React.useState<InputError>(null);
+export function useError(): [
+  React.ReactNode,
+  (error: React.ReactNode) => void
+] {
+  const [error, errorUpdater] = useState<React.ReactNode>(null);
 
   return [
     error,
-    (error: InputError): void => {
+    (error: React.ReactNode): void => {
       errorUpdater(error);
     },
   ];
 }
 
-export function useRules(
-  props: FormInputProps,
-  configRulesKey: string
-): Rule[] {
-  return React.useMemo(() => {
-    return (props.rules ||
-      getFormConfig("input.rules." + configRulesKey)) as Rule[];
-  }, [props.rules, configRulesKey]);
-}
+export function useChecked(props: any) {
+  const [isChecked, setChecked] = useState(() => {
+    if (props.checked !== undefined) {
+      return Boolean(props.checked);
+    }
 
-export function useInputRules(props: FormInputProps) {
-  return useRules(props, "list");
+    if (props.defaultChecked !== undefined) {
+      return Boolean(props.defaultChecked);
+    }
+
+    return false;
+  });
+
+  return [isChecked, setChecked] as const;
 }

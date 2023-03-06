@@ -1,30 +1,21 @@
 import events, { EventSubscription } from "@mongez/events";
-import { Random, toInputName } from "@mongez/reinforcements";
-import serialize from "form-serialize";
-import queryString from "query-string";
 import React from "react";
-
-import { ControlMode, ControlType, getFormConfig } from "..";
 import {
   addToFormsList,
   removeActiveForm,
   setActiveForm,
 } from "../active-form";
-import FormContext from "../contexts/FormContext";
+import { getFormConfig } from "../configurations";
+import { FormContext } from "../contexts/FormContext";
 import {
-  FormContextProps,
   FormControl,
-  FormControlType,
   FormControlValues,
   FormEventType,
   FormInterface,
   FormProps,
 } from "./../types";
 
-export default class Form
-  extends React.Component<FormProps>
-  implements FormInterface
-{
+export class Form extends React.Component<FormProps> implements FormInterface {
   /**
    * {@inheritdoc}
    */
@@ -53,23 +44,12 @@ export default class Form
   /**
    * Determine form submission state
    */
-  protected isBeingSubmitted: boolean = false;
+  protected _isSubmitting: boolean = false;
 
   /**
    * Determine if form is disabled
    */
-  protected isBeingDisabled: boolean = false;
-
-  /**
-   * Determine if values of the form controls should be stored even if its unregistered
-   * Useful with form wizards based
-   */
-  protected isStoringValues: boolean = false;
-
-  /**
-   * Stored values list
-   */
-  protected storedValuesList: FormControlValues = {};
+  protected _isDisabled: boolean = false;
 
   /**
    * List of invalid controls
@@ -82,41 +62,41 @@ export default class Form
   protected validControls: FormControl[] = [];
 
   /**
-   * Determine if current form's controls values have been changed
-   */
-  protected isDirtyForm: boolean = false;
-
-  /**
-   * List of dirty controls
-   */
-  protected dirtyControls: FormControl[] = [];
-
-  /**
    * {@inheritDoc}
    */
   public constructor(props: FormProps) {
     super(props);
 
-    this.formId = props.id || "frm-" + Random.string(32);
+    this.formId = props.id || "frm-" + Math.random().toString(36).substr(2, 9);
 
     this.formEventPrefix = `form.${this.formId}`;
 
-    setActiveForm(this);
-    addToFormsList(this);
+    setActiveForm(this as any);
+    addToFormsList(this as any);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public change(name: string, value: any) {
+    const formControl = this.control(name);
+
+    if (!formControl) return;
+
+    formControl.change(value);
   }
 
   /**
    * {@inheritDoc}
    */
   public componentWillUnmount() {
-    removeActiveForm(this);
-    removeActiveForm(this);
+    removeActiveForm(this as any);
   }
 
   /**
    * Mark the given form control as invalid control
    */
-  public invalidControl(formControl: FormControl): void {
+  public invalidControl(formControl: FormControl) {
     this.isValidForm = false;
 
     this.validControls = this.validControls.filter(
@@ -134,7 +114,7 @@ export default class Form
   /**
    * Mark the given form control as valid control
    */
-  public validControl(formControl: FormControl): void {
+  public validControl(formControl: FormControl) {
     this.trigger("validControl", formControl, this);
 
     this.invalidControls = this.invalidControls.filter(
@@ -149,8 +129,10 @@ export default class Form
   /**
    * Check and trigger form validation state
    */
-  public checkIfIsValid(): void {
-    this.isValidForm = this.invalidControls.length === 0;
+  public checkIfIsValid() {
+    const isValidForm = this.invalidControls.length === 0;
+
+    this.isValidForm = isValidForm;
 
     if (this.isValidForm) {
       this.trigger("validControls", this.validControls, this);
@@ -160,17 +142,10 @@ export default class Form
   }
 
   /**
-   * Determine whether to keep storing input values even if it is unregistered
-   */
-  public keepValues(keepValues: boolean = true): void {
-    this.isStoringValues = keepValues;
-  }
-
-  /**
    * Trigger form submission
    */
-  public submitting(submitting: boolean): void {
-    this.isBeingSubmitted = submitting;
+  public submitting(submitting: boolean) {
+    this._isSubmitting = submitting;
     this.trigger("submitting", submitting, this);
 
     if (submitting === false) {
@@ -182,130 +157,43 @@ export default class Form
   /**
    * Trigger form disable/enable state
    */
-  public disable(
-    isDisabled: boolean = true,
-    formControlNames: FormControlType[] = []
-  ): void {
-    const controls = this.controls(formControlNames);
+  public disable(isDisabled: boolean = true) {
+    const controls = this.formControls;
 
-    this.trigger("disabling", isDisabled, this.isBeingDisabled, controls, this);
-
-    this.isBeingDisabled = isDisabled;
+    this._isDisabled = isDisabled;
 
     controls.forEach((control) => {
-      control.disable && control.disable(isDisabled);
+      control.disable(isDisabled);
     });
 
-    if (this.props.collectValuesFromDOM) {
-      const elements = this.formElement.elements;
-      const totalControlNames = controls.map((control) => control.name);
-
-      for (let element of elements as any) {
-        if (
-          (!totalControlNames.includes(element["name"]) &&
-            formControlNames.length > 0 &&
-            totalControlNames.includes(element["name"])) ||
-          formControlNames.length === 0
-        ) {
-          if (isDisabled) {
-            element.setAttribute("disabled", "disabled");
-          } else {
-            element.removeAttribute("disabled");
-          }
-        }
-      }
-    }
-
-    this.trigger("disable", isDisabled, controls, this);
-  }
-
-  /**
-   * Mark form elements as read only
-   */
-  public readOnly(
-    isReadOnly: boolean = true,
-    formControlNames: FormControlType[] = []
-  ): void {
-    const controls = this.each(
-      (input) => input.readOnly && input.readOnly(isReadOnly),
-      formControlNames
-    );
-
-    const totalControlNames = controls.map((control) => control.name);
-
-    if (this.props.collectValuesFromDOM) {
-      for (let element of this.formElement.elements as any) {
-        if (
-          (!totalControlNames.includes(element["name"]) &&
-            formControlNames.length > 0 &&
-            totalControlNames.includes(element["name"])) ||
-          formControlNames.length === 0
-        ) {
-          if (isReadOnly) {
-            element.setAttribute("readonly", "readonly");
-          } else {
-            element.removeAttribute("readonly");
-          }
-        }
-      }
-    }
+    return this;
   }
 
   /**
    * Enable form
    */
-  public enable(): void {
+  public enable() {
     return this.disable(false);
-  }
-
-  /**
-   * Perform operation on each registered input
-   */
-  public each(
-    callback: (input: FormControl) => void,
-    formControls: FormControlType[] = []
-  ): FormControl[] {
-    let controls = this.controls(formControls);
-
-    for (let input of controls) {
-      callback(input);
-    }
-
-    return controls;
-  }
-
-  /**
-   * Determine whether the form is enabled
-   */
-  public isEnabled(): boolean {
-    return this.isBeingDisabled === false;
-  }
-
-  /**
-   * Determine whether the form is disabled
-   */
-  public isDisabled(): boolean {
-    return this.isBeingDisabled;
   }
 
   /**
    * Determine whether the form is being submitted
    */
-  public isSubmitting(): boolean {
-    return this.isBeingSubmitted;
+  public isSubmitting() {
+    return this._isSubmitting;
   }
 
   /**
    * Determine whether the form is valid, can be called after form validation
    */
-  public isValid(): boolean {
+  public isValid() {
     return this.isValidForm;
   }
 
   /**
    * Get form id
    */
-  public get id(): string {
+  public get id() {
     return this.formId;
   }
 
@@ -334,72 +222,9 @@ export default class Form
   }
 
   /**
-   * Change form control value using its name
-   */
-  public changeValue(name: string, value: any): void {
-    const input = this.control(name, "name");
-
-    if (!input || !input.changeValue) return;
-
-    if (value !== input.oldValue) {
-      input.oldValue = value;
-    }
-
-    input.isDirty = true;
-
-    this.dirty(true, input);
-
-    input.changeValue(value);
-
-    this.trigger("change", input, this);
-  }
-
-  /**
-   * Toggle form as dirty
-   * If first parameter is set to true, then second argument must be the input'value that has been updated
-   */
-  public dirty(isDirty: boolean, control?: FormControl) {
-    if (isDirty && control) {
-      let controlIndex = this.getDirtyControlIndex(control);
-      if (controlIndex > -1) {
-        this.dirtyControls[controlIndex] = control;
-      } else {
-        this.dirtyControls.push(control);
-      }
-    } else {
-      this.dirtyControls.forEach((control) => {
-        control.isDirty = false;
-        control.oldValue = undefined;
-      });
-
-      this.dirtyControls = [];
-    }
-
-    this.isDirtyForm = isDirty;
-
-    this.trigger("dirty", this.isDirtyForm, this.dirtyControls, this);
-  }
-
-  /**
-   * Determine if the given form control is dirty
-   */
-  public isDirtyControl(value: string, getBy: any) {
-    return this.control(value, getBy)?.isDirty;
-  }
-
-  /**
-   * Get dirty control index
-   */
-  public getDirtyControlIndex(control: FormControl): number {
-    return this.dirtyControls.findIndex(
-      (dirtyControl) => dirtyControl.id === control.id
-    );
-  }
-
-  /**
    * Manually submit form
    */
-  public submit(): void {
+  public submit() {
     if (!this.formElement) return;
 
     if (this.formElement.requestSubmit) {
@@ -418,30 +243,24 @@ export default class Form
   /**
    * Trigger form validation
    */
-  public validate(
-    formControlNames: FormControlType[] = []
-  ): FormControl[] | false {
-    const validatedInputs: FormControl[] = [];
-
-    const controls = this.controls(formControlNames);
-
-    const eventResponse = this.triggerAll("validating", controls, this);
-
-    if (eventResponse.results.includes(false)) {
-      this.isValidForm = false;
-      return false;
-    }
-
+  public async validate(controls: FormControl[] = this.formControls) {
     this.isValidForm = true;
     this.validControls = [];
     this.invalidControls = [];
 
-    for (const input of controls) {
-      if (input.isDisabled) continue;
+    const eventResponse = this.triggerAll("validating", this);
 
+    const validatedInputs: FormControl[] = [];
+
+    if (eventResponse.results.includes(false)) {
+      this.isValidForm = false;
+      return validatedInputs;
+    }
+
+    for (const input of controls) {
       validatedInputs.push(input);
 
-      input.validate && input.validate();
+      await input.validate();
 
       if (input.isValid === false) {
         this.invalidControl(input);
@@ -450,7 +269,7 @@ export default class Form
       }
     }
 
-    this.trigger("validation", validatedInputs, this);
+    this.trigger("validation", this.isValidForm, validatedInputs, this);
 
     this.checkIfIsValid();
 
@@ -467,18 +286,10 @@ export default class Form
    * Trigger form validation only for visible elements in the dom
    * If formControlNames is passed, then it will be operated only on these names.
    */
-  public validateVisible(
-    formControlNames: FormControlType[] = []
-  ): FormControl[] {
-    let controls = this.controls(formControlNames).filter(
-      (control: FormControl) => {
-        const visibleControlElement = control.visibleElement
-          ? control.visibleElement()
-          : document.getElementById(control.id!);
-
-        return visibleControlElement?.offsetParent !== null;
-      }
-    );
+  public async validateVisible() {
+    let controls = this.formControls.filter((control) => {
+      return control.isVisible();
+    });
 
     return this.validate(controls);
   }
@@ -486,8 +297,8 @@ export default class Form
   /**
    * Register form control
    */
-  public register(formControl: FormControl): void {
-    if (this.control(formControl.id!, "id")) return;
+  public register(formControl: FormControl) {
+    if (this.control(formControl.id, "id")) return;
 
     this.trigger("registering", formControl, this);
 
@@ -499,25 +310,16 @@ export default class Form
   /**
    * Unregister form control from the form
    */
-  public unregister(formControl: FormControl): void {
+  public unregister(formControl: FormControl) {
+    formControl.unregister();
+
     const formControlIndex = this.formControls.findIndex(
       (input) => input.id === formControl.id
     );
 
     if (formControlIndex === -1) return;
 
-    if (this.isStoringValues && formControl.isDisabled !== false) {
-      this.storedValuesList[formControl.name] = formControl.value;
-    }
-
-    this.trigger("unregistering", formControl, this);
-
     this.formControls.splice(formControlIndex, 1);
-
-    if (formControl.isDirty) {
-      let dirtyControlIndex = this.getDirtyControlIndex(formControl);
-      this.dirtyControls.splice(dirtyControlIndex, 1);
-    }
 
     this.trigger("unregister", formControl, this);
   }
@@ -529,40 +331,36 @@ export default class Form
     value: string,
     getBy: "name" | "id" = "name"
   ): FormControl | null {
-    if (getBy === "name") {
-      value = toInputName(value);
-    }
-
     return this.formControls.find((input) => input[getBy] === value) || null;
   }
 
   /**
    * Reset all form values and properties
    */
-  public reset(formControlNames: FormControlType[] = []): FormControl[] {
-    this.trigger("resetting", formControlNames, this);
-    this.dirty(false);
+  public reset() {
+    this.trigger("resetting", this);
+    this.formControls.forEach((input) => {
+      input.reset();
+    });
 
-    const controls = this.each(
-      (input) => input.reset && input.reset(),
-      formControlNames
-    );
+    this.isValidForm = true;
+    this._isSubmitting = false;
+    this._isDisabled = false;
 
-    if (formControlNames.length === 0) {
-      this.isValidForm = true;
-      this.isBeingSubmitted = false;
-      this.isBeingDisabled = false;
-      this.storedValuesList = {};
-      this.isStoringValues = false;
+    this.trigger("reset", this);
 
-      if (this.props.collectValuesFromDOM) {
-        this.formElement.reset();
-      }
-    }
+    return this;
+  }
 
-    this.trigger("reset", controls, this);
+  /**
+   * Reset form errors
+   */
+  public resetErrors() {
+    this.formControls.forEach((formControl) => {
+      formControl.setError(null);
+    });
 
-    return controls;
+    return this;
   }
 
   /**
@@ -576,132 +374,132 @@ export default class Form
   /**
    * Get all form values
    */
-  public values(formControlNames: FormControlType[] = []): FormControlValues {
-    this.trigger("serializing", "object", formControlNames, this);
-    let storedValuesList: FormControlValues = {};
+  public values(formControlNames: string[] = []) {
+    const formControls = this.controls(formControlNames);
 
-    if (this.props.collectValuesFromDOM === true) {
-      storedValuesList = serialize(this.formElement, true);
+    const values: FormControlValues = {};
 
-      if (formControlNames.length > 0) {
-        for (let key in storedValuesList) {
-          if (!formControlNames.includes(key)) {
-            delete storedValuesList[key];
-          }
-        }
+    const ignoreEmptyValues =
+      this.props.ignoreEmptyValues !== undefined
+        ? this.props.ignoreEmptyValues
+        : getFormConfig("ignoreEmptyValues", false);
+
+    for (const formControl of formControls) {
+      if (!formControl.isCollectable()) continue;
+      const name = formControl.name;
+      const value = formControl.collectValue();
+
+      if (
+        (ignoreEmptyValues && [null, undefined, ""].includes(value)) ||
+        (Array.isArray(value) && value.length === 0)
+      )
+        continue;
+
+      // we have 3 scenarios here
+      // 1. we have a single value
+      // 2. we have an array of values
+      // 3. we have a nested object values
+      // Nested values names are a dot notation syntax.
+      // if we have a nested value, we need to split the name and create a nested object
+
+      if (values[name] && !Array.isArray(values[name])) {
+        values[name] = [values[name]];
+      }
+
+      if (Array.isArray(values[name])) {
+        values[name].push(value);
+      } else {
+        values[name] = value;
       }
     }
 
-    for (const input of this.formControls) {
-      if (input.isDisabled || formControlNames.includes(input.name)) continue;
+    // convert any dot notation to nested objects
+    for (const name in values) {
+      if (name.includes(".")) {
+        const nestedValue = values[name];
+        const nestedName = name.split(".");
+        const nestedNameLength = nestedName.length;
 
-      storedValuesList[input.name] = input.value;
+        let nestedObject = values;
+
+        for (let i = 0; i < nestedNameLength; i++) {
+          const nestedNamePart = nestedName[i];
+
+          if (i === nestedNameLength - 1) {
+            nestedObject[nestedNamePart] = nestedValue;
+            continue;
+          }
+
+          if (!nestedObject[nestedNamePart]) {
+            nestedObject[nestedNamePart] = {};
+          }
+
+          nestedObject = nestedObject[nestedNamePart];
+        }
+
+        delete values[name];
+      }
+    }
+    return values;
+  }
+
+  /**
+   * Return value in form data format
+   */
+  public formData() {
+    const formData = new FormData();
+
+    const values = this.values();
+
+    for (const name in values) {
+      const value = values[name];
+
+      if (Array.isArray(value)) {
+        value.forEach((v) => formData.append(name, v));
+        continue;
+      }
+
+      formData.append(name, value);
     }
 
-    const values = { ...storedValuesList, ...this.storedValuesList };
-
-    this.trigger("serialize", "object", values, formControlNames, this);
-
-    return values;
-  }
-
-  /**
-   * Return form values as an object
-   */
-  public toObject(formControlNames: FormControlType[] = []): FormControlValues {
-    return this.values(formControlNames);
-  }
-
-  /**
-   * Return form values as a query string
-   */
-  public toString(formControlNames: FormControlType[] = []): string {
-    return this.toQueryString(formControlNames);
-  }
-
-  /**
-   * Return form values as a query string
-   */
-  public toQueryString(formControlNames: FormControlType[] = []): string {
-    this.trigger("serializing", "queryString", formControlNames, this);
-
-    const values = queryString.stringify(this.toObject(formControlNames), {
-      arrayFormat: "bracket",
-    });
-
-    this.trigger("serializing", "queryString", values, formControlNames, this);
-
-    return values;
-  }
-
-  /**
-   * Return form values as json syntax
-   */
-  public toJSON(formControlNames: FormControlType[] = []): string {
-    this.trigger("serializing", "json", formControlNames, this);
-
-    const values = JSON.stringify(this.toObject(formControlNames));
-
-    this.trigger("serializing", "json", values, formControlNames, this);
-
-    return values;
+    return formData;
   }
 
   /**
    * Get all form controls list
    */
-  public controls(formControls: FormControlType[] = []): FormControl[] {
+  public controls(formControls: string[] = []): FormControl[] {
     if (formControls?.length === 0) return this.formControls;
 
-    return formControls.map((formControl) => {
-      if (typeof formControl === "string")
-        return this.formControls.find(
-          (control) => formControl === control.name
-        );
-
-      return formControl;
-    }) as FormControl[];
-  }
-
-  /**
-   * Getting list of control based on its type
-   */
-  public controlsOf(control: ControlMode, type?: ControlType): FormControl[] {
-    return this.formControls.filter(
-      (formControl) =>
-        formControl.control === control &&
-        (type ? formControl.type === type : true)
+    return this.formControls.filter((formControl) =>
+      formControls.includes(formControl.name)
     );
-  }
-
-  /**
-   * Shorthand method to get input controls
-   */
-  public inputs(type?: ControlType): FormControl[] {
-    return this.controlsOf("input", type);
-  }
-
-  /**
-   * Shorthand method to get buttons controls
-   */
-  public buttons(type?: ControlType): FormControl[] {
-    return this.controlsOf("button", type);
   }
 
   /**
    * The onSubmit method that will be passed to the form element
    */
-  protected triggerSubmit(e: React.FormEvent): void {
+  protected async triggerSubmit(e: React.FormEvent) {
     e.preventDefault();
     e.stopPropagation();
 
-    this.validate();
+    await this.validate();
 
     if (this.isValidForm === false) return;
 
     if (this.props.onSubmit) {
       this.submitting(true);
-      this.props.onSubmit(e, this);
+      const form = this;
+      this.props.onSubmit({
+        form: this,
+        event: e,
+        get values() {
+          return form.values();
+        },
+        get formData() {
+          return form.formData();
+        },
+      });
     }
 
     this.trigger("submit", e, this);
@@ -712,34 +510,22 @@ export default class Form
    */
   public render() {
     const {
-      noValidate = true,
-      className,
       id = "form-" + this.formId,
       onError,
-      collectValuesFromDOM,
-      keepValues,
       onSubmit,
-      onValidating,
-      component: Component = getFormConfig("components.formComponent", "form"),
+      component: Component = getFormConfig("formComponent", "form"),
       children,
       ...otherProps
     } = this.props;
 
-    const formContext: FormContextProps = {
-      form: this as FormInterface,
-      register: this.register.bind(this),
-      unregister: this.unregister.bind(this),
-    };
-
     return (
-      <FormContext.Provider value={formContext}>
+      <FormContext.Provider value={this}>
         <Component
           ref={(form: any) => {
             this.formElement = form ? form.root || form : form;
           }}
-          className={className}
           id={id}
-          noValidate={noValidate}
+          noValidate
           onSubmit={this.triggerSubmit.bind(this) as any}
           {...otherProps}
         >

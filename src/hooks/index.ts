@@ -1,5 +1,6 @@
 export * from "./form-hooks";
-export { default as useForm } from "./useForm";
-export { default as useFormInput } from "./useFormInput";
-export { default as useInputValue } from "./useInputValue";
-export { default as useFormEvent } from "./useFormEvent";
+export * from "./useForm";
+export * from "./useFormControl";
+export * from "./useFormEvent";
+export * from "./useInputValue";
+export * from "./useSubmitButton";

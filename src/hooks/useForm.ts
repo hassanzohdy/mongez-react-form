@@ -1,7 +1,7 @@
 import React from "react";
+import { FormContext } from "../contexts/FormContext";
 import { FormContextProps } from "../types";
-import FormContext from "../contexts/FormContext";
 
-export default function useForm(): FormContextProps {
+export function useForm(): FormContextProps {
   return React.useContext<FormContextProps>(FormContext);
 }

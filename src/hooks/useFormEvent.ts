@@ -1,17 +1,17 @@
-import useForm from "./useForm";
 import { useEffect } from "react";
 import { FormEventType } from "../types";
+import { useForm } from "./useForm";
 
 /**
- * Watch for form event change 
+ * Watch for form event change
  */
-export default function useFormEvent(event: FormEventType, callback: any) {
-  const formProvider = useForm();
+export function useFormEvent(event: FormEventType, callback: any) {
+  const form = useForm();
 
   useEffect(() => {
-    if (!formProvider) return;
+    if (!form) return;
 
-    const eventSubscription = formProvider.form.on(event, callback);
+    const eventSubscription = form.on(event, callback);
 
     return () => eventSubscription.unsubscribe();
   }, [event]);

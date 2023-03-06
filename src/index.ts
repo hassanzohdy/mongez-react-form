@@ -1,17 +1,16 @@
-// components
-export * from "./components";
-
-// types
-export * from "./types";
-
-// configurations
-export * from "./configurations";
-
-// hooks
-export * from "./hooks";
-
 // active form
 export * from "./active-form";
-
+// components
+export * from "./components";
+// configurations
+export * from "./configurations";
 // contexts
-export { default as FormContext } from "./contexts/FormContext";
+export * from "./contexts/FormContext";
+// hooks
+export * from "./hooks";
+// locales
+export * from "./locales";
+// rules
+export * from "./rules";
+// types
+export * from "./types";
