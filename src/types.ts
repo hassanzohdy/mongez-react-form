@@ -235,7 +235,7 @@ export type FormControlEvent =
   | "validation.error"
   | "validation.end";
 
-export type FormContextProps = null | FormInterface;
+export type FormContextDefinition = null | FormInterface;
 
 /**
  * Returns when calling form.values() or form.toObject() to list all form inputs with its values
