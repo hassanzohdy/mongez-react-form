@@ -1,7 +1,7 @@
 import { trans } from "@mongez/localization";
 
 export const matchRule = ({ value, match, form, errorKeys }: any) => {
-  if (!match) return;
+  if (!match || !form) return;
 
   const matchingElement = form.control(match);
 
@@ -11,8 +11,8 @@ export const matchRule = ({ value, match, form, errorKeys }: any) => {
     const matchingName = errorKeys.matchingElement || matchingElement.name;
 
     return trans("validation.match", {
-      name: errorKeys.name,
-      matchingField: matchingName,
+      input: errorKeys.name,
+      matchingInput: matchingName,
     });
   }
 };

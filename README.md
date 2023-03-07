@@ -758,7 +758,7 @@ export default function App() {
 }
 ```
 
-Now if we submitted the form, it won't go to `onSubmit` method, because the `name` field is required, and it's empty.
+Now if we submitted the form, it won't go to `onSubmit` method, because the `name` input is required, and it's empty.
 
 #### Displaying the error
 
@@ -848,9 +848,9 @@ Here are the available rules that you can use:
 - `alphabetRule`: Check if the value is a valid alphabet.
   - Translation Key: `validation.alphabet`.
   - Requires `type` prop to be `alphabet`.
-- `matchRule`:  Check if the value matches the value of the field with the name of the `match` prop.
+- `matchRule`:  Check if the value matches the value of the input with the name of the `match` prop.
   - Requires `match` prop to be present.
-  - Translation Key: `validation.match`, receives `:matchingField` as a placeholder.
+  - Translation Key: `validation.match`, receives `:matchingInput` as a placeholder.
   - `match` prop will be preserved from being passed to `otherProps`.
 
 Example of usage for each rule:
@@ -1119,7 +1119,7 @@ import { groupedTranslations } from "@mongez/localization";
 
 export const validationTranslation = {
   required: {
-    en: "This field is required",
+    en: "This input is required",
     ar: "هذا الحقل مطلوب",
     fr: "Ce champ est requis",
     es: "Este campo es obligatorio",
@@ -1159,15 +1159,15 @@ export const validationTranslation = {
     de: "Der Wert darf nicht größer sein als :max",
   },
   matchElement: {
-    en: "This field is not matching with :matchingField",
-    ar: "هذا الحقل غير متطابق مع :matchingField",
-    fr: "Ce champ ne correspond pas à :matchingField",
-    es: "Este campo no coincide con :matchingField",
-    it: "Questo campo non corrisponde a :matchingField",
-    de: "Dieses Feld stimmt nicht mit :matchingField überein",
+    en: "This input is not matching with :matchingInput",
+    ar: "هذا الحقل غير متطابق مع :matchingInput",
+    fr: "Ce champ ne correspond pas à :matchingInput",
+    es: "Este campo no coincide con :matchingInput",
+    it: "Questo campo non corrisponde a :matchingInput",
+    de: "Dieses Feld stimmt nicht mit :matchingInput überein",
   },
   length: {
-    en: "This field should have :length characters",
+    en: "This input should have :length characters",
     ar: "حروف الحقل يجب ان تساوي :length",
     fr: "Ce champ doit avoir :length caractères",
     es: "Este campo debe tener :length caracteres",
@@ -1175,7 +1175,7 @@ export const validationTranslation = {
     de: "Dieses Feld sollte :length Zeichen haben",
   },
   minLength: {
-    en: "This field can not be less than :length characters",
+    en: "This input can not be less than :length characters",
     ar: "هذا الحقل يجب ألا يقل عن :length حرف",
     fr: "Ce champ ne peut pas être inférieur à :length caractères",
     es: "Este campo no puede ser inferior a :length caracteres",
@@ -1183,7 +1183,7 @@ export const validationTranslation = {
     de: "Dieses Feld darf nicht weniger als :length Zeichen haben",
   },
   maxLength: {
-    en: "This field can not be greater than :length characters",
+    en: "This input can not be greater than :length characters",
     ar: "هذا الحقل يجب ألا يزيد عن :length حرف",
     fr: "Ce champ ne peut pas être supérieur à :length caractères",
     es: "Este campo no puede ser superior a :length caracteres",
@@ -1191,7 +1191,7 @@ export const validationTranslation = {
     de: "Dieses Feld darf nicht mehr als :length Zeichen haben",
   },
   pattern: {
-    en: "This field is not matching with the :pattern",
+    en: "This input is not matching with the :pattern",
     ar: "هذا الحقل غير مطابق :pattern",
     fr: "Ce champ ne correspond pas au :pattern",
     es: "Este campo no coincide con el :pattern",
@@ -1199,7 +1199,7 @@ export const validationTranslation = {
     de: "Dieses Feld stimmt nicht mit dem :pattern überein",
   },
   number: {
-    en: "This field accepts only numbers",
+    en: "This input accepts only numbers",
     ar: "هذا الحقل لا يقبل غير أرقام فقط",
     fr: "Ce champ ne peut contenir que des chiffres",
     es: "Este campo solo acepta números",
@@ -1207,7 +1207,7 @@ export const validationTranslation = {
     de: "Dieses Feld akzeptiert nur Zahlen",
   },
   integer: {
-    en: "This field accepts only integer digits",
+    en: "This input accepts only integer digits",
     ar: "هذا الحقل لا يقبل غير أرقام صحيحة",
     fr: "Ce champ ne peut contenir que des chiffres entiers",
     es: "Este campo solo acepta dígitos enteros",
@@ -1215,7 +1215,7 @@ export const validationTranslation = {
     de: "Dieses Feld akzeptiert nur ganze Zahlen",
   },
   float: {
-    en: "This field accepts only integer or float digits",
+    en: "This input accepts only integer or float digits",
     ar: "هذا الحقل لا يقبل غير أرقام صحيحة او عشرية",
     fr: "Ce champ ne peut contenir que des chiffres entiers ou décimaux",
     es: "Este campo solo acepta dígitos enteros o decimales",
@@ -1223,7 +1223,7 @@ export const validationTranslation = {
     de: "Dieses Feld akzeptiert nur ganze oder Dezimalzahlen",
   },
   alphabet: {
-    en: "This field accepts only alphabets",
+    en: "This input accepts only alphabets",
     ar: "هذا الحقل لا يقبل غير أحرف فقط",
     fr: "Ce champ ne peut contenir que des lettres",
     es: "Este campo solo acepta letras",
@@ -1237,7 +1237,7 @@ groupedTranslations("validation", validationTranslation);
 
 #### Changing the error keys per component call
 
-This coulld be useful for  some rules such as the`match` rule to override the error key with the matching field name.
+This coulld be useful for  some rules such as the`match` rule to override the error key with the matching input name.
 
 ```tsx
 // srcc/App.tsx
@@ -1253,7 +1253,7 @@ export default function App() {
         match="password" 
         type="password" 
         errorKeys={{
-          matchingField: "Passowrd Input"
+          matchingInput: "Passowrd Input"
         }}
       />
     </Form>
@@ -1263,7 +1263,7 @@ export default function App() {
 
 If the passowrd input does not match the confirm password input, the error message will be:
 
-`This field is not matching with Passowrd Input`
+`This input is not matching with Passowrd Input`
 
 If you installed [Localization React](https://github.com/hassanzohdy/mongez-react-localization) package, yoou can get benefit from passing `jsx` element instead of just plain text.
 
@@ -1281,7 +1281,7 @@ export default function App() {
         match="password" 
         type="password" 
         errorKeys={{
-          matchingField: <span className="text-danger">Passowrd Input</span>
+          matchingInput: <span className="text-danger">Passowrd Input</span>
         }}
       />
     </Form>

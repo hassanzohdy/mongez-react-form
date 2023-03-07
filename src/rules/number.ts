@@ -1,12 +1,10 @@
 import { trans } from "@mongez/localization";
 
 export const numberRule = ({ value, type, errorKeys }: any) => {
-  if (type !== "number") return;
+  if (!value || type !== "number") return;
 
   if (isNaN(Number(value))) {
-    const nameKey = errorKeys.name;
-
-    return trans("validation.number", { name: nameKey });
+    return trans("validation.number", { input: errorKeys.name });
   }
 };
 

@@ -10,8 +10,7 @@ export const requiredRule = ({
   if (!required) return;
 
   if ((type === "checkbox" && checked === false) || isEmpty(value)) {
-    const errorKeyName = errorKeys.name;
-    return trans("validation.required", { name: errorKeyName });
+    return trans("validation.required", { input: errorKeys.name });
   }
 };
 
