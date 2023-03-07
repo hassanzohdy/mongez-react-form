@@ -14,12 +14,12 @@ import { useForm } from "./useForm";
 export function useFormControl<T extends FormControlProps>(
   baseProps: T,
   formControlOptions: FormControlOptions = {
-    uncheckedValue: "OK",
     collectUnchecked: true,
-    transformValue: (value) => {
+    uncheckedValue: false,
+    transformValue: value => {
       return String(value);
     },
-  }
+  },
 ) {
   const {
     id: incomingId,
@@ -33,7 +33,7 @@ export function useFormControl<T extends FormControlProps>(
     disabled: incomingDisabled,
     validate: incomingValidate,
     value: incomingValue,
-    defaultValue,
+    defaultValue: _dv,
     checked: _checked,
     defaultChecked: _defaultChecked,
     ...props
@@ -41,7 +41,7 @@ export function useFormControl<T extends FormControlProps>(
 
   const id = useId(incomingId);
   const [name] = useState(() =>
-    String(incomingName).replace("][", ".").replace("[", ".").replace("]", "")
+    String(incomingName).replace("][", ".").replace("[", ".").replace("]", ""),
   );
 
   const [checked, setChecked] = useChecked(props);
@@ -168,11 +168,14 @@ export function useFormControl<T extends FormControlProps>(
           updateState = true,
           validate = true,
           ...other
-        }: FormControlChangeOptions = {}
+        }: FormControlChangeOptions = {},
       ) {
-        value = formControlOptions.transformValue?.(value);
         if (value !== undefined) {
+          value = formControlOptions.transformValue?.(value);
           formControl.value = value;
+          if (updateState) {
+            setValue(value);
+          }
         }
 
         if (baseProps.type === "checkbox") {
@@ -180,8 +183,6 @@ export function useFormControl<T extends FormControlProps>(
         }
 
         if (updateState) {
-          setValue(value);
-
           if (baseProps.type === "checkbox") {
             setChecked(Boolean(checked));
           }
@@ -258,16 +259,21 @@ export function useFormControl<T extends FormControlProps>(
     if (!formControl.isControlled || formControl.rendered === false) return;
 
     formControl.change(incomingValue);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [incomingValue]);
 
   useEffect(() => {
-    if (!formControl.isControlled || formControl.rendered === false) return;
+    if (!formControl.isControlled || formControl.rendered === false) {
+      return;
+    }
 
-    formControl.change({ checked: baseProps.checked });
+    formControl.change(formControl.value, { checked: _checked });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [_checked]);
 
   useEffect(() => {
     formControl.disable(Boolean(incomingDisabled));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [incomingDisabled]);
 
   useEffect(() => {

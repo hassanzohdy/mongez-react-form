@@ -3,14 +3,14 @@ import { FormControlOptions, FormControlProps } from "../types";
 
 export function useId(id?: string) {
   return useMemo(
-    () => id || "input-" + Math.random().toString(36).substr(2, 9),
-    [id]
+    () => id || "input-" + Math.random().toString(36).substring(2, 9),
+    [id],
   );
 }
 
 export function useValue<T>(
   props: FormControlProps,
-  options: FormControlOptions
+  options: FormControlOptions,
 ): [T, React.Dispatch<React.SetStateAction<T>>] {
   const [value, setValue] = useState<T>(() => {
     if (![undefined, null].includes(props.value)) {
@@ -28,7 +28,7 @@ export function useValue<T>(
 
 export function useError(): [
   React.ReactNode,
-  (error: React.ReactNode) => void
+  (error: React.ReactNode) => void,
 ] {
   const [error, errorUpdater] = useState<React.ReactNode>(null);
 

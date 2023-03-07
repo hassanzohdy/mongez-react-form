@@ -7,7 +7,7 @@ export function useInputValue<T>(initialValue: T) {
     if (e === 0) {
       setValue(e);
     } else if (!e) {
-      setValue("" as any);
+      setValue("" as T);
     } else if (e.target?.value !== undefined) {
       setValue(e.target.value);
     } else if (e.value !== undefined) {
