@@ -47,7 +47,7 @@ export type FormSubmitOptions = {
 
 export type FormProps = Omit<
   React.FormHTMLAttributes<HTMLFormElement>,
-  "onSubmit"
+  "onSubmit" | "onError"
 > & {
   /**
    * Triggered when form validation results to error
