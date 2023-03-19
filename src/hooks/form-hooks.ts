@@ -17,10 +17,11 @@ export function useValue<T>(
       return options.transformValue?.(props.value);
     }
 
-    if (![undefined, null].includes(props.defaultValue))
+    if (![undefined, null].includes(props.defaultValue)) {
       return options.transformValue?.(props.defaultValue);
+    }
 
-    return "";
+    return props.multiple ? [] : "";
   });
 
   return [value, setValue];

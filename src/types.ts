@@ -68,7 +68,7 @@ export type FormProps = Omit<
    *
    * @default false
    */
-  ignoreEmpty?: boolean;
+  ignoreEmptyValues?: boolean;
 };
 
 export type FormControlChangeOptions = {
@@ -209,6 +209,10 @@ export type FormControl = {
    * Listen when form control is destroyed
    */
   onDestroy: (callback: () => void) => EventSubscription;
+  /**
+   * Listen to form control when value is reset
+   */
+  onReset: (callback: () => void) => EventSubscription;
   /**
    * Disable/Enable form control
    */
@@ -457,6 +461,8 @@ export type InputRuleOptions = {
   [key: string]: any;
 };
 
+export type FormContextProps = FormInterface | null;
+
 export type InputRuleResult = React.ReactNode | undefined;
 
 export type InputRule = (
@@ -492,7 +498,7 @@ export type FormControlOptions = {
   /**
    * Transform input value before setting it
    */
-  transformValue?: (value: any) => any;
+  transformValue?: (value: any, formControl?: FormControl) => any;
 };
 
 export type FormControlProps = {
@@ -500,7 +506,7 @@ export type FormControlProps = {
    * Input name attribute, allows dot notation syntax
    * i.e user.name is valid, will be transformed into user[name]
    */
-  name: string;
+  name?: string;
   /**
    * Input id attribute
    */

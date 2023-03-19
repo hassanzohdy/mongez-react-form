@@ -1,4 +1,6 @@
 import events, { EventSubscription } from "@mongez/events";
+import { toInputName } from "@mongez/reinforcements";
+import Is from "@mongez/supportive-is";
 import React from "react";
 import {
   addToFormsList,
@@ -24,12 +26,12 @@ export class Form extends React.Component<FormProps> implements FormInterface {
   /**
    * Form id
    */
-  protected formId: string = "";
+  protected formId = "";
 
   /**
    * Form event prefix
    */
-  protected formEventPrefix: string = "";
+  protected formEventPrefix = "";
 
   /**
    * Form Controls
@@ -39,17 +41,17 @@ export class Form extends React.Component<FormProps> implements FormInterface {
   /**
    * Determine whether form validation is valid
    */
-  protected isValidForm: boolean = true;
+  protected isValidForm = true;
 
   /**
    * Determine form submission state
    */
-  protected _isSubmitting: boolean = false;
+  protected _isSubmitting = false;
 
   /**
    * Determine if form is disabled
    */
-  protected _isDisabled: boolean = false;
+  protected _isDisabled = false;
 
   /**
    * List of invalid controls
@@ -100,10 +102,10 @@ export class Form extends React.Component<FormProps> implements FormInterface {
     this.isValidForm = false;
 
     this.validControls = this.validControls.filter(
-      (control) => control.id !== formControl.id
+      control => control.id !== formControl.id,
     );
 
-    if (this.invalidControls.find((control) => control.id === formControl.id))
+    if (this.invalidControls.find(control => control.id === formControl.id))
       return;
 
     this.invalidControls.push(formControl);
@@ -118,7 +120,7 @@ export class Form extends React.Component<FormProps> implements FormInterface {
     this.trigger("validControl", formControl, this);
 
     this.invalidControls = this.invalidControls.filter(
-      (control) => control.id !== formControl.id
+      control => control.id !== formControl.id,
     );
 
     this.validControls.push(formControl);
@@ -157,14 +159,16 @@ export class Form extends React.Component<FormProps> implements FormInterface {
   /**
    * Trigger form disable/enable state
    */
-  public disable(isDisabled: boolean = true) {
+  public disable(isDisabled = true) {
     const controls = this.formControls;
 
     this._isDisabled = isDisabled;
 
-    controls.forEach((control) => {
+    controls.forEach(control => {
       control.disable(isDisabled);
     });
+
+    this.trigger("disable", isDisabled, this);
 
     return this;
   }
@@ -202,7 +206,7 @@ export class Form extends React.Component<FormProps> implements FormInterface {
    */
   public on(
     event: FormEventType,
-    callback: (form: FormInterface) => void
+    callback: (form: FormInterface) => void,
   ): EventSubscription {
     return events.subscribe(`${this.formEventPrefix}.${event}`, callback);
   }
@@ -260,9 +264,7 @@ export class Form extends React.Component<FormProps> implements FormInterface {
     for (const input of controls) {
       validatedInputs.push(input);
 
-      await input.validate();
-
-      if (input.isValid === false) {
+      if ((await input.validate()) === false) {
         this.invalidControl(input);
       } else {
         this.validControl(input);
@@ -287,7 +289,7 @@ export class Form extends React.Component<FormProps> implements FormInterface {
    * If formControlNames is passed, then it will be operated only on these names.
    */
   public async validateVisible() {
-    let controls = this.formControls.filter((control) => {
+    const controls = this.formControls.filter(control => {
       return control.isVisible();
     });
 
@@ -314,7 +316,7 @@ export class Form extends React.Component<FormProps> implements FormInterface {
     formControl.unregister();
 
     const formControlIndex = this.formControls.findIndex(
-      (input) => input.id === formControl.id
+      input => input.id === formControl.id,
     );
 
     if (formControlIndex === -1) return;
@@ -329,9 +331,9 @@ export class Form extends React.Component<FormProps> implements FormInterface {
    */
   public control(
     value: string,
-    getBy: "name" | "id" = "name"
+    getBy: "name" | "id" = "name",
   ): FormControl | null {
-    return this.formControls.find((input) => input[getBy] === value) || null;
+    return this.formControls.find(input => input[getBy] === value) || null;
   }
 
   /**
@@ -339,7 +341,7 @@ export class Form extends React.Component<FormProps> implements FormInterface {
    */
   public reset() {
     this.trigger("resetting", this);
-    this.formControls.forEach((input) => {
+    this.formControls.forEach(input => {
       input.reset();
     });
 
@@ -356,7 +358,7 @@ export class Form extends React.Component<FormProps> implements FormInterface {
    * Reset form errors
    */
   public resetErrors() {
-    this.formControls.forEach((formControl) => {
+    this.formControls.forEach(formControl => {
       formControl.setError(null);
     });
 
@@ -375,6 +377,15 @@ export class Form extends React.Component<FormProps> implements FormInterface {
    * Get all form values
    */
   public values(formControlNames: string[] = []) {
+    return createNestedObjectFromDotNotation(
+      this.collectValues(formControlNames),
+    );
+  }
+
+  /**
+   * Collect values for the given form control names
+   */
+  public collectValues(formControlNames: string[] = []) {
     const formControls = this.controls(formControlNames);
 
     const values: FormControlValues = {};
@@ -385,8 +396,9 @@ export class Form extends React.Component<FormProps> implements FormInterface {
         : getFormConfig("ignoreEmptyValues", false);
 
     for (const formControl of formControls) {
-      if (!formControl.isCollectable()) continue;
       const name = formControl.name;
+      if (!name || !formControl.isCollectable()) continue;
+
       const value = formControl.collectValue();
 
       if (
@@ -394,13 +406,6 @@ export class Form extends React.Component<FormProps> implements FormInterface {
         (Array.isArray(value) && value.length === 0)
       )
         continue;
-
-      // we have 3 scenarios here
-      // 1. we have a single value
-      // 2. we have an array of values
-      // 3. we have a nested object values
-      // Nested values names are a dot notation syntax.
-      // if we have a nested value, we need to split the name and create a nested object
 
       if (values[name] && !Array.isArray(values[name])) {
         values[name] = [values[name]];
@@ -413,33 +418,6 @@ export class Form extends React.Component<FormProps> implements FormInterface {
       }
     }
 
-    // convert any dot notation to nested objects
-    for (const name in values) {
-      if (name.includes(".")) {
-        const nestedValue = values[name];
-        const nestedName = name.split(".");
-        const nestedNameLength = nestedName.length;
-
-        let nestedObject = values;
-
-        for (let i = 0; i < nestedNameLength; i++) {
-          const nestedNamePart = nestedName[i];
-
-          if (i === nestedNameLength - 1) {
-            nestedObject[nestedNamePart] = nestedValue;
-            continue;
-          }
-
-          if (!nestedObject[nestedNamePart]) {
-            nestedObject[nestedNamePart] = {};
-          }
-
-          nestedObject = nestedObject[nestedNamePart];
-        }
-
-        delete values[name];
-      }
-    }
     return values;
   }
 
@@ -449,17 +427,25 @@ export class Form extends React.Component<FormProps> implements FormInterface {
   public formData() {
     const formData = new FormData();
 
-    const values = this.values();
+    const values = this.collectValues();
 
     for (const name in values) {
       const value = values[name];
+      const formControlName = toInputName(name);
 
       if (Array.isArray(value)) {
-        value.forEach((v) => formData.append(name, v));
+        for (const item of value) {
+          formData.append(`${formControlName}[]`, item);
+        }
+        continue;
+      } else if (Is.plainObject(value)) {
+        for (const key in value) {
+          formData.append(`${formControlName}[${key}]`, value[key]);
+        }
         continue;
       }
 
-      formData.append(name, value);
+      formData.append(formControlName, value);
     }
 
     return formData;
@@ -471,8 +457,8 @@ export class Form extends React.Component<FormProps> implements FormInterface {
   public controls(formControls: string[] = []): FormControl[] {
     if (formControls?.length === 0) return this.formControls;
 
-    return this.formControls.filter((formControl) =>
-      formControls.includes(formControl.name)
+    return this.formControls.filter(formControl =>
+      formControls.includes(formControl.name),
     );
   }
 
@@ -485,10 +471,13 @@ export class Form extends React.Component<FormProps> implements FormInterface {
 
     await this.validate();
 
+    console.log(this.isValidForm);
+
     if (this.isValidForm === false) return;
 
     if (this.props.onSubmit) {
       this.submitting(true);
+      // eslint-disable-next-line @typescript-eslint/no-this-alias
       const form = this;
       this.props.onSubmit({
         form: this,
@@ -511,8 +500,8 @@ export class Form extends React.Component<FormProps> implements FormInterface {
   public render() {
     const {
       id = "form-" + this.formId,
-      onError,
-      onSubmit,
+      onError: _e,
+      onSubmit: _s,
       component: Component = getFormConfig("formComponent", "form"),
       children,
       ...otherProps
@@ -527,11 +516,61 @@ export class Form extends React.Component<FormProps> implements FormInterface {
           id={id}
           noValidate
           onSubmit={this.triggerSubmit.bind(this) as any}
-          {...otherProps}
-        >
+          {...otherProps}>
           {children}
         </Component>
       </FormContext.Provider>
     );
   }
 }
+
+// create a function that receives an object
+// each key is a dot notation syntax
+// return an object with nested objects
+// if the key is a dot notation syntax, then create a nested object
+// if a segment of the key is a number, then create an array
+// if the key is a number, then create an array
+// i.e name.0.text => { name: [{ text: 'value' }] }
+// name.firstName => { name: { firstName: 'value' } }
+// name.addresses.0.city => { name: { addresses: [{ city: 'value' }] } }
+function createNestedObjectFromDotNotation(object: any) {
+  const result: any = {};
+
+  for (const key in object) {
+    const value = object[key];
+
+    if (key.includes(".")) {
+      const nestedName = key.split(".");
+      const nestedNameLength = nestedName.length;
+
+      let nestedObject = result;
+
+      for (let i = 0; i < nestedNameLength; i++) {
+        const nestedNamePart = nestedName[i];
+        const isLastSegment = i === nestedNameLength - 1;
+        const nextSegment = nestedName[i + 1];
+
+        if (!nestedObject[nestedNamePart]) {
+          if (isLastSegment) {
+            nestedObject[nestedNamePart] = value;
+            continue;
+          }
+
+          if (nextSegment && !isNaN(Number(nextSegment))) {
+            nestedObject[nestedNamePart] = [];
+          } else {
+            nestedObject[nestedNamePart] = {};
+          }
+        }
+
+        nestedObject = nestedObject[nestedNamePart];
+      }
+    } else {
+      result[key] = value;
+    }
+  }
+
+  return result;
+}
+
+// name.0.text
