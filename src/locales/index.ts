@@ -9,7 +9,7 @@ export const validationTranslation = {
     it: "Questo campo è obbligatorio",
     de: "Dieses Feld ist erforderlich",
   },
-  invalidEmailAddress: {
+  email: {
     en: "Invalid Email Address",
     ar: "بريد الكتروني خاطئ",
     fr: "Adresse e-mail invalide",
@@ -41,7 +41,7 @@ export const validationTranslation = {
     it: "Il valore non può essere superiore a :max",
     de: "Der Wert darf nicht größer sein als :max",
   },
-  matchElement: {
+  match: {
     en: "This input is not matching with :matchingInput",
     ar: "هذا الحقل غير متطابق مع :matchingInput",
     fr: "Ce champ ne correspond pas à :matchingInput",

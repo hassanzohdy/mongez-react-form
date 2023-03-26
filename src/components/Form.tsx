@@ -1,5 +1,5 @@
 import events, { EventSubscription } from "@mongez/events";
-import { toInputName } from "@mongez/reinforcements";
+import { debounce, toInputName } from "@mongez/reinforcements";
 import Is from "@mongez/supportive-is";
 import React from "react";
 import {
@@ -16,7 +16,6 @@ import {
   FormInterface,
   FormProps,
 } from "./../types";
-
 export class Form extends React.Component<FormProps> implements FormInterface {
   /**
    * {@inheritdoc}
@@ -132,15 +131,17 @@ export class Form extends React.Component<FormProps> implements FormInterface {
    * Check and trigger form validation state
    */
   public checkIfIsValid() {
-    const isValidForm = this.invalidControls.length === 0;
+    debounce(() => {
+      const isValidForm = this.invalidControls.length === 0;
 
-    this.isValidForm = isValidForm;
+      this.isValidForm = isValidForm;
 
-    if (this.isValidForm) {
-      this.trigger("validControls", this.validControls, this);
-    } else {
-      this.trigger("invalidControls", this.invalidControls, this);
-    }
+      if (this.isValidForm) {
+        this.trigger("validControls", this.validControls, this);
+      } else {
+        this.trigger("invalidControls", this.invalidControls, this);
+      }
+    }, 0);
   }
 
   /**
@@ -148,6 +149,7 @@ export class Form extends React.Component<FormProps> implements FormInterface {
    */
   public submitting(submitting: boolean) {
     this._isSubmitting = submitting;
+
     this.trigger("submitting", submitting, this);
 
     if (submitting === false) {
@@ -407,8 +409,15 @@ export class Form extends React.Component<FormProps> implements FormInterface {
       )
         continue;
 
-      if (values[name] && !Array.isArray(values[name])) {
-        values[name] = [values[name]];
+      // value must be converted into array in two scenarios:
+      // if the `multiple` is set to true
+      // or the values object already has the same name
+      if (
+        (values[name] || formControl.multiple) &&
+        !Array.isArray(values[name]) &&
+        !Array.isArray(value)
+      ) {
+        values[name] = values[name] ? [values[name]] : [];
       }
 
       if (Array.isArray(values[name])) {
@@ -471,12 +480,11 @@ export class Form extends React.Component<FormProps> implements FormInterface {
 
     await this.validate();
 
-    console.log(this.isValidForm);
-
     if (this.isValidForm === false) return;
 
     if (this.props.onSubmit) {
       this.submitting(true);
+
       // eslint-disable-next-line @typescript-eslint/no-this-alias
       const form = this;
       this.props.onSubmit({
@@ -491,7 +499,7 @@ export class Form extends React.Component<FormProps> implements FormInterface {
       });
     }
 
-    this.trigger("submit", e, this);
+    this.trigger("submit", this);
   }
 
   /**

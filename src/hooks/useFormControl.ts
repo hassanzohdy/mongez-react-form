@@ -21,7 +21,7 @@ export const defaultFormControlOptions = {
 
     return value;
   },
-  collectValue: ({ value, multiple }) => {
+  collectValue: ({ value, multiple }: any) => {
     if (multiple && !Array.isArray(value)) {
       return [value];
     }
@@ -132,7 +132,6 @@ export function useFormControl<T extends FormControlProps>(
       initialValue: value,
       initialChecked: checked,
       value,
-      multiple: Boolean(baseProps.multiple),
       isControlled:
         baseProps.value !== undefined || baseProps.checked !== undefined,
       id,
@@ -175,6 +174,12 @@ export function useFormControl<T extends FormControlProps>(
           formControl,
           value: formControl.value,
         });
+
+        events.trigger(`form.control.${id}.change`, {
+          value: formControl.value,
+          checked: formControl.checked,
+          formControl,
+        });
       },
       isVisible: () => {
         return visibleElementRef.current?.isHidden === false;
@@ -196,6 +201,7 @@ export function useFormControl<T extends FormControlProps>(
 
         events.trigger(`form.control.${id}.reset`, formControl);
       },
+      multiple: formControlOptions.multiple,
       validate,
       change(
         value,
@@ -318,23 +324,24 @@ export function useFormControl<T extends FormControlProps>(
   useEffect(() => {
     setTimeout(() => {
       formControl.rendered = true;
-      let resetEvent: EventSubscription | undefined;
+    }, 0);
+
+    let resetEvent: EventSubscription | undefined;
+    if (form) {
+      form.register(formControl);
+      resetEvent = form.on("reset", formControl.reset);
+    }
+
+    return () => {
       if (form) {
-        form.register(formControl);
-        resetEvent = form.on("reset", formControl.reset);
+        form.unregister(formControl);
+      } else {
+        formControl.unregister();
       }
 
-      return () => {
-        if (form) {
-          form.unregister(formControl);
-        } else {
-          formControl.unregister();
-        }
-
-        resetEvent?.unsubscribe();
-      };
-    }, 0);
-  }, [name]);
+      resetEvent?.unsubscribe();
+    };
+  }, [form, formControl, name]);
 
   const outputProps = useMemo(() => {
     let finalProps = { ...props };

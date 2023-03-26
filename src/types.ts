@@ -56,7 +56,7 @@ export type FormProps = Omit<
   /**
    * Triggered when form validation is passed and now its in the submit process
    */
-  onSubmit: (options: FormSubmitOptions) => void;
+  onSubmit?: (options: FormSubmitOptions) => void;
   /**
    * Form element
    *
@@ -172,7 +172,7 @@ export type FormControl = {
   /**
    * Determine if form control is multiple
    */
-  multiple: boolean;
+  multiple?: boolean;
   /**
    * Collect form control value
    */
@@ -478,6 +478,10 @@ export type ErrorKeys = ErrorMessages;
 export type ValidateOn = "change" | "blur";
 
 export type FormControlOptions = {
+  /**
+   * Determine if form input value is multiple
+   */
+  multiple?: boolean;
   /**
    * Callback used to determine if input's value should be collected when calling form.values()
    */
