@@ -14,11 +14,10 @@ export function useSubmitButton() {
       disable(form.isSubmitting());
     });
 
-    const inValidControls = form.on("invalidControls", controls => {
-      console.log(controls);
-
+    const inValidControls = form.on("invalidControls", () => {
       disable(true);
     });
+
     const isDisabledEvent = form.on("disable", disable as any);
     const validControl = form.on("validControls", () => disable(false));
     const resetEvent = form.on("reset", () => disable(false));
