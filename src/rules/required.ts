@@ -9,7 +9,10 @@ export const requiredRule = ({
 }: any) => {
   if (!required) return;
 
-  if ((type === "checkbox" && checked === false) || isEmpty(value)) {
+  if (
+    (["checkbox", "radio"].includes(type) && checked === false) ||
+    isEmpty(value)
+  ) {
     return trans("validation.required", { input: errorKeys.name });
   }
 };

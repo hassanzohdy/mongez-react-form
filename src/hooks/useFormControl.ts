@@ -32,7 +32,7 @@ export const defaultFormControlOptions = {
 
 export function useFormControl<T extends FormControlProps>(
   baseProps: T,
-  incomingFormControlOptions: FormControlOptions = {},
+  incomingFormControlOptions: FormControlOptions = {}
 ) {
   const {
     id: incomingId,
@@ -54,7 +54,7 @@ export function useFormControl<T extends FormControlProps>(
 
   const id = useId(incomingId);
   const [name] = useState(() =>
-    String(incomingName).replace("][", ".").replace("[", ".").replace("]", ""),
+    String(incomingName).replace("][", ".").replace("[", ".").replace("]", "")
   );
 
   const [checked, setChecked] = useChecked(baseProps);
@@ -158,7 +158,7 @@ export function useFormControl<T extends FormControlProps>(
         if (formControl.type === "radio" && checked === true) {
           // get all other form radio controllers with same name and set their checked to false
           if (form) {
-            form.controls([formControl.name]).forEach(control => {
+            form.controls([formControl.name]).forEach((control) => {
               if (control.id === formControl.id) return;
 
               control.setChecked(false);
@@ -210,7 +210,7 @@ export function useFormControl<T extends FormControlProps>(
           updateState = true,
           validate = true,
           ...other
-        }: FormControlChangeOptions = {},
+        }: FormControlChangeOptions = {}
       ) {
         if (value !== undefined) {
           value = formControlOptions.transformValue?.(value, formControl);
@@ -258,7 +258,10 @@ export function useFormControl<T extends FormControlProps>(
 
         if (formControl.disabled) return false;
 
-        if (formControl.type === "checkbox" && formControl.checked === false) {
+        if (
+          ["checkbox", "radio"].includes(formControl.type) &&
+          formControl.checked === false
+        ) {
           return Boolean(formControlOptions.collectUnchecked);
         }
 
@@ -268,7 +271,7 @@ export function useFormControl<T extends FormControlProps>(
         if (formControlOptions.collectValue) {
           return formControlOptions.collectValue(formControl);
         }
-        if (formControl.type === "checkbox") {
+        if (["checkbox", "radio"].includes(formControl.type)) {
           if (
             !formControl.checked &&
             formControlOptions.uncheckedValue !== undefined
