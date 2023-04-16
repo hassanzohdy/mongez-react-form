@@ -221,6 +221,17 @@ export type FormControl = {
    * Determine if form control is disabled
    */
   disabled: boolean;
+  /**
+   * Whether unchecked value should be collected
+   *
+   * Works only if type is `checkbox` or `radio`
+   * @default false
+   */
+  collectUnchecked?: boolean;
+  /**
+   * Define the value if control checked state is false, If collectUnchecked is true
+   */
+  uncheckedValue?: any;
 };
 
 export type FormControlType = string | FormControl;
@@ -385,7 +396,7 @@ export interface FormInterface {
    */
   on: (
     event: FormEventType,
-    callback: (form: FormInterface) => void,
+    callback: (form: FormInterface) => void
   ) => EventSubscription;
   /**
    * Register new form input
@@ -466,7 +477,7 @@ export type FormContextProps = FormInterface | null;
 export type InputRuleResult = React.ReactNode | undefined;
 
 export type InputRule = (
-  options: InputRuleOptions,
+  options: InputRuleOptions
 ) => InputRuleResult | Promise<InputRuleResult>;
 
 export type ErrorMessages = {

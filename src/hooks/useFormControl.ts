@@ -131,6 +131,8 @@ export function useFormControl<T extends FormControlProps>(
     const formControlData: FormControl = {
       initialValue: value,
       initialChecked: checked,
+      collectUnchecked: formControlOptions.collectUnchecked,
+      uncheckedValue: formControlOptions.uncheckedValue,
       value,
       isControlled:
         baseProps.value !== undefined || baseProps.checked !== undefined,
