@@ -264,6 +264,12 @@ export function useFormControl<T extends FormControlProps>(
           ["checkbox", "radio"].includes(formControl.type) &&
           formControl.checked === false
         ) {
+          console.log(
+            formControlOptions,
+            formControl,
+            formControlOptions.collectUnchecked
+          );
+
           return Boolean(formControlOptions.collectUnchecked);
         }
 
