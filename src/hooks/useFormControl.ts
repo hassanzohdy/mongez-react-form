@@ -21,13 +21,6 @@ export const defaultFormControlOptions = {
 
     return value;
   },
-  collectValue: ({ value, multiple }: any) => {
-    if (multiple && !Array.isArray(value)) {
-      return [value];
-    }
-
-    return value;
-  },
 };
 
 export function useFormControl<T extends FormControlProps>(
@@ -264,12 +257,6 @@ export function useFormControl<T extends FormControlProps>(
           ["checkbox", "radio"].includes(formControl.type) &&
           formControl.checked === false
         ) {
-          console.log(
-            formControlOptions,
-            formControl,
-            formControlOptions.collectUnchecked
-          );
-
           return Boolean(formControlOptions.collectUnchecked);
         }
 
@@ -280,21 +267,21 @@ export function useFormControl<T extends FormControlProps>(
           return formControlOptions.collectValue(formControl);
         }
 
-        console.log(formControlOptions, formControl);
-
         if (["checkbox", "radio"].includes(formControl.type)) {
           if (
             !formControl.checked &&
             formControlOptions.uncheckedValue !== undefined
           ) {
-            console.log("Unchecked !");
-
             return formControlOptions.uncheckedValue;
           } else if (formControl.checked) {
             return formControl.value !== undefined ? formControl.value : true;
           }
 
           return false;
+        }
+
+        if (formControl.multiple && !Array.isArray(value)) {
+          return [value];
         }
 
         return formControl.value;
