@@ -147,6 +147,15 @@ export function useFormControl<T extends FormControlProps>(
       setError,
       props: baseProps,
       setChecked: (checked: boolean) => {
+        onChange?.(checked, {
+          formControl,
+          value: formControl.value,
+        });
+
+        if (formControl.isControlled) {
+          return;
+        }
+
         setChecked(checked);
         formControl.checked = checked;
 
