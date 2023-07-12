@@ -385,6 +385,17 @@ export class Form extends React.Component<FormProps> implements FormInterface {
   }
 
   /**
+   * Determine whether form should ignore empty values
+   */
+  public shouldIgnoreEmptyValues() {
+    return (
+      this.props.ignoreEmptyValues !== undefined
+        ? this.props.ignoreEmptyValues
+        : getFormConfig("ignoreEmptyValues", false)
+    ) as Boolean;
+  }
+
+  /**
    * Collect values for the given form control names
    */
   public collectValues(formControlNames: string[] = []) {
@@ -392,10 +403,7 @@ export class Form extends React.Component<FormProps> implements FormInterface {
 
     const values: FormControlValues = {};
 
-    const ignoreEmptyValues =
-      this.props.ignoreEmptyValues !== undefined
-        ? this.props.ignoreEmptyValues
-        : getFormConfig("ignoreEmptyValues", false);
+    const ignoreEmptyValues = this.shouldIgnoreEmptyValues();
 
     for (const formControl of formControls) {
       const name = formControl.name;
