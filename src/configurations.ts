@@ -10,7 +10,7 @@ export function getFormConfig(
   key: keyof FormConfigurations,
   defaultValue?: any
 ) {
-  return formConfigurations[key] || defaultValue;
+  return formConfigurations[key] ?? defaultValue;
 }
 
 export function getFormConfigurations(): FormConfigurations {
