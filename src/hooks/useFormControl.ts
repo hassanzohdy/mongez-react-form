@@ -174,11 +174,6 @@ export function useFormControl<T extends FormControlProps>(
           formControl.setError(null);
         }
 
-        onChange?.(checked, {
-          formControl,
-          value: formControl.value,
-        });
-
         events.trigger(`form.control.${id}.change`, {
           value: formControl.value,
           checked: formControl.checked,
