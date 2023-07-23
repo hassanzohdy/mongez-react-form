@@ -412,8 +412,9 @@ export class Form extends React.Component<FormProps> implements FormInterface {
       const value = formControl.collectValue();
 
       if (
-        (ignoreEmptyValues && [null, undefined, ""].includes(value)) ||
-        (Array.isArray(value) && value.length === 0)
+        ignoreEmptyValues &&
+        ([null, undefined, ""].includes(value) ||
+          (Array.isArray(value) && value.length === 0))
       )
         continue;
 
