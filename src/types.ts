@@ -106,6 +106,10 @@ export type FormControl = {
    */
   type: string;
   /**
+   * default value
+   */
+  defaultValue?: any;
+  /**
    * Form input id, used as a form input flag determiner
    */
   id: string;
@@ -396,7 +400,7 @@ export interface FormInterface {
    */
   on: (
     event: FormEventType,
-    callback: (form: FormInterface) => void
+    callback: (form: FormInterface) => void,
   ) => EventSubscription;
   /**
    * Register new form input
@@ -477,7 +481,7 @@ export type FormContextProps = FormInterface | null;
 export type InputRuleResult = React.ReactNode | undefined;
 
 export type InputRule = (
-  options: InputRuleOptions
+  options: InputRuleOptions,
 ) => InputRuleResult | Promise<InputRuleResult>;
 
 export type ErrorMessages = {

@@ -37,7 +37,7 @@ export default function TextInput(props: FormControlProps) {
     <input
       type="text"
       value={value}
-      onChange={e => {
+      onChange={(e) => {
         changeValue(e.target.value);
       }}
     />
@@ -199,7 +199,7 @@ type FormControl = {
    * Determine if form control is disabled
    */
   disabled: boolean;
-}
+};
 ```
 
 ## Input name
@@ -244,7 +244,7 @@ export default function TextInput(props: FormControlProps) {
   return (
     <input
       value={value}
-      onChange={e => {
+      onChange={(e) => {
         changeValue(e.target.value);
       }}
     />
@@ -252,7 +252,7 @@ export default function TextInput(props: FormControlProps) {
 }
 
 TextInput.defaultProps = {
-  type: "text"
+  type: "text",
 };
 ```
 
@@ -279,7 +279,7 @@ export default function App() {
       <TextInput
         name="firstName"
         value={value}
-        onChange={value => {
+        onChange={(value) => {
           changeValue(value);
         }}
       />
@@ -328,10 +328,10 @@ export default function TextInput(props: FormControlProps) {
   return (
     <input
       value={value}
-      onChange={e => {
+      onChange={(e) => {
         changeValue(e.target.value, {
           event: e,
-          otherOption: "some value"
+          otherOption: "some value",
         });
       }}
     />
@@ -347,7 +347,6 @@ Now you can receive the event and other options in the `onChange` prop in the se
 // src/App.tsx
 import { Form } from "@mongez/react-form";
 import TextInput from "./components/TextInput";
-
 
 export default function App() {
   const [value, changeValue] = useState("");
@@ -387,7 +386,7 @@ export default function Checkbox(props: FormControlProps) {
     <input
       type="checkbox"
       checked={checked}
-      onChange={e => {
+      onChange={(e) => {
         setChecked(e.target.checked);
       }}
     />
@@ -436,7 +435,7 @@ export default function App() {
     <Form onSubmit={submitForm}>
       <Checkbox
         checked={checked}
-        onChange={checked => {
+        onChange={(checked) => {
           setChecked(checked);
         }}
         name="rememberMe"
@@ -490,7 +489,7 @@ export default function Checkbox(props: FormControlProps) {
     <input
       type="checkbox"
       checked={value}
-      onChange={e => {
+      onChange={(e) => {
         setChecked(e.target.checked);
       }}
     />
@@ -498,7 +497,7 @@ export default function Checkbox(props: FormControlProps) {
 }
 
 Checkbox.defaultProps = {
-  defaultValue: 1
+  defaultValue: 1,
 };
 ```
 
@@ -510,14 +509,14 @@ import { useFormControl, FormControlProps } from "@mongez/react-form";
 
 export default function Checkbox(props: FormControlProps) {
   const { checked, setChecked } = useFormControl(props, {
-    uncheckedValue: 0
+    uncheckedValue: 0,
   });
 
   return (
     <input
       type="checkbox"
       checked={value}
-      onChange={e => {
+      onChange={(e) => {
         setChecked(e.target.checked);
       }}
     />
@@ -525,7 +524,7 @@ export default function Checkbox(props: FormControlProps) {
 }
 
 Checkbox.defaultProps = {
-  defaultValue: 1
+  defaultValue: 1,
 };
 ```
 
@@ -545,7 +544,7 @@ export default function TextInput(props: FormControlProps) {
       type="text"
       value={value}
       id={id}
-      onChange={e => {
+      onChange={(e) => {
         changeValue(e.target.value);
       }}
     />
@@ -563,7 +562,8 @@ import { useFormControl, FormControlProps } from "@mongez/react-form";
 import { useEffect } from "react";
 
 export default function TextInput(props: FormControlProps) {
-  const { value, changeValue, id, inputRef, formControl } = useFormControl(props);
+  const { value, changeValue, id, inputRef, formControl } =
+    useFormControl(props);
 
   useEffect(() => {
     setTimeout(() => {
@@ -579,7 +579,7 @@ export default function TextInput(props: FormControlProps) {
       value={value}
       id={id}
       ref={inputRef}
-      onChange={e => {
+      onChange={(e) => {
         changeValue(e.target.value);
       }}
     />
@@ -587,7 +587,7 @@ export default function TextInput(props: FormControlProps) {
 }
 ```
 
-You can also perform  `blur` as well:
+You can also perform `blur` as well:
 
 ```tsx
 // src/components/TextInput.tsx
@@ -595,7 +595,8 @@ import { useFormControl, FormControlProps } from "@mongez/react-form";
 import { useEffect } from "react";
 
 export default function TextInput(props: FormControlProps) {
-  const { value, changeValue, id, inputRef, formControl } = useFormControl(props);
+  const { value, changeValue, id, inputRef, formControl } =
+    useFormControl(props);
 
   useEffect(() => {
     setTimeout(() => {
@@ -616,7 +617,7 @@ export default function TextInput(props: FormControlProps) {
       value={value}
       id={id}
       ref={inputRef}
-      onChange={e => {
+      onChange={(e) => {
         changeValue(e.target.value);
       }}
     />
@@ -641,7 +642,7 @@ export default function TextInput(props: FormControlProps) {
       value={value}
       id={id}
       disabled={disabled}
-      onChange={e => {
+      onChange={(e) => {
         changeValue(e.target.value);
       }}
     />
@@ -656,7 +657,8 @@ If you want to change the state of `disable` state, you can use `disable` and `e
 import { useFormControl, FormControlProps } from "@mongez/react-form";
 
 export default function TextInput(props: FormControlProps) {
-  const { value, changeValue, id, disabled, disable, formControl } = useFormControl(props);
+  const { value, changeValue, id, disabled, disable, formControl } =
+    useFormControl(props);
 
   useEffect(() => {
     setTimeout(() => {
@@ -673,7 +675,7 @@ export default function TextInput(props: FormControlProps) {
       value={value}
       id={id}
       disabled={disabled}
-      onChange={e => {
+      onChange={(e) => {
         changeValue(e.target.value);
       }}
     />
@@ -696,7 +698,7 @@ export default function Checkbox(props: FormControlProps) {
     <input
       type="checkbox"
       checked={value}
-      onChange={e => {
+      onChange={(e) => {
         setChecked(e.target.checked);
       }}
       {...otherProps}
@@ -724,7 +726,7 @@ export default function TextInput(props: FormControlProps) {
     <input
       type="text"
       value={value}
-      onChange={e => {
+      onChange={(e) => {
         changeValue(e.target.value);
       }}
     />
@@ -732,7 +734,7 @@ export default function TextInput(props: FormControlProps) {
 }
 
 TextInput.defaultProps = {
-  rules: [requiredRule]
+  rules: [requiredRule],
 };
 ```
 
@@ -776,19 +778,25 @@ export default function TextInput(props: FormControlProps) {
       <input
         type="text"
         value={value}
-        onChange={e => {
+        onChange={(e) => {
           changeValue(e.target.value);
         }}
       />
-      {error && <span style={{
-        color: 'red'
-      }}>{error}</span>}
+      {error && (
+        <span
+          style={{
+            color: "red",
+          }}
+        >
+          {error}
+        </span>
+      )}
     </>
   );
 }
 
 TextInput.defaultProps = {
-  rules: [requiredRule]
+  rules: [requiredRule],
 };
 ```
 
@@ -848,7 +856,7 @@ Here are the available rules that you can use:
 - `alphabetRule`: Check if the value is a valid alphabet.
   - Translation Key: `validation.alphabet`.
   - Requires `type` prop to be `alphabet`.
-- `matchRule`:  Check if the value matches the value of the input with the name of the `match` prop.
+- `matchRule`: Check if the value matches the value of the input with the name of the `match` prop.
   - Requires `match` prop to be present.
   - Translation Key: `validation.match`, receives `:matchingInput` as a placeholder.
   - `match` prop will be preserved from being passed to `otherProps`.
@@ -888,8 +896,20 @@ export default function App() {
 
 ```tsx
 // src/components/TextInput.tsx
-import { Form, requiredRule, 
-  minLengthRule, maxLengthRule, lengthRule, emailRule, numberRule, floatRule, integerRule, patternRule, alphabetRule, matchRule } from "@mongez/react-form";
+import {
+  Form,
+  requiredRule,
+  minLengthRule,
+  maxLengthRule,
+  lengthRule,
+  emailRule,
+  numberRule,
+  floatRule,
+  integerRule,
+  patternRule,
+  alphabetRule,
+  matchRule,
+} from "@mongez/react-form";
 
 export default function TextInput(props: FormControlProps) {
   const { value, changeValue, error } = useFormControl(props);
@@ -899,19 +919,37 @@ export default function TextInput(props: FormControlProps) {
       <input
         type="text"
         value={value}
-        onChange={e => {
+        onChange={(e) => {
           changeValue(e.target.value);
         }}
       />
-      {error && <span style={{
-        color: 'red'
-      }}>{error}</span>}
+      {error && (
+        <span
+          style={{
+            color: "red",
+          }}
+        >
+          {error}
+        </span>
+      )}
     </>
   );
 }
 
 TextInput.defaultProps = {
-  rules: [requiredRule, minLengthRule, maxLengthRule, lengthRule, emailRule, numberRule, floatRule, integerRule, patternRule, alphabetRule, matchRule]
+  rules: [
+    requiredRule,
+    minLengthRule,
+    maxLengthRule,
+    lengthRule,
+    emailRule,
+    numberRule,
+    floatRule,
+    integerRule,
+    patternRule,
+    alphabetRule,
+    matchRule,
+  ],
 };
 ```
 
@@ -966,19 +1004,25 @@ export default function TextInput(props: FormControlProps) {
       <input
         type={type}
         value={value}
-        onChange={e => {
+        onChange={(e) => {
           changeValue(e.target.value);
         }}
       />
-      {error && <span style={{
-        color: 'red'
-      }}>{error}</span>}
+      {error && (
+        <span
+          style={{
+            color: "red",
+          }}
+        >
+          {error}
+        </span>
+      )}
     </>
   );
 }
 
 TextInput.defaultProps = {
-  rules: [requiredRule, phoneNumberRule]
+  rules: [requiredRule, phoneNumberRule],
 };
 ```
 
@@ -1039,8 +1083,8 @@ export default function App() {
 
     const usernameRegex = /^[a-zA-Z0-9]+$/;
 
-    if (! usernameRegex.test(value)) {
-      return 'Username must be alphanumeric';
+    if (!usernameRegex.test(value)) {
+      return "Username must be alphanumeric";
     }
   };
 
@@ -1237,7 +1281,7 @@ groupedTranslations("validation", validationTranslation);
 
 #### Changing the error keys per component call
 
-This coulld be useful for  some rules such as the`match` rule to override the error key with the matching input name.
+This coulld be useful for some rules such as the`match` rule to override the error key with the matching input name.
 
 ```tsx
 // srcc/App.tsx
@@ -1248,12 +1292,12 @@ export default function App() {
   return (
     <Form>
       <TextInput name="password" type="password" required minLength={8} />
-      <TextInput 
-        name="confirmPassword" 
-        match="password" 
-        type="password" 
+      <TextInput
+        name="confirmPassword"
+        match="password"
+        type="password"
         errorKeys={{
-          matchingInput: "Passowrd Input"
+          matchingInput: "Passowrd Input",
         }}
       />
     </Form>
@@ -1276,12 +1320,12 @@ export default function App() {
   return (
     <Form>
       <TextInput name="password" type="password" required minLength={8} />
-      <TextInput 
-        name="confirmPassword" 
-        match="password" 
-        type="password" 
+      <TextInput
+        name="confirmPassword"
+        match="password"
+        type="password"
         errorKeys={{
-          matchingInput: <span className="text-danger">Passowrd Input</span>
+          matchingInput: <span className="text-danger">Passowrd Input</span>,
         }}
       />
     </Form>
@@ -1301,10 +1345,10 @@ import { TextInput } from "@mongez/form";
 export default function App() {
   return (
     <Form>
-      <TextInput 
-        name="username" 
+      <TextInput
+        name="username"
         placeholder="Username must accept only letters and numbers"
-        pattern={/^[a-zA-Z0-9]+$/}} 
+        pattern={/^[a-zA-Z0-9]+$/}}
         errorMessages={{
           pattern: "Username must accept only letters and numbers"
         }}
@@ -1325,10 +1369,10 @@ import { TextInput } from "@mongez/form";
 export default function App() {
   return (
     <Form>
-      <TextInput 
-        name="username" 
+      <TextInput
+        name="username"
         placeholder="Username must accept only letters and numbers"
-        pattern={/^[a-zA-Z0-9]+$/}} 
+        pattern={/^[a-zA-Z0-9]+$/}}
         errorMessages={{
           pattern: trans('usernamePatternError')
         }}
@@ -1421,9 +1465,9 @@ import createAccount from "./services/createAccount";
 
 export default function App() {
   const submitForm = ({ formData }) => {
-    createAccount(formData).then(response => {
+    createAccount(formData).then((response) => {
       //...
-    })
+    });
   };
 
   return (
@@ -1568,7 +1612,7 @@ export default function App() {
   };
 
   const onError = (formControls) => {
-    const errors = formControls.map(control => control.error);
+    const errors = formControls.map((control) => control.error);
     console.log(errors);
   };
 
@@ -1596,11 +1640,9 @@ export default function InternalComponent() {
 
   const submitForm = () => {
     form?.submit();
-  }
+  };
 
-  return (
-      <TextInput name="name" onChange={submitForm} required />
-  );
+  return <TextInput name="name" onChange={submitForm} required />;
 }
 ```
 
@@ -1645,9 +1687,7 @@ import { useSubmitButton } from "@mongez/react-form";
 export default function SubmitButton({ children }) {
   const { disabled } = useSubmitButton();
 
-  return (
-    <button disabled={disabled}>{children}</button>
-  );
+  return <button disabled={disabled}>{children}</button>;
 }
 ```
 
@@ -1664,7 +1704,7 @@ export default function SubmitButton({ children }) {
 
   return (
     <button disabled={disabled}>
-      {isSubmitting ? 'Loading...' : children}
+      {isSubmitting ? "Loading..." : children}
     </button>
   );
 }
@@ -1683,11 +1723,13 @@ import createAccount from "./services/createAccount";
 
 export default function App() {
   const submitForm = ({ values }) => {
-    createAccount(values).then(response => {
-      //...
-    }).catch(error => {
-      form?.submitting(false);
-    })
+    createAccount(values)
+      .then((response) => {
+        //...
+      })
+      .catch((error) => {
+        form?.submitting(false);
+      });
   };
 
   return (
@@ -1737,18 +1779,14 @@ import { getForm, Form } from "@mongez/react-form";
 
 export default function LoginPage() {
   React.useEffect(() => {
-    console.log(getForm('login-form')); // will get the login form
-    console.log(getForm('register-form')); // will get the register form
+    console.log(getForm("login-form")); // will get the login form
+    console.log(getForm("register-form")); // will get the register form
   }, []);
 
   return (
     <>
-    <Form id="login-form">
-      ...
-    </Form>
-    <Form id="register-form">
-      ...
-    </Form>
+      <Form id="login-form">...</Form>
+      <Form id="register-form">...</Form>
     </>
   );
 }
@@ -1838,12 +1876,12 @@ export default function App() {
   };
 
   useEffect(() => {
-    formRef.current.on('submitting', () => {
-      console.log('Form is being submitted');
+    formRef.current.on("submitting", () => {
+      console.log("Form is being submitted");
     });
 
-    formRef.current.on('submit', () => {
-      console.log('Form is submitted');
+    formRef.current.on("submit", () => {
+      console.log("Form is submitted");
     });
   }, []);
 
@@ -1867,6 +1905,10 @@ Here are the available events:
 - `invalidControls`: will be triggered when the form has invalid controls, recives an array of invalid controls.
 - `validControls`: will be triggered when the form has valid controls, recives an array of valid controls.
 - `validation`: will be triggered when the form is validated, recives a `Boolean` value to indicate if the form is valid or not, also recives an array of all controls that have been validated.
+
+## TODO
+
+- Add silent update
 
 ## Change Log
 

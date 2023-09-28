@@ -25,7 +25,7 @@ export const defaultFormControlOptions = {
 
 export function useFormControl<T extends FormControlProps>(
   baseProps: T,
-  incomingFormControlOptions: FormControlOptions = {}
+  incomingFormControlOptions: FormControlOptions = {},
 ) {
   const {
     id: incomingId,
@@ -47,7 +47,7 @@ export function useFormControl<T extends FormControlProps>(
 
   const id = useId(incomingId);
   const [name] = useState(() =>
-    String(incomingName).replace("][", ".").replace("[", ".").replace("]", "")
+    String(incomingName).replace("][", ".").replace("[", ".").replace("]", ""),
   );
 
   const [checked, setChecked] = useChecked(baseProps);
@@ -132,6 +132,7 @@ export function useFormControl<T extends FormControlProps>(
       id,
       name,
       checked,
+      defaultValue: _dv,
       disabled,
       isValid: true,
       disable(isDisabled) {
@@ -162,7 +163,7 @@ export function useFormControl<T extends FormControlProps>(
         if (formControl.type === "radio" && checked === true) {
           // get all other form radio controllers with same name and set their checked to false
           if (form) {
-            form.controls([formControl.name]).forEach((control) => {
+            form.controls([formControl.name]).forEach(control => {
               if (control.id === formControl.id) return;
 
               control.setChecked(false);
@@ -209,7 +210,7 @@ export function useFormControl<T extends FormControlProps>(
           updateState = true,
           validate = true,
           ...other
-        }: FormControlChangeOptions = {}
+        }: FormControlChangeOptions = {},
       ) {
         if (value !== undefined) {
           value = formControlOptions.transformValue?.(value, formControl);
@@ -293,6 +294,7 @@ export function useFormControl<T extends FormControlProps>(
     };
 
     return formControlData;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const changeValue = (value: any, options: any) => {
