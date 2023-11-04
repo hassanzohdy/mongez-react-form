@@ -8,7 +8,7 @@ export function setFormConfigurations(newConfigurations: FormConfigurations) {
 
 export function getFormConfig(
   key: keyof FormConfigurations,
-  defaultValue?: any
+  defaultValue?: any,
 ) {
   return formConfigurations[key] ?? defaultValue;
 }

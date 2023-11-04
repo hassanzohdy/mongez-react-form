@@ -88,6 +88,19 @@ type FormControl = {
    */
   type: string;
   /**
+   * default value
+   */
+  defaultValue?: any;
+  /**
+   * Check if form control's value is changed
+   */
+  isDirty: boolean;
+  /**
+   * Check if form control is touched
+   * Touched means that the user has focused on the input
+   */
+  isTouched: boolean;
+  /**
    * Form input id, used as a form input flag determiner
    */
   id: string;
@@ -154,7 +167,7 @@ type FormControl = {
   /**
    * Determine if form control is multiple
    */
-  multiple: boolean;
+  multiple?: boolean;
   /**
    * Collect form control value
    */
@@ -192,6 +205,10 @@ type FormControl = {
    */
   onDestroy: (callback: () => void) => EventSubscription;
   /**
+   * Listen to form control when value is reset
+   */
+  onReset: (callback: () => void) => EventSubscription;
+  /**
    * Disable/Enable form control
    */
   disable: (disable: boolean) => void;
@@ -199,6 +216,17 @@ type FormControl = {
    * Determine if form control is disabled
    */
   disabled: boolean;
+  /**
+   * Whether unchecked value should be collected
+   *
+   * Works only if type is `checkbox` or `radio`
+   * @default false
+   */
+  collectUnchecked?: boolean;
+  /**
+   * Define the value if control checked state is false, If collectUnchecked is true
+   */
+  uncheckedValue?: any;
 };
 ```
 
@@ -666,6 +694,84 @@ export default function TextInput(props: FormControlProps) {
       disable();
       // or using the formControl
       formControl.disable();
+    }, 1000);
+  }, []);
+
+  return (
+    <input
+      type="text"
+      value={value}
+      id={id}
+      disabled={disabled}
+      onChange={(e) => {
+        changeValue(e.target.value);
+      }}
+    />
+  );
+}
+```
+
+## Is Touched
+
+> Added in v2.1.0
+
+Is touched in terms of form control concept means that the user has focused on the input.
+
+You can check if the form control is touched or not using `formControl.isTouched` property, for example:
+
+```tsx
+// src/components/TextInput.tsx
+import { useFormControl, FormControlProps } from "@mongez/react-form";
+
+export default function TextInput(props: FormControlProps) {
+  const { value, changeValue, id, disabled, disable, formControl } =
+    useFormControl(props);
+
+  useEffect(() => {
+    setTimeout(() => {
+      // check if the input is touched
+      if (formControl.isTouched) {
+        // do something
+      }
+    }, 1000);
+  }, []);
+
+  return (
+    <input
+      type="text"
+      value={value}
+      id={id}
+      disabled={disabled}
+      onChange={(e) => {
+        changeValue(e.target.value);
+      }}
+    />
+  );
+}
+```
+
+## Is Dirty
+
+> Added in v2.1.0
+
+Is dirty in terms of form control concept means that the form control value is changed.
+
+You can check if the form control is dirty or not using `formControl.isDirty` property, for example:
+
+```tsx
+// src/components/TextInput.tsx
+import { useFormControl, FormControlProps } from "@mongez/react-form";
+
+export default function TextInput(props: FormControlProps) {
+  const { value, changeValue, id, disabled, disable, formControl } =
+    useFormControl(props);
+
+  useEffect(() => {
+    setTimeout(() => {
+      // check if the input is dirty
+      if (formControl.isDirty) {
+        // do something
+      }
     }, 1000);
   }, []);
 
@@ -1912,6 +2018,9 @@ Here are the available events:
 
 ## Change Log
 
+- 2.1.0 (05 Nov 2023)
+  - Added `isDirty` to form control.
+  - Added `isTouched` to form control.
 - 2.0.0 (05 Mar 2023)
   - Refactored code
   - Replaced `useFormInput` with `useFormControl`

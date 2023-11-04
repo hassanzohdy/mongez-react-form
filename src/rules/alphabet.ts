@@ -1,6 +1,6 @@
 import { trans } from "@mongez/localization";
 
-export const alphabetRule = ({ value, type, alphabet, errorKeys }: any) => {
+export const alphabetRule = ({ value, type, errorKeys }: any) => {
   if (!value || type !== "alphabet") return;
 
   if (!/^[a-zA-Z]+$/.test(value)) {

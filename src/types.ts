@@ -110,6 +110,15 @@ export type FormControl = {
    */
   defaultValue?: any;
   /**
+   * Check if form control's value is changed
+   */
+  isDirty: boolean;
+  /**
+   * Check if form control is touched
+   * Touched means that the user has focused on the input
+   */
+  isTouched: boolean;
+  /**
    * Form input id, used as a form input flag determiner
    */
   id: string;

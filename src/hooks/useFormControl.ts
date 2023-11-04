@@ -127,6 +127,8 @@ export function useFormControl<T extends FormControlProps>(
       collectUnchecked: formControlOptions.collectUnchecked,
       uncheckedValue: formControlOptions.uncheckedValue,
       value,
+      isDirty: false,
+      isTouched: false,
       isControlled:
         baseProps.value !== undefined || baseProps.checked !== undefined,
       id,
@@ -152,6 +154,8 @@ export function useFormControl<T extends FormControlProps>(
           formControl,
           value: formControl.value,
         });
+
+        formControl.isDirty = true;
 
         if (formControl.isControlled) {
           return;
@@ -219,6 +223,8 @@ export function useFormControl<T extends FormControlProps>(
             setValue(value);
           }
         }
+
+        formControl.isDirty = true;
 
         if (baseProps.type === "checkbox") {
           formControl.checked = Boolean(checked);
@@ -297,6 +303,28 @@ export function useFormControl<T extends FormControlProps>(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    // now find all rules that have onInit method and call it
+    const events: EventSubscription[] = [];
+    for (const rule of rules) {
+      if ((rule as any).onInit) {
+        const output = (rule as any).onInit({
+          formControl,
+          form,
+          ...props,
+        });
+
+        if (output) {
+          events.push(output);
+        }
+      }
+    }
+
+    return () => {
+      events.forEach(event => event.unsubscribe());
+    };
+  }, [form, formControl, props, rules]);
+
   const changeValue = (value: any, options: any) => {
     formControl.change(value, {
       ...options,
@@ -329,6 +357,24 @@ export function useFormControl<T extends FormControlProps>(
     formControl.disable(Boolean(incomingDisabled));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [incomingDisabled]);
+
+  useEffect(() => {
+    // Check if the form control is touched
+    if (formControl.isTouched) return;
+
+    const input: HTMLInputElement | undefined =
+      formControl.inputRef?.current || document.getElementById(formControl.id);
+
+    if (!input) return;
+
+    const updateTouchState = () => (formControl.isTouched = true);
+
+    input.addEventListener("focus", updateTouchState);
+
+    return () => {
+      input.removeEventListener("focus", updateTouchState);
+    };
+  }, [formControl]);
 
   useEffect(() => {
     setTimeout(() => {
