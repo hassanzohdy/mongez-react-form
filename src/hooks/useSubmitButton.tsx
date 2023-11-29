@@ -15,8 +15,6 @@ export function useSubmitButton() {
     });
 
     const inValidControls = form.on("invalidControls", () => {
-      console.log("IFF");
-
       disable(true);
     });
 
