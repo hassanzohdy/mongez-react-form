@@ -2012,6 +2012,83 @@ Here are the available events:
 - `validControls`: will be triggered when the form has valid controls, recives an array of valid controls.
 - `validation`: will be triggered when the form is validated, recives a `Boolean` value to indicate if the form is valid or not, also recives an array of all controls that have been validated.
 
+## Validate Stepper
+
+Sometimes you may deal with a form that has multiple steps, and you want to validate each step before moving to the next one, you can use `validateVisible` method to do that.
+
+First off, make sure the elements are hidden and `not removed` from the DOM, otherwise, the validation will not work.
+
+Secondly, each input must use the `visibleElementRef` either in the input itself or the wrapper, this way the form will know which inputs are visible and which are not.
+
+```tsx
+// src/components/TextInput.tsx
+import { Form, useFormControl } from "@mongez/react-form";
+
+export default function TextInput(props: FormControlProps) {
+  const { value, changeValue, type, error, visibleElementRef } =
+    useFormControl(props);
+
+  return (
+    <div ref={visibleElementRef}>
+      <input
+        type={type}
+        value={value}
+        onChange={(e) => {
+          changeValue(e.target.value);
+        }}
+      />
+      {error && (
+        <span
+          style={{
+            color: "red",
+          }}
+        >
+          {error}
+        </span>
+      )}
+    </div>
+  );
+}
+```
+
+Finally, when the usere clicks on the next button, validate the current step, if it's valid, move to the next step, otherwise, show the errors, but this time instead of using `validate` methid, we will use `validateVisible` method.
+
+```tsx
+// src/App.tsx
+import { Form } from "@mongez/react-form";
+import TextInput from "./components/TextInput";
+
+export default function App() {
+  const formRef = useRef();
+
+  const submitForm = ({ values }) => {
+    console.log(values);
+  };
+
+  const nextStep = async () => {
+    const form = formRef.current;
+
+    form.validateVisible().then(() => {
+      if (form.isValid) {
+        // move to the next step
+      }
+    });
+  };
+
+  return (
+    <Form ref={formRef} onSubmit={submitForm}>
+      <TextInput name="name" required />
+      <TextInput name="username" />
+      <button type="button" onClick={nextStep}>
+        Next
+      </button>
+    </Form>
+  );
+}
+```
+
+When the validation is done, the output of the promise returns list of the inputs which have been validated either they are valid or not.
+
 ## TODO
 
 - Add silent update

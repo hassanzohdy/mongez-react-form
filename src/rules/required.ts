@@ -20,7 +20,7 @@ export const requiredRule = ({
 requiredRule.rule = "required";
 requiredRule.preservedProps = ["required"];
 
-export const isEmpty = (value: any) => {
+const isEmpty = (value: any) => {
   return (
     value === undefined ||
     value === null ||
