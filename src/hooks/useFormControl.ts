@@ -23,9 +23,25 @@ export const defaultFormControlOptions = {
   },
 };
 
+const isElementOrAncestorHidden = (element: HTMLElement) => {
+  if (!element) {
+    return false;
+  }
+
+  if (element.hidden) {
+    return true;
+  }
+
+  if (!element.parentElement) {
+    return false;
+  }
+
+  return isElementOrAncestorHidden(element.parentElement);
+};
+
 export function useFormControl<T extends FormControlProps>(
   baseProps: T,
-  incomingFormControlOptions: FormControlOptions = {},
+  incomingFormControlOptions: FormControlOptions = {}
 ) {
   const {
     id: incomingId,
@@ -47,7 +63,7 @@ export function useFormControl<T extends FormControlProps>(
 
   const id = useId(incomingId);
   const [name] = useState(() =>
-    String(incomingName).replace("][", ".").replace("[", ".").replace("]", ""),
+    String(incomingName).replace("][", ".").replace("[", ".").replace("]", "")
   );
 
   const [checked, setChecked] = useChecked(baseProps);
@@ -167,7 +183,7 @@ export function useFormControl<T extends FormControlProps>(
         if (formControl.type === "radio" && checked === true) {
           // get all other form radio controllers with same name and set their checked to false
           if (form) {
-            form.controls([formControl.name]).forEach(control => {
+            form.controls([formControl.name]).forEach((control) => {
               if (control.id === formControl.id) return;
 
               control.setChecked(false);
@@ -186,7 +202,7 @@ export function useFormControl<T extends FormControlProps>(
         });
       },
       isVisible: () => {
-        return visibleElementRef.current?.hidden === false;
+        return isElementOrAncestorHidden(visibleElementRef.current) === false;
       },
       focus: () => {
         inputRef.current?.focus();
@@ -214,7 +230,7 @@ export function useFormControl<T extends FormControlProps>(
           updateState = true,
           validate = true,
           ...other
-        }: FormControlChangeOptions = {},
+        }: FormControlChangeOptions = {}
       ) {
         if (value !== undefined) {
           value = formControlOptions.transformValue?.(value, formControl);
@@ -321,7 +337,7 @@ export function useFormControl<T extends FormControlProps>(
     }
 
     return () => {
-      events.forEach(event => event.unsubscribe());
+      events.forEach((event) => event.unsubscribe());
     };
   }, [form, formControl, props, rules]);
 
