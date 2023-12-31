@@ -186,7 +186,7 @@ export function useFormControl<T extends FormControlProps>(
         });
       },
       isVisible: () => {
-        return visibleElementRef.current?.isHidden === false;
+        return visibleElementRef.current?.hidden === false;
       },
       focus: () => {
         inputRef.current?.focus();
