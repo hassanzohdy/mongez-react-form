@@ -127,7 +127,7 @@ type FormControl = {
   /**
    * Determine whether the form input is valid, this is checked after calling the validate method
    */
-  isValid: boolean;
+  isValid: () => boolean;
   /**
    * Focus on the element
    */
@@ -2069,7 +2069,7 @@ export default function App() {
     const form = formRef.current;
 
     form.validateVisible().then(() => {
-      if (form.isValid) {
+      if (form.isValid()) {
         // move to the next step
       }
     });
