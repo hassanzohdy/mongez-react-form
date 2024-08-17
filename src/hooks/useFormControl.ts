@@ -169,6 +169,7 @@ export function useFormControl<T extends FormControlProps>(
         onChange?.(checked, {
           formControl,
           value: formControl.value,
+          checked,
         });
 
         formControl.isDirty = true;

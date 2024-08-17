@@ -1,6 +1,5 @@
 import events, { EventSubscription } from "@mongez/events";
 import { debounce, toInputName } from "@mongez/reinforcements";
-import Is from "@mongez/supportive-is";
 import React from "react";
 import {
   addToFormsList,
@@ -16,6 +15,14 @@ import {
   FormInterface,
   FormProps,
 } from "./../types";
+
+function isPlainObject(value: any) {
+  return (
+    value !== null &&
+    Object.prototype.toString.call(value) === "[object Object]"
+  );
+}
+
 export class Form extends React.Component<FormProps> implements FormInterface {
   /**
    * {@inheritdoc}
@@ -461,7 +468,7 @@ export class Form extends React.Component<FormProps> implements FormInterface {
           formData.append(`${formControlName}[]`, item);
         }
         continue;
-      } else if (Is.plainObject(value)) {
+      } else if (isPlainObject(value)) {
         for (const key in value) {
           formData.append(`${formControlName}[${key}]`, value[key]);
         }
