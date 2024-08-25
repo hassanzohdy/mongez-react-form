@@ -66,7 +66,7 @@ export type FormProps = Omit<
   /**
    * Default value that will be passed to all form controls
    */
-  defaultValue: Record<string, any> | undefined;
+  defaultValue?: Record<string, any> | undefined;
   /**
    * Whether to ignore empty values
    *
