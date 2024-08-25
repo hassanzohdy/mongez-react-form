@@ -1,30 +1,32 @@
 import { trans } from "@mongez/localization";
+import { type InputRule } from "../types";
 
-export const requiredRule = ({
-  type,
-  value,
-  errorKeys,
-  required,
-  checked,
-}: any) => {
-  if (!required) return;
-
-  if (
-    (["checkbox", "radio"].includes(type) && checked === false) ||
-    isEmpty(value)
-  ) {
-    return trans("validation.required", { input: errorKeys.name });
-  }
-};
-
-requiredRule.rule = "required";
-requiredRule.preservedProps = ["required"];
-
-const isEmpty = (value: any) => {
+const isEmpty = value => {
   return (
     value === undefined ||
     value === null ||
     value === "" ||
     (Array.isArray(value) && value.length === 0)
   );
+};
+
+export const requiredRule: InputRule = {
+  name: "required",
+  preservedProps: ["required"],
+  requiresValue: false,
+  validate: ({ type, value, errorKeys, required, checked }) => {
+    if (!required) return;
+
+    if (type === "checkbox") {
+      if (checked === false) {
+        return trans("validation.required", { input: errorKeys.name });
+      }
+
+      return;
+    }
+
+    if (isEmpty(value)) {
+      return trans("validation.required", { input: errorKeys.name });
+    }
+  },
 };

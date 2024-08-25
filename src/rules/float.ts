@@ -1,11 +1,12 @@
 import { trans } from "@mongez/localization";
+import { InputRule } from "../types";
 
-export const floatRule = ({ value, type, errorKeys }: any) => {
-  if (!value || type !== "float") return;
-
-  if (isNaN(Number(value)) && !Number.isInteger(Number(value))) {
-    return trans("validation.float", { input: errorKeys.name });
-  }
+export const floatRule: InputRule = {
+  name: "float",
+  requiresType: "float",
+  validate: ({ value, errorKeys }) => {
+    if (isNaN(Number(value)) && !Number.isInteger(Number(value))) {
+      return trans("validation.float", { input: errorKeys.name });
+    }
+  },
 };
-
-floatRule.rule = "float";

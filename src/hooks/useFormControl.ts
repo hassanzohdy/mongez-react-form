@@ -1,6 +1,8 @@
 import events, { EventSubscription } from "@mongez/events";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { get } from "@mongez/reinforcements";
+import React, { ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import {
+  FormContextData,
   FormControl,
   FormControlChangeOptions,
   FormControlHook,
@@ -8,7 +10,7 @@ import {
   FormControlProps,
   InputRuleOptions,
 } from "../types";
-import { useChecked, useId, useValue } from "./form-hooks";
+import { useId } from "./form-hooks";
 import { useForm } from "./useForm";
 
 export const defaultFormControlOptions = {
@@ -39,9 +41,41 @@ const isElementOrAncestorHidden = (element: HTMLElement) => {
   return isElementOrAncestorHidden(element.parentElement);
 };
 
+const initializeValue = (
+  props: FormControlProps,
+  options: FormControlOptions,
+  form: FormContextData,
+) => {
+  if (![undefined, null].includes(props.value)) {
+    return options.transformValue?.(props.value);
+  }
+
+  if (![undefined, null].includes(props.defaultValue)) {
+    return options.transformValue?.(props.defaultValue);
+  }
+
+  if (form && props.name) {
+    const value = getFormDefaultValue(form, props.name);
+
+    if (value !== undefined) return value;
+  }
+
+  return props.multiple ? [] : "";
+};
+
+function getFormDefaultValue(form: FormContextData, name: string) {
+  if (!form || !name) return;
+
+  const value = get(form.defaultValue, name);
+
+  if (value !== undefined) return value;
+
+  return;
+}
+
 export function useFormControl<T extends FormControlProps>(
   baseProps: T,
-  incomingFormControlOptions: FormControlOptions = {}
+  incomingFormControlOptions: FormControlOptions = {},
 ) {
   const {
     id: incomingId,
@@ -61,25 +95,54 @@ export function useFormControl<T extends FormControlProps>(
     ...props
   } = baseProps;
 
-  const id = useId(incomingId);
-  const [name] = useState(() =>
-    String(incomingName).replace("][", ".").replace("[", ".").replace("]", "")
+  const name = useMemo(
+    () =>
+      String(incomingName)
+        .replace("][", ".")
+        .replace("[", ".")
+        .replace("]", ""),
+    [incomingName],
   );
 
-  const [checked, setChecked] = useChecked(baseProps);
+  const id = useId({
+    id: incomingId,
+    name,
+  });
 
   const formControlOptions = {
     ...defaultFormControlOptions,
     ...incomingFormControlOptions,
   };
 
-  const [value, setValue] = useValue(baseProps, formControlOptions);
   const [disabled, setDisabled] = useState(Boolean(incomingDisabled));
 
-  const [error, updateError] = useState<React.ReactNode>(null);
   const inputRef = useRef<any>();
   const visibleElementRef = useRef<any>();
   const form = useForm();
+
+  const [state, setState] = useState<{
+    error: React.ReactNode;
+    value: any;
+    checked: boolean;
+  }>(() => {
+    return {
+      error: null,
+      value: initializeValue(baseProps, formControlOptions, form),
+      checked:
+        _defaultChecked !== undefined
+          ? _defaultChecked
+          : getFormDefaultValue(form, name),
+    };
+  });
+
+  const { value, checked, error } = state;
+
+  const updateError = (error: ReactNode) => {
+    setState({
+      ...state,
+      error,
+    });
+  };
 
   const setError = (error: React.ReactNode) => {
     updateError(error);
@@ -98,7 +161,68 @@ export function useFormControl<T extends FormControlProps>(
     onError?.(error);
   };
 
-  const validate = async () => {
+  const setValue = (value = formControl.value) => {
+    setState({
+      ...state,
+      value,
+    });
+  };
+
+  const validateFormControl = () => {
+    const error = validate();
+
+    formControl.error = error;
+    formControl.isValid = Boolean(!error);
+
+    if (error) {
+      setError(error);
+    }
+
+    return error;
+  };
+
+  const validateAndSetValue = () => {
+    const error = validate();
+
+    formControl.error = error;
+    formControl.isValid = Boolean(!error);
+
+    if (error) {
+      setState({
+        ...state,
+        value: formControl.value,
+        error,
+      });
+    } else {
+      setState({
+        ...state,
+        value: formControl.value,
+        error: null,
+      });
+    }
+  };
+
+  const validateAndSetChecked = () => {
+    const error = validate();
+
+    formControl.error = error;
+
+    if (error) {
+      setState({
+        ...state,
+        checked: formControl.checked,
+        error,
+      });
+    } else {
+      setState({
+        ...state,
+        checked: formControl.checked,
+        error: null,
+      });
+    }
+  };
+
+  const validate = () => {
     if (!errorKeys.name) {
       errorKeys.name = String(baseProps.label || baseProps.placeholder || name);
     }
@@ -113,27 +237,57 @@ export function useFormControl<T extends FormControlProps>(
       form,
     };
 
-    let validationError: React.ReactNode;
+    let validationError: React.ReactNode | Promise<React.ReactNode> | null;
 
     const validatingRules = [...rules];
+
+    formControl.errorsList = {};
 
     if (incomingValidate) {
       validatingRules.unshift(incomingValidate);
     }
 
     for (const rule of validatingRules) {
-      validationError = await rule(validationData);
+      if (rule.requiresType && rule.requiresType !== formControl.type) continue;
+
+      const requiresValue =
+        rule.requiresValue === undefined || rule.requiresValue;
+
+      if (requiresValue && [undefined, null, ""].includes(formControl.value)) {
+        continue;
+      }
+
+      validationError = rule.validate(validationData);
 
       if (validationError) {
-        const errorMessage = errors[(rule as any).rule] || validationError;
-        setError(errorMessage);
-        return false;
+        if (validationError instanceof Promise) {
+          validationError.then((error: React.ReactNode) => {
+            formControl.errorsList[rule.name || "custom"] = error;
+            setError(error);
+          });
+        } else {
+          const ruleName = rule.name || "custom";
+          const errorMessage = errors[ruleName] || validationError;
+
+          formControl.errorsList[ruleName] = errorMessage;
+
+          if (!incomingFormControlOptions.validateAll) {
+            return errorMessage;
+          }
+        }
       }
     }
 
-    setError(null);
+    if (
+      Object.keys(formControl.errorsList).length > 0 &&
+      !incomingFormControlOptions.validateAll
+    ) {
+      return Object.keys(formControl.errorsList).map(
+        key => formControl.errorsList[key],
+      );
+    }
 
-    return true;
+    return;
   };
 
   const formControl: FormControl = useMemo(() => {
@@ -144,6 +298,7 @@ export function useFormControl<T extends FormControlProps>(
       uncheckedValue: formControlOptions.uncheckedValue,
       value,
       isDirty: false,
+      errorsList: {},
       isTouched: false,
       isControlled:
         baseProps.value !== undefined || baseProps.checked !== undefined,
@@ -152,7 +307,7 @@ export function useFormControl<T extends FormControlProps>(
       checked,
       defaultValue: _dv,
       disabled,
-      isValid: true,
+      isValid: null, // null means not validated yet
       disable(isDisabled) {
         isDisabled = Boolean(isDisabled);
         setDisabled(isDisabled);
@@ -169,7 +324,6 @@ export function useFormControl<T extends FormControlProps>(
         onChange?.(checked, {
           formControl,
           value: formControl.value,
-          checked,
         });
 
         formControl.isDirty = true;
@@ -178,13 +332,12 @@ export function useFormControl<T extends FormControlProps>(
           return;
         }
 
-        setChecked(checked);
         formControl.checked = checked;
 
         if (formControl.type === "radio" && checked === true) {
           // get all other form radio controllers with same name and set their checked to false
           if (form) {
-            form.controls([formControl.name]).forEach((control) => {
+            form.controls([formControl.name]).forEach(control => {
               if (control.id === formControl.id) return;
 
               control.setChecked(false);
@@ -192,9 +345,7 @@ export function useFormControl<T extends FormControlProps>(
           }
         }
 
-        if (checked && formControl.error) {
-          formControl.setError(null);
-        }
+        validateAndSetChecked();
 
         events.trigger(`form.control.${id}.change`, {
           value: formControl.value,
@@ -219,39 +370,28 @@ export function useFormControl<T extends FormControlProps>(
         });
 
         formControl.setError(null);
+        formControl.isValid = null;
+        formControl.isDirty = false;
+        formControl.isTouched = false;
 
         events.trigger(`form.control.${id}.reset`, formControl);
       },
       multiple: formControlOptions.multiple,
-      validate,
+      validate: validateFormControl,
       change(
         value,
         {
-          checked,
           updateState = true,
           validate = true,
           ...other
-        }: FormControlChangeOptions = {}
+        }: FormControlChangeOptions = {},
       ) {
         if (value !== undefined) {
           value = formControlOptions.transformValue?.(value, formControl);
           formControl.value = value;
-          if (updateState) {
-            setValue(value);
-          }
         }
 
         formControl.isDirty = true;
-
-        if (baseProps.type === "checkbox") {
-          formControl.checked = Boolean(checked);
-        }
-
-        if (updateState) {
-          if (baseProps.type === "checkbox") {
-            setChecked(Boolean(checked));
-          }
-        }
 
         events.trigger(`form.control.${id}.change`, {
           value: formControl.value,
@@ -260,7 +400,13 @@ export function useFormControl<T extends FormControlProps>(
           formControl,
         });
 
-        validate && this.validate();
+        if (updateState) {
+          if (validate) {
+            validateAndSetValue();
+          } else {
+            setValue(value);
+          }
+        }
       },
       onChange: (callback: any) => {
         return events.subscribe(`form.control.${id}.change`, callback);
@@ -283,7 +429,7 @@ export function useFormControl<T extends FormControlProps>(
 
         if (
           ["checkbox", "radio"].includes(formControl.type) &&
-          formControl.checked === false
+          !formControl.checked
         ) {
           return Boolean(formControlOptions.collectUnchecked);
         }
@@ -302,7 +448,7 @@ export function useFormControl<T extends FormControlProps>(
           ) {
             return formControlOptions.uncheckedValue;
           } else if (formControl.checked) {
-            return formControl.value !== undefined ? formControl.value : true;
+            return formControl.value || true;
           }
 
           return false;
@@ -338,7 +484,7 @@ export function useFormControl<T extends FormControlProps>(
     }
 
     return () => {
-      events.forEach((event) => event.unsubscribe());
+      events.forEach(event => event?.unsubscribe());
     };
   }, [form, formControl, props, rules]);
 
@@ -427,8 +573,8 @@ export function useFormControl<T extends FormControlProps>(
     };
 
     for (const rule of rules) {
-      if ((rule as any).preservedProps) {
-        finalProps = except(finalProps, (rule as any).preservedProps);
+      if (rule.preservedProps) {
+        finalProps = except(finalProps, rule.preservedProps);
       }
     }
 
@@ -449,10 +595,14 @@ export function useFormControl<T extends FormControlProps>(
     changeValue,
     checked,
     disabled,
+    errorsList: formControl.errorsList,
     disable: formControl.disable.bind(formControl, true),
     enable: formControl.disable.bind(formControl, false),
     setChecked: formControl.setChecked.bind(formControl),
     otherProps: outputProps,
+    get isInvalid() {
+      return formControl.isTouched && formControl.isValid === false;
+    },
   };
 
   return output;

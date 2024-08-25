@@ -1,44 +1,36 @@
 import { trans } from "@mongez/localization";
-import { Form } from "src/form/components";
-import { FormControl } from "src/form/types";
+import { InputRule } from "../types";
 
-export const matchRule = ({ value, match, form, errorKeys }: any) => {
-  if (!match || !form) return;
+export const matchRule: InputRule = {
+  name: "match",
+  preservedProps: ["match"],
+  onInit: ({ formControl, form, match }) => {
+    if (!match || !form) return;
 
-  const matchingElement = form.control(match);
+    const matchingElement = form.control(match);
 
-  if (!matchingElement) return;
+    if (!matchingElement) return;
 
-  if (matchingElement.value !== value) {
-    const matchingName = errorKeys.matchingElement || matchingElement.name;
+    return matchingElement.onChange(() => {
+      if (!formControl.isDirty) return;
 
-    return trans("validation.match", {
-      input: errorKeys.name,
-      matchingInput: matchingName,
+      formControl.validate();
     });
-  }
-};
+  },
+  validate: ({ value, match, form, errorKeys }) => {
+    if (!form) return;
 
-matchRule.preserveProps = ["match"];
-matchRule.rule = "match";
-matchRule.onInit = ({
-  formControl,
-  form,
-  match,
-}: {
-  form: Form;
-  match?: string;
-  formControl: FormControl;
-}) => {
-  if (!match || !form) return;
+    const matchingElement = form.control(match);
 
-  const matchingElement = form.control(match);
+    if (!matchingElement) return;
 
-  if (!matchingElement) return;
+    if (matchingElement.value !== value) {
+      const matchingName = errorKeys.matchingElement || matchingElement.name;
 
-  return matchingElement.onChange(() => {
-    if (!formControl.isDirty) return;
-
-    formControl.validate();
-  });
+      return trans("validation.match", {
+        input: errorKeys.name,
+        matchingInput: matchingName,
+      });
+    }
+  },
 };

@@ -1,16 +1,17 @@
 import { trans } from "@mongez/localization";
+import { InputRule } from "../types";
 
-export const maxLengthRule = ({ value, maxLength, errorKeys }: any) => {
-  if (isNaN(length) || value?.length === undefined) return;
+export const maxLengthRule: InputRule = {
+  name: "maxLength",
+  preservedProps: ["maxLength"],
+  validate: ({ value, maxLength, errorKeys }) => {
+    if (value?.length === undefined) return;
 
-  if (value.length > maxLength) {
-    return trans("validation.maxLength", {
-      input: errorKeys.name,
-      length: maxLength,
-    });
-  }
+    if (value.length > maxLength) {
+      return trans("validation.maxLength", {
+        input: errorKeys.name,
+        length: maxLength,
+      });
+    }
+  },
 };
-
-maxLengthRule.toBePresent = ["maxLength"];
-maxLengthRule.preserveProps = ["maxLength"];
-maxLengthRule.rule = "maxLength";

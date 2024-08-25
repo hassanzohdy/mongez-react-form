@@ -70,12 +70,19 @@ export class Form extends React.Component<FormProps> implements FormInterface {
   protected validControls: FormControl[] = [];
 
   /**
+   * Default value for the form
+   */
+  public defaultValue: FormProps["defaultValue"];
+
+  /**
    * {@inheritDoc}
    */
   public constructor(props: FormProps) {
     super(props);
 
     this.formId = props.id || "frm-" + Math.random().toString(36).substr(2, 9);
+
+    this.defaultValue = props.defaultValue;
 
     this.formEventPrefix = `form.${this.formId}`;
 
@@ -108,10 +115,10 @@ export class Form extends React.Component<FormProps> implements FormInterface {
     this.isValidForm = false;
 
     this.validControls = this.validControls.filter(
-      (control) => control.id !== formControl.id
+      control => control.id !== formControl.id,
     );
 
-    if (this.invalidControls.find((control) => control.id === formControl.id))
+    if (this.invalidControls.find(control => control.id === formControl.id))
       return;
 
     this.invalidControls.push(formControl);
@@ -126,7 +133,7 @@ export class Form extends React.Component<FormProps> implements FormInterface {
     this.trigger("validControl", formControl, this);
 
     this.invalidControls = this.invalidControls.filter(
-      (control) => control.id !== formControl.id
+      control => control.id !== formControl.id,
     );
 
     this.validControls.push(formControl);
@@ -178,7 +185,7 @@ export class Form extends React.Component<FormProps> implements FormInterface {
 
     this._isDisabled = isDisabled;
 
-    controls.forEach((control) => {
+    controls.forEach(control => {
       control.disable(isDisabled);
     });
 
@@ -220,7 +227,7 @@ export class Form extends React.Component<FormProps> implements FormInterface {
    */
   public on(
     event: FormEventType,
-    callback: (form: FormInterface) => void
+    callback: (form: FormInterface) => void,
   ): EventSubscription {
     return events.subscribe(`${this.formEventPrefix}.${event}`, callback);
   }
@@ -244,6 +251,8 @@ export class Form extends React.Component<FormProps> implements FormInterface {
    */
   public submit() {
     if (!this.formElement) return;
+
+    if (this.isSubmitting()) return;
 
     if (this.formElement.requestSubmit) {
       this.formElement.requestSubmit();
@@ -278,7 +287,9 @@ export class Form extends React.Component<FormProps> implements FormInterface {
     for (const input of controls) {
       validatedInputs.push(input);
 
-      if ((await input.validate()) === false) {
+      await input.validate();
+
+      if (input.isValid === false) {
         this.invalidControl(input);
       } else {
         this.validControl(input);
@@ -303,7 +314,7 @@ export class Form extends React.Component<FormProps> implements FormInterface {
    * If formControlNames is passed, then it will be operated only on these names.
    */
   public validateVisible() {
-    const controls = this.formControls.filter((control) => {
+    const controls = this.formControls.filter(control => {
       return control.isVisible();
     });
 
@@ -330,7 +341,7 @@ export class Form extends React.Component<FormProps> implements FormInterface {
     formControl.unregister();
 
     const formControlIndex = this.formControls.findIndex(
-      (input) => input.id === formControl.id
+      input => input.id === formControl.id,
     );
 
     if (formControlIndex === -1) return;
@@ -345,9 +356,9 @@ export class Form extends React.Component<FormProps> implements FormInterface {
    */
   public control(
     value: string,
-    getBy: "name" | "id" = "name"
+    getBy: "name" | "id" = "name",
   ): FormControl | null {
-    return this.formControls.find((input) => input[getBy] === value) || null;
+    return this.formControls.find(input => input[getBy] === value) || null;
   }
 
   /**
@@ -355,7 +366,7 @@ export class Form extends React.Component<FormProps> implements FormInterface {
    */
   public reset() {
     this.trigger("resetting", this);
-    this.formControls.forEach((input) => {
+    this.formControls.forEach(input => {
       input.reset();
     });
 
@@ -372,7 +383,7 @@ export class Form extends React.Component<FormProps> implements FormInterface {
    * Reset form errors
    */
   public resetErrors() {
-    this.formControls.forEach((formControl) => {
+    this.formControls.forEach(formControl => {
       formControl.setError(null);
     });
 
@@ -392,7 +403,7 @@ export class Form extends React.Component<FormProps> implements FormInterface {
    */
   public values(formControlNames: string[] = []) {
     return createNestedObjectFromDotNotation(
-      this.collectValues(formControlNames)
+      this.collectValues(formControlNames),
     );
   }
 
@@ -487,8 +498,8 @@ export class Form extends React.Component<FormProps> implements FormInterface {
   public controls(formControls: string[] = []): FormControl[] {
     if (formControls?.length === 0) return this.formControls;
 
-    return this.formControls.filter((formControl) =>
-      formControls.includes(formControl.name)
+    return this.formControls.filter(formControl =>
+      formControls.includes(formControl.name),
     );
   }
 
@@ -502,6 +513,8 @@ export class Form extends React.Component<FormProps> implements FormInterface {
     await this.validate();
 
     if (this.isValidForm === false) return;
+
+    if (this.isSubmitting()) return;
 
     if (this.props.onSubmit) {
       this.submitting(true);
@@ -546,8 +559,7 @@ export class Form extends React.Component<FormProps> implements FormInterface {
           id={id}
           noValidate
           onSubmit={this.triggerSubmit.bind(this) as any}
-          {...otherProps}
-        >
+          {...otherProps}>
           {children}
         </Component>
       </FormContext.Provider>

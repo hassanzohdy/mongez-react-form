@@ -47,7 +47,7 @@ export type FormSubmitOptions = {
 
 export type FormProps = Omit<
   React.FormHTMLAttributes<HTMLFormElement>,
-  "onSubmit" | "onError"
+  "onSubmit" | "onError" | "defaultValue"
 > & {
   /**
    * Triggered when form validation results to error
@@ -63,6 +63,10 @@ export type FormProps = Omit<
    * @default form
    */
   component?: React.ComponentType<any>;
+  /**
+   * Default value that will be passed to all form controls
+   */
+  defaultValue: Record<string, any> | undefined;
   /**
    * Whether to ignore empty values
    *
@@ -133,7 +137,7 @@ export type FormControl = {
   /**
    * Triggered when form starts validation
    */
-  validate: () => Promise<boolean>;
+  validate: () => ReactNode;
   /**
    * Set form input error
    */
@@ -144,8 +148,15 @@ export type FormControl = {
   isVisible: () => boolean;
   /**
    * Determine whether the form input is valid, this is checked after calling the validate method
+   * if the form control is not validated yet, then it will return null
    */
-  isValid: boolean;
+  isValid: boolean | null;
+  /**
+   * List of errors caused by rules
+   */
+  errorsList: {
+    [rule: string]: React.ReactNode;
+  };
   /**
    * Focus on the element
    */
@@ -245,6 +256,10 @@ export type FormControl = {
    * Define the value if control checked state is false, If collectUnchecked is true
    */
   uncheckedValue?: any;
+  /**
+   * Any other data to be used by the form control
+   */
+  data?: any;
 };
 
 export type FormControlType = string | FormControl;
@@ -409,7 +424,7 @@ export interface FormInterface {
    */
   on: (
     event: FormEventType,
-    callback: (form: FormInterface) => void
+    callback: (form: FormInterface) => void,
   ) => EventSubscription;
   /**
    * Register new form input
@@ -463,6 +478,10 @@ export interface FormInterface {
    * Mark the given form control as valid control
    */
   validControl: (formControl: FormControl) => void;
+  /**
+   * Default value that will be passed to all form controls
+   */
+  defaultValue?: Record<string, any>;
 }
 
 export type InputRuleOptions = {
@@ -485,13 +504,43 @@ export type InputRuleOptions = {
   [key: string]: any;
 };
 
-export type FormContextProps = FormInterface | null;
+export type FormContextData = FormInterface | null;
 
 export type InputRuleResult = React.ReactNode | undefined;
 
-export type InputRule = (
-  options: InputRuleOptions
-) => InputRuleResult | Promise<InputRuleResult>;
+type InitOptions = {
+  formControl: FormControl;
+  form: FormInterface;
+  [key: string]: any;
+};
+
+export type InputRule = {
+  validate: (
+    options: InputRuleOptions,
+  ) => InputRuleResult | Promise<InputRuleResult>;
+  /**
+   * Validation rule name
+   */
+  name?: string;
+  /**
+   * Preserved props will be used to prevent these props to be passed to `otherProps` object
+   */
+  preservedProps?: string[];
+  /**
+   * Whether it requires a value to be called or not
+   *
+   * @default true
+   */
+  requiresValue?: boolean;
+  /**
+   * Determine what input type to run this input against
+   */
+  requiresType?: string;
+  /**
+   * Called when form control is initialized
+   */
+  onInit?: (options: InitOptions) => EventSubscription | undefined;
+};
 
 export type ErrorMessages = {
   [errorName: string]: string;
@@ -502,6 +551,12 @@ export type ErrorKeys = ErrorMessages;
 export type ValidateOn = "change" | "blur";
 
 export type FormControlOptions = {
+  /**
+   * Whether to run all validation rules even if one of them fails
+   *
+   * @default false
+   */
+  validateAll?: boolean;
   /**
    * Determine if form input value is multiple
    */
@@ -534,7 +589,7 @@ export type FormControlProps = {
    * Input name attribute, allows dot notation syntax
    * i.e user.name is valid, will be transformed into user[name]
    */
-  name?: string;
+  name: string;
   /**
    * Input id attribute
    */
@@ -590,7 +645,7 @@ export type FormControlProps = {
   /**
    * Add manual validation
    */
-  validate?: (options: InputRuleOptions) => React.ReactNode;
+  validate?: InputRule;
   /**
    * Input validation rules list
    */
@@ -680,6 +735,16 @@ export type FormControlHook = {
    * Enable form control
    */
   enable: () => void;
+  /**
+   * Errors list
+   */
+  errorsList: FormControl["errorsList"];
+  /**
+   * Determine if current form control is not valid
+   *
+   * An invalid control is a control that is touched and has at least one error
+   */
+  isInvalid: boolean;
 };
 
 export type FormConfigurations = {

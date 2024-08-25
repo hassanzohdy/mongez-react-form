@@ -16,6 +16,21 @@ Or
 
 ## Usage
 
+First off, in your entry main file, we need to set the validation translations, for example:
+
+```tsx
+// src/main.tsx
+import {
+  enValidationTranslation,
+  arValidationTranslation,
+} from "@mongez/react-form";
+import { extend } from "@mongez/localization";
+
+// validation object must be set with the namespace `validation`
+extend("en", { validation: enValidationTranslation });
+extend("ar", { validation: arValidationTranslation });
+```
+
 The package here has two main anchors, `Form` component and `useFormControl` hook.
 
 `Form` component is the wrapper for the entire form, it will handle the form submission and data collection.
@@ -78,7 +93,7 @@ Now once we click on the submit button, the `onSubmit` callback will be called w
 Any component that uses `useFormControl` hook will be considered as a form control, and it will be registered in the form and it will generate a `formControl` instance, which has the following properties:
 
 ```ts
-type FormControl = {
+export type FormControl = {
   /**
    * Form input name, it must be unique
    */
@@ -115,7 +130,7 @@ type FormControl = {
   /**
    * Triggered when form starts validation
    */
-  validate: () => Promise<boolean>;
+  validate: () => ReactNode;
   /**
    * Set form input error
    */
@@ -126,8 +141,15 @@ type FormControl = {
   isVisible: () => boolean;
   /**
    * Determine whether the form input is valid, this is checked after calling the validate method
+   * if the form control is not validated yet, then it will return null
    */
-  isValid: () => boolean;
+  isValid: boolean | null;
+  /**
+   * List of errors caused by rules
+   */
+  errorsList: {
+    [rule: string]: React.ReactNode;
+  };
   /**
    * Focus on the element
    */
@@ -227,6 +249,10 @@ type FormControl = {
    * Define the value if control checked state is false, If collectUnchecked is true
    */
   uncheckedValue?: any;
+  /**
+   * Any other data to be used by the form control
+   */
+  data?: any;
 };
 ```
 
@@ -266,7 +292,7 @@ Input type is also required when passing props to the form control hook, for exa
 // src/components/TextInput.tsx
 import { useFormControl, FormControlProps } from "@mongez/react-form";
 
-export default function TextInput(props: FormControlProps) {
+export default function TextInput({ type = "text", props }: FormControlProps) {
   const { value, changeValue } = useFormControl(props);
 
   return (
@@ -278,10 +304,6 @@ export default function TextInput(props: FormControlProps) {
     />
   );
 }
-
-TextInput.defaultProps = {
-  type: "text",
-};
 ```
 
 The type will be passed to the form control, if not defined it will be set to `text` by default.
@@ -408,7 +430,10 @@ Any form control labeled with `type` equal to `checkbox` will have a slight diff
 import { useFormControl, FormControlProps } from "@mongez/react-form";
 
 export default function Checkbox(props: FormControlProps) {
-  const { checked, setChecked } = useFormControl(props);
+  const { checked, setChecked } = useFormControl({
+    ...props,
+    type: "checkbox", // must be explicitly set to checkbox
+  });
 
   return (
     <input
@@ -523,10 +548,6 @@ export default function Checkbox(props: FormControlProps) {
     />
   );
 }
-
-Checkbox.defaultProps = {
-  defaultValue: 1,
-};
 ```
 
 You can also set the `unchecked` value as well by passing it to `useFormControl` in the second argument object.
@@ -550,10 +571,6 @@ export default function Checkbox(props: FormControlProps) {
     />
   );
 }
-
-Checkbox.defaultProps = {
-  defaultValue: 1,
-};
 ```
 
 ## Form Control Id
@@ -579,6 +596,89 @@ export default function TextInput(props: FormControlProps) {
   );
 }
 ```
+
+> In V3, the id will be by default `${name}-input` to give better accessibility, but you can still pass the id to the form control.
+
+## useRadioInput
+
+> Added in V3.0.0
+
+As radio input is some sort of selection but with variant values for each radio input, `useRadioInput` will make it easier to control a single form control with multiple values from variant radio inputs.
+
+First step is to create a `RadioGroup` component:
+
+```tsx
+import { requiredRule,  RadioGroupContext, type FormControlProps } from "@mongez/react-form";
+
+type RadioGroupProps = FormControlProps & {
+  children: React.ReactNode;
+};
+
+export default function RadioGroup(props\: RadioGroupProps) {
+  const {value, changeValue, error} = useFormControl({
+    ...props,
+    rules: [requiredRule],
+  });
+
+  return (
+    <RadioGroupContext.Provider value={{
+      value,
+      changeValue
+    }}>
+      {children}
+    </RadioGroupContext.Provider>
+  );
+}
+```
+
+So what we did here is we used the `RadioGroupContext` to wrap our radio inputs, then we passed the `value` and `changeValue` to the context provider.
+
+Now let's define our `RadioInput` Component:
+
+```tsx
+import { useRadioInput } from "@mongez/react-form";
+
+export default function RadioInput({
+  value,
+  children,
+}: {
+  value: any;
+  children: React.ReactNode;
+}) {
+  const { isSelected, changeValue } = useRadioInput(value);
+
+  return (
+    <label>
+      <input type="radio" checked={isSelected} onChange={changeValue} />
+      {children}
+    </label>
+  );
+}
+```
+
+Now we can use the `RadioGroup` and `RadioInput` components in our form:
+
+```tsx
+import { Form } from "@mongez/react-form";
+import RadioGroup from "./components/RadioGroup";
+import RadioInput from "./components/RadioInput";
+
+export default function App() {
+  const submitForm = ({ values }) => {
+    console.log(values);
+  };
+
+  return (
+    <Form onSubmit={submitForm}>
+      <RadioGroup name="gender">
+        <RadioInput value="male">Male</RadioInput>
+        <RadioInput value="female">Female</RadioInput>
+      </RadioGroup>
+    </Form>
+  );
+```
+
+We can mark it as a required field by passing the `required` prop to the `RadioGroup` component.
 
 ## Input Ref
 
@@ -825,8 +925,14 @@ First off, let's define the rules list that `could` be used for `TextInput` comp
 // src/components/TextInput.tsx
 import { Form, requiredRule } from "@mongez/react-form";
 
-export default function TextInput(props: FormControlProps) {
-  const { value, changeValue } = useFormControl(props);
+export default function TextInput({
+  rules = [requiredRule],
+  ...props
+}: FormControlProps) {
+  const { value, changeValue } = useFormControl({
+    ...props,
+    rules,
+  });
 
   return (
     <input
@@ -838,10 +944,6 @@ export default function TextInput(props: FormControlProps) {
     />
   );
 }
-
-TextInput.defaultProps = {
-  rules: [requiredRule],
-};
 ```
 
 Here we defined the default `rules` that could run against the value change, now if we want to use it, we just have to pass `required` prop to the `TextInput` component, for example:
@@ -876,8 +978,14 @@ If the rule is `not valid`, then it will return the error message, so we can dis
 // src/components/TextInput.tsx
 import { Form, requiredRule } from "@mongez/react-form";
 
-export default function TextInput(props: FormControlProps) {
-  const { value, changeValue, error } = useFormControl(props);
+export default function TextInput({
+  rules = [requiredRule],
+  ...props
+}: FormControlProps) {
+  const { value, changeValue, error } = useFormControl({
+    ...props,
+    rules,
+  });
 
   return (
     <>
@@ -900,15 +1008,68 @@ export default function TextInput(props: FormControlProps) {
     </>
   );
 }
-
-TextInput.defaultProps = {
-  rules: [requiredRule],
-};
 ```
 
 The error will appear based on current locale code from [Mongez Localization](https://github.com/hassanzohdy/mongez-localization)
 
 For now translation supports Six languages, `English`, `Arabic`, `French`, `Spanish`, `Italian` and `Germany` with locale codes `en`, `ar`, `fr`, `es`, `it` and `de` respectively.
+
+Let's add another rule `minLengthRule` to the `TextInput` component, for example:
+
+```tsx
+// src/components/TextInput.tsx
+import { Form, requiredRule, minLengthRule } from "@mongez/react-form";
+
+export default function TextInput(props: FormControlProps) {
+  const { value, changeValue, error } = useFormControl({
+    rules: [requiredRule, minLengthRule],
+    ...props,
+  });
+
+  return (
+    <>
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => {
+          changeValue(e.target.value);
+        }}
+      />
+      {error && (
+        <span
+          style={{
+            color: "red",
+          }}
+        >
+          {error}
+        </span>
+      )}
+    </>
+  );
+}
+```
+
+Now to make the `minLengthRule` work, the TextInput component must receive `minLength` prop, for example:
+
+```tsx
+// src/App.tsx
+import { Form } from "@mongez/react-form";
+import TextInput from "./components/TextInput";
+
+export default function App() {
+  const submitForm = ({ values }) => {
+    console.log(values);
+  };
+
+  return (
+    <Form onSubmit={submitForm}>
+    >
+      <TextInput name="name" required minLength={3} />
+      <button>Submit</button>
+    </Form>
+  );
+}
+```
 
 ## Rules list
 
@@ -1018,7 +1179,22 @@ import {
 } from "@mongez/react-form";
 
 export default function TextInput(props: FormControlProps) {
-  const { value, changeValue, error } = useFormControl(props);
+  const { value, changeValue, error } = useFormControl({
+    rules: [
+      requiredRule,
+      minLengthRule,
+      maxLengthRule,
+      lengthRule,
+      emailRule,
+      numberRule,
+      floatRule,
+      integerRule,
+      patternRule,
+      alphabetRule,
+      matchRule,
+    ],
+    ...props,
+  });
 
   return (
     <>
@@ -1041,22 +1217,6 @@ export default function TextInput(props: FormControlProps) {
     </>
   );
 }
-
-TextInput.defaultProps = {
-  rules: [
-    requiredRule,
-    minLengthRule,
-    maxLengthRule,
-    lengthRule,
-    emailRule,
-    numberRule,
-    floatRule,
-    integerRule,
-    patternRule,
-    alphabetRule,
-    matchRule,
-  ],
-};
 ```
 
 > This is just a demo, please make a component for each type separately, for example `EmailInput`, `NumberInput`, `FloatInput`, `IntegerInput`, `PasswordInput`, `UrlInput`, `AlphabetInput` and so on.
@@ -1067,32 +1227,51 @@ You can of course create a custom rule to use it among your inputs, for example:
 
 ```tsx
 // src/validation/phoneNumber.ts
-import { groupedTranslations } from "@mongez/localization";
+import { type InputRule } from "@mongez/react-form";
+import { trans } from "@mongez/localization";
 
-export const phoneNumberRule = ({ value, type }) => {
-  if (!value || type !== 'phoneNumber') return;
-
+export const phoneNumberRule: InputRule = {
+  name: "phoneNumber",
+  requiresType: "number",
+  validate: ({ value, type }) => {
   const regex = /^01[0-2|5]{1}[0-9]{8}$/;
 
   if (!regex.test(value)) {
-    return trans('validation.phoneNumber');
+    return trans("validation.phoneNumber");
   }
-}
+};
+```
 
-// don't forget to add the rule name
-phoneNumberRule.rule = 'phoneNumber';
+Here is the `InputRule` interface:
 
-// now add the translation
-groupedTranslations('validation', {
-  phoneNumber: {
-    en: 'Phone number is invalid',
-    ar: 'رقم الهاتف غير صحيح'
-    fr: 'Le numéro de téléphone est invalide',
-    es: 'El número de teléfono no es válido',
-    it: 'Il numero di telefono non è valido',
-    de: 'Die Telefonnummer ist ungültig'
-  }
-});
+```ts
+export type InputRule = {
+  validate: (
+    options: InputRuleOptions
+  ) => InputRuleResult | Promise<InputRuleResult>;
+  /**
+   * Validation rule name
+   */
+  name?: string;
+  /**
+   * Preserved props will be used to prevent these props to be passed to `otherProps` object
+   */
+  preservedProps?: string[];
+  /**
+   * Whether it requires a value to be called or not
+   *
+   * @default true
+   */
+  requiresValue?: boolean;
+  /**
+   * Determine what input type to run this input against
+   */
+  requiresType?: string;
+  /**
+   * Called when form control is initialized
+   */
+  onInit?: (options: InitOptions) => EventSubscription | undefined;
+};
 ```
 
 Now you can use it in your `TextInput` component
@@ -1102,8 +1281,14 @@ Now you can use it in your `TextInput` component
 import { Form, requiredRule } from "@mongez/react-form";
 import { phoneNumberRule } from "../validation/phoneNumber";
 
-export default function TextInput(props: FormControlProps) {
-  const { value, changeValue, type, error } = useFormControl(props);
+export default function TextInput({
+  rules = [requiredRule, phoneNumberRule],
+  ...props
+}: FormControlProps) {
+  const { value, changeValue, type, error } = useFormControl({
+    ...props,
+    rules,
+  });
 
   return (
     <>
@@ -1126,10 +1311,6 @@ export default function TextInput(props: FormControlProps) {
     </>
   );
 }
-
-TextInput.defaultProps = {
-  rules: [requiredRule, phoneNumberRule],
-};
 ```
 
 And that's it!
@@ -1154,24 +1335,6 @@ export default function App() {
     </Form>
   );
 }
-```
-
-Sometimes you may need a certain prop to be present as well, but this is needed only for validation, so we can added to `preservedProps` array to prevent it from being added to `otherProps` object
-
-```tsx
-// src/rules/min.ts
-import { trans } from "@mongez/localization";
-
-export const minRule = ({ value, min, errorKeys }: any) => {
-  if (Number(value) < Number(min)) {
-    return trans("validation.min", { name: errorKeys.name, length: min });
-  }
-};
-
-// prevent the min prop from being added to otherProps
-minRule.preserveProps = ["min"];
-// don't forget to add the rule name
-minRule.rule = "min";
 ```
 
 ### Single Component Validation
@@ -1220,7 +1383,7 @@ import { checkUsername } from "./api";
 export default function App() {
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
 
-  const validateUsername = ({ value }) => {
+  const validateUsername = async ({ value }) => {
     if (!value) return; // skip the validation if the value is empty
 
     // check for username from api
@@ -1484,6 +1647,109 @@ export default function App() {
         }}
       />
     </Form>
+  );
+}
+```
+
+## Validate all Rules
+
+> Added in v2.2.0
+
+By default validation rules are executed one by one, if one of them is not valid, the validation process will stop and the error message will be displayed.
+
+To override this, pass to the second argument of `useFormControl` hook an object with `validateAll` property set to `true`.
+
+```tsx
+// src/components/TextInput.tsx
+import { Form, requiredRule, minLengthRule, type FormControlProps } from "@mongez/react-form";
+
+export default function TextInput(props:FormControlProps) {
+  const { value, changeValue, error } = useFormControl({
+    rules: [requiredRule, minLengthRule],
+    ...props,
+  }, { validateAll: true });
+
+  return (
+    <>
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => {
+          changeValue(e.target.value);
+        }}
+      />
+      {error && (
+        <span
+          style={{
+            color: "red",
+          }}
+        >
+          {error.map((error, index) => (
+            <div key={index}>{error}</div>
+          )}
+        </span>
+      )}
+    </>
+  );
+}
+```
+
+In this case the `error` property will be an array of error messages.
+
+## Get errors list based on rule
+
+> Added in v2.2.0
+
+If you want to detect what rules made the validation fail, you can use `errorsList` property from the `formControl` object.
+
+```tsx
+// src/components/TextInput.tsx
+import {
+  Form,
+  requiredRule,
+  minLengthRule,
+  type FormControlProps,
+} from "@mongez/react-form";
+
+export default function TextInput(props: FormControlProps) {
+  const { value, changeValue, errorsList, error, formControl } = useFormControl(
+    {
+      rules: [requiredRule, minLengthRule],
+      ...props,
+    }
+  );
+
+  return (
+    <>
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => {
+          changeValue(e.target.value);
+        }}
+      />
+      {error && (
+        <span
+          style={{
+            color: "red",
+          }}
+        >
+          {error}
+        </span>
+      )}
+
+      {errorsList.minLength && (
+        <span
+          style={{
+            color: "red",
+            fontSize: "16px",
+            fontWeight: "bold",
+          }}
+        >
+          {errorsList.minLength}
+        </span>
+      )}
+    </>
   );
 }
 ```
@@ -1930,6 +2196,38 @@ export default function App() {
 }
 ```
 
+## Form Default Value
+
+> Added in V3.0.0
+
+Instead of setting `defaultValue` to each single form control, you can set the default values to the form itself.
+
+```tsx
+// src/App.tsx
+import { Form } from "@mongez/react-form";
+import TextInput from "./components/TextInput";
+import SubmitButton from "./components/SubmitButton";
+
+export default function App() {
+  const submitForm = ({ values }) => {
+    console.log(values);
+  };
+
+  return (
+    <Form
+      onSubmit={submitForm}
+      defaultValue={{ name: "John Doe", username: "john" }}
+    >
+      <TextInput name="name" required />
+      <TextInput name="username" />
+      <SubmitButton>Submit</SubmitButton>
+    </Form>
+  );
+}
+```
+
+This will set the default values to the form controls, and if the user changes the value, the form control value will be updated.
+
 ## Form Ref
 
 You can also get the form instance using the `ref` prop.
@@ -2091,61 +2389,5 @@ When the validation is done, the output of the promise returns list of the input
 
 ## TODO
 
+- Add `strongRule` to validate strong password.
 - Add silent update
-
-## Change Log
-
-- 2.1.0 (05 Nov 2023)
-  - Added `isDirty` to form control.
-  - Added `isTouched` to form control.
-- 2.0.0 (05 Mar 2023)
-  - Refactored code
-  - Replaced `useFormInput` with `useFormControl`
-  - Changed `onSubmit` callback options.
-  - Added `useSubmitButton` hook.
-  - Validation rules are now internally added in the package.
-  - Added `English` `Arabic` `French` `Italian` and `Spanish` translations.
-- 1.5.25 (13 Nov 2022)
-  - Feat: when `validating` trigger callbacks returns `false` then the form will be marked as invalid and won't be submitted.
-- 1.5.20 (06 Nov 2022)
-  - Added `formControl.element` to get the form control element.
-  - Added `formControl.isChecked` to check if the form control is checked or not.
-  - Added `formControl.blur` to blur the form control.
-  - Added `formControl.isHidden` to check if the form control is hidden or not.
-- 1.5.12 (17 Aug 2022)
-  - Added `checkIfIsValid` method to form interface
-- 1.5.11 (17 Aug 2022)
-  - Fixed form `validControls` and `invalidControls` validation events trigger.
-- 1.5.3 (12 July 2022)
-  - Fixed form control reset value.
-- 1.5.2 (12 July 2022)
-  - Fixed form submission.
-- 1.5.1 (12 July 2022)
-  - Fixed exclude props.
-- 1.5.0 (12 July 2022)
-  - Added Active Forms.
-  - Fixed some bugs.
-- 1.4.0 (09 July 2022)
-  - Added `validate` prop to form control.
-  - Added `errors` prop to form control.
-- 1.3.0 (03 July 2022)
-  - Added Form Control Events.
-- 1.2.4 (18 Jun 2022)
-  - Fixed form input registering.
-- 1.2.3 (18 Jun 2022)
-  - Fixed `disable` method.
-- 1.2.2 (17 Jun 2022)
-  - Fixed `each` method.
-- 1.2.1 (15 Jun 2022)
-  - `validate` and `validateVisible` methods return the validated form controls.
-- 1.2.0 (15 Jun 2022)
-- Fixed `validate` method to allow calling it without any parameters.
-- Added validateVisible method
-- 1.1.0 (16 May 2022)
-  - Added `change` form event.
-  - Added Dirty Form Controls.
-  - Added useFormEvent Hook
-- 1.0.11 (04 Mar 2022)
-  - Fixed Bugs
-- 1.0.7 (26 Jan 2022)
-  - Fixed Filtering form controls in `each` method.

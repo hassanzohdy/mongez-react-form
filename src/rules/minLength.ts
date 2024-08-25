@@ -1,15 +1,17 @@
 import { trans } from "@mongez/localization";
+import { InputRule } from "../types";
 
-export const minLengthRule = ({ value, minLength, errorKeys }: any) => {
-  if (!value || isNaN(length) || value?.length === undefined) return;
+export const minLengthRule: InputRule = {
+  name: "minLength",
+  preservedProps: ["minLength"],
+  validate: ({ value, minLength, errorKeys }) => {
+    if (value?.length === undefined) return;
 
-  if (value.length < minLength) {
-    return trans("validation.minLength", {
-      input: errorKeys.name,
-      length: minLength,
-    });
-  }
+    if (value.length < minLength) {
+      return trans("validation.minLength", {
+        input: errorKeys.name,
+        length: minLength,
+      });
+    }
+  },
 };
-
-minLengthRule.preserveProps = ["minLength"];
-minLengthRule.rule = "minLength";
