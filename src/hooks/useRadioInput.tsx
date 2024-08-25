@@ -14,7 +14,7 @@ export const RadioGroupContext = createContext<RadioGroupContextOptions>({
 
 export type RadioInputHookOutput = {
   isSelected: boolean;
-  changeValue: (value: Value) => void;
+  changeValue: () => void;
 };
 
 export function useRadioInput(value: Value): RadioInputHookOutput {
@@ -28,6 +28,6 @@ export function useRadioInput(value: Value): RadioInputHookOutput {
 
   return {
     isSelected: groupValue === value,
-    changeValue,
+    changeValue: () => changeValue(value),
   };
 }
