@@ -1,11 +1,11 @@
 {
     "name": "@mongez/react-form",
-    "version": "3.0.3",
+    "version": "3.0.4",
     "description": "A Powerful React form handler.",
     "main": "src/index.ts",
     "dependencies": {
         "@mongez/events": "2.1.0",
-        "@mongez/localization": "^2.2.4 | ^3.0.0"
+        "@mongez/localization": "^3.0.0"
     },
     "repository": {
         "type": "git",
