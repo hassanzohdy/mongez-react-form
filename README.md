@@ -2022,6 +2022,25 @@ export default function InternalComponent() {
 
 If `useForm` is used outside the `Form` component, it will return `null`.
 
+## Hidden Input
+
+In some cases, we need to add hidden inputs to the form, this will not be visible to the user nor will be validated, also no UI will be rendered.
+
+```tsx
+import { HiddenInput } from "@mongez/react-form";
+
+export default function App() {
+  return (
+    <Form onSubmit={submitForm}>
+      <HiddenInput name="userId" value={1} />
+      <TextInput name="name" required />
+      <TextInput name="username" />
+      <button>Submit</button>
+    </Form>
+  );
+}
+```
+
 ## useSubmitButton hook
 
 Another good hook to use is `useSubmitButton`, this hook basically disables the submit button in certain scenarios
