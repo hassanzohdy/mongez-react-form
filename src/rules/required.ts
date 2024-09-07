@@ -1,7 +1,7 @@
 import { trans } from "@mongez/localization";
 import { type InputRule } from "../types";
 
-const isEmpty = value => {
+const isEmpty = (value) => {
   return (
     value === undefined ||
     value === null ||
@@ -18,7 +18,7 @@ export const requiredRule: InputRule = {
     if (!required) return;
 
     if (type === "checkbox") {
-      if (checked === false) {
+      if (!checked) {
         return trans("validation.required", { input: errorKeys.name });
       }
 
