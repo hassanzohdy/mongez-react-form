@@ -139,10 +139,10 @@ export function useFormControl<T extends FormControlProps>(
   const { value, checked, error } = state;
 
   const updateError = (error: ReactNode) => {
-    setState({
+    setState(state => ({
       ...state,
       error,
-    });
+    }));
   };
 
   const setError = (error: ReactNode) => {
@@ -151,10 +151,10 @@ export function useFormControl<T extends FormControlProps>(
   };
 
   const setValue = (value = formControl.value) => {
-    setState({
+    setState(state => ({
       ...state,
       value,
-    });
+    }));
   };
 
   const validateFormControl = () => {
@@ -186,17 +186,17 @@ export function useFormControl<T extends FormControlProps>(
     if (error) {
       onError?.(error);
 
-      setState({
+      setState(state => ({
         ...state,
         value: formControl.value,
         error,
-      });
+      }));
     } else {
-      setState({
+      setState(state => ({
         ...state,
         value: formControl.value,
         error: null,
-      });
+      }));
     }
 
     updateFormControlValidityState(error);
@@ -208,17 +208,17 @@ export function useFormControl<T extends FormControlProps>(
     if (error) {
       onError?.(error);
 
-      setState({
+      setState(state => ({
         ...state,
         checked: formControl.checked,
         error,
-      });
+      }));
     } else {
-      setState({
+      setState(state => ({
         ...state,
         checked: formControl.checked,
         error: null,
-      });
+      }));
     }
 
     updateFormControlValidityState(error);
