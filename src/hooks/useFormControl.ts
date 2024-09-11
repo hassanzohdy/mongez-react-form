@@ -326,21 +326,10 @@ export function useFormControl<T extends FormControlProps>(
         formControl.checked = checked;
         formControl.isDirty = true;
 
-        if (formControl.isControlled) {
-          onChange?.(checked);
-          return;
-        }
-
-        if (formControl.type === "radio" && checked === true) {
-          // get all other form radio controllers with same name and set their checked to false
-          if (form) {
-            form.controls([formControl.name]).forEach(control => {
-              if (control.id === formControl.id) return;
-
-              control.setChecked(false);
-            });
-          }
-        }
+        // if (formControl.isControlled) {
+        //   onChange?.(checked);
+        //   return;
+        // }
 
         validateAndSetChecked();
 
