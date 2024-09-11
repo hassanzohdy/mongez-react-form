@@ -44,7 +44,7 @@ const isElementOrAncestorHidden = (element: HTMLElement) => {
 const initializeValue = (
   props: FormControlProps,
   options: FormControlOptions,
-  form: FormContextData,
+  form: FormContextData
 ) => {
   if (![undefined, null].includes(props.value)) {
     return options.transformValue?.(props.value);
@@ -75,7 +75,7 @@ function getFormDefaultValue(form: FormContextData, name: string) {
 
 export function useFormControl<T extends FormControlProps>(
   baseProps: T,
-  incomingFormControlOptions: FormControlOptions = {},
+  incomingFormControlOptions: FormControlOptions = {}
 ) {
   const {
     id: incomingId,
@@ -101,7 +101,7 @@ export function useFormControl<T extends FormControlProps>(
         .replace("][", ".")
         .replace("[", ".")
         .replace("]", ""),
-    [incomingName],
+    [incomingName]
   );
 
   const id = useId({
@@ -129,9 +129,10 @@ export function useFormControl<T extends FormControlProps>(
       error: null,
       value: initializeValue(baseProps, formControlOptions, form),
       checked:
-        _defaultChecked !== undefined
+        _checked ??
+        (_defaultChecked !== undefined
           ? _defaultChecked
-          : (getFormDefaultValue(form, name) ??
+          : getFormDefaultValue(form, name) ??
             (type === "checkbox" ? false : undefined)),
     };
   });
@@ -139,7 +140,7 @@ export function useFormControl<T extends FormControlProps>(
   const { value, checked, error } = state;
 
   const updateError = (error: ReactNode) => {
-    setState(state => ({
+    setState((state) => ({
       ...state,
       error,
     }));
@@ -151,7 +152,7 @@ export function useFormControl<T extends FormControlProps>(
   };
 
   const setValue = (value = formControl.value) => {
-    setState(state => ({
+    setState((state) => ({
       ...state,
       value,
     }));
@@ -186,13 +187,13 @@ export function useFormControl<T extends FormControlProps>(
     if (error) {
       onError?.(error);
 
-      setState(state => ({
+      setState((state) => ({
         ...state,
         value: formControl.value,
         error,
       }));
     } else {
-      setState(state => ({
+      setState((state) => ({
         ...state,
         value: formControl.value,
         error: null,
@@ -208,13 +209,13 @@ export function useFormControl<T extends FormControlProps>(
     if (error) {
       onError?.(error);
 
-      setState(state => ({
+      setState((state) => ({
         ...state,
         checked: formControl.checked,
         error,
       }));
     } else {
-      setState(state => ({
+      setState((state) => ({
         ...state,
         checked: formControl.checked,
         error: null,
@@ -285,7 +286,7 @@ export function useFormControl<T extends FormControlProps>(
       !incomingFormControlOptions.validateAll
     ) {
       return Object.keys(formControl.errorsList).map(
-        key => formControl.errorsList[key],
+        (key) => formControl.errorsList[key]
       );
     }
 
@@ -368,7 +369,7 @@ export function useFormControl<T extends FormControlProps>(
           updateState = true,
           validate = true,
           ...other
-        }: FormControlChangeOptions = {},
+        }: FormControlChangeOptions = {}
       ) {
         if (value !== undefined) {
           value = formControlOptions.transformValue?.(value, formControl);
@@ -468,7 +469,7 @@ export function useFormControl<T extends FormControlProps>(
     }
 
     return () => {
-      events.forEach(event => event?.unsubscribe());
+      events.forEach((event) => event?.unsubscribe());
     };
   }, [form, formControl, props, rules]);
 
@@ -496,9 +497,17 @@ export function useFormControl<T extends FormControlProps>(
       return;
     }
 
-    formControl.change(formControl.value, { checked: _checked });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [_checked]);
+    formControl.checked = _checked;
+    formControl.isDirty = true;
+
+    validateAndSetChecked();
+
+    // onChange?.(checked);
+
+    events.trigger(`form.control.${id}.change`, formControl);
+
+    // formControl.setChecked(_checked);
+  }, [_checked, formControl, onChange, id, validateAndSetChecked]);
 
   useEffect(() => {
     formControl.disable(Boolean(incomingDisabled));
