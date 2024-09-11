@@ -506,8 +506,8 @@ export function useFormControl<T extends FormControlProps>(
 
     events.trigger(`form.control.${id}.change`, formControl);
 
-    // formControl.setChecked(_checked);
-  }, [_checked, formControl, onChange, id, validateAndSetChecked]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [_checked]);
 
   useEffect(() => {
     formControl.disable(Boolean(incomingDisabled));
