@@ -5,7 +5,7 @@ export const minLengthRule: InputRule = {
   name: "minLength",
   preservedProps: ["minLength"],
   validate: ({ value, minLength, errorKeys }) => {
-    if (value?.length === undefined) return;
+    if (!minLength || value?.length === undefined) return;
 
     if (value.length < minLength) {
       return trans("validation.minLength", {

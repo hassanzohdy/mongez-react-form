@@ -5,7 +5,7 @@ export const maxLengthRule: InputRule = {
   name: "maxLength",
   preservedProps: ["maxLength"],
   validate: ({ value, maxLength, errorKeys }) => {
-    if (value?.length === undefined) return;
+    if (!maxLength || value?.length === undefined) return;
 
     if (value.length > maxLength) {
       return trans("validation.maxLength", {
