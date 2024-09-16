@@ -170,7 +170,7 @@ export function useFormControl<T extends FormControlProps>(
 
   const updateFormControlValidityState = (error: any) => {
     formControl.error = error;
-    formControl.isValid = Boolean(!error);
+    formControl.isValid = !error;
 
     if (error) {
       form?.invalidControl(formControl);
@@ -290,7 +290,7 @@ export function useFormControl<T extends FormControlProps>(
       );
     }
 
-    return;
+    return null;
   };
 
   const formControl: FormControl = useMemo(() => {
@@ -334,7 +334,9 @@ export function useFormControl<T extends FormControlProps>(
 
         validateAndSetChecked();
 
-        onChange?.(checked);
+        onChange?.(checked, {
+          formControl,
+        });
 
         events.trigger(`form.control.${id}.change`, formControl);
       },
