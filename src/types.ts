@@ -424,7 +424,7 @@ export interface FormInterface {
    */
   on: (
     event: FormEventType,
-    callback: (form: FormInterface) => void,
+    callback: (form: FormInterface) => void
   ) => EventSubscription;
   /**
    * Register new form input
@@ -516,7 +516,7 @@ type InitOptions = {
 
 export type InputRule = {
   validate: (
-    options: InputRuleOptions,
+    options: InputRuleOptions
   ) => InputRuleResult | Promise<InputRuleResult>;
   /**
    * Validation rule name
@@ -645,7 +645,7 @@ export type FormControlProps = {
   /**
    * Add manual validation
    */
-  validate?: InputRule;
+  validate?: InputRule["validate"];
   /**
    * Input validation rules list
    */

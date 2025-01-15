@@ -11,3 +11,4 @@ export * from "./minLength";
 export * from "./number";
 export * from "./pattern";
 export * from "./required";
+export * from "./url";

@@ -4,11 +4,11 @@ import { InputRule } from "../types";
 export const minLengthRule: InputRule = {
   name: "minLength",
   preservedProps: ["minLength"],
-  validate: ({ value, minLength, errorKeys }) => {
+  validate: ({ value, minLength, errorKeys, errors }) => {
     if (!minLength || value?.length === undefined) return;
 
     if (value.length < minLength) {
-      return trans("validation.minLength", {
+      return trans(errors?.minLength ?? "validation.minLength", {
         input: errorKeys.name,
         length: minLength,
       });

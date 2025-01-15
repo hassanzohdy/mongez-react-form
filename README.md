@@ -1061,10 +1061,43 @@ export default function App() {
     console.log(values);
   };
 
+  const validateUsername = ({ value }) => {
+    if (value.length < 3) {
+      return trans("validation.minLength", { length: 3 });
+    }
+
+    // returning nothing means that the validation is successful
+  }
+
   return (
     <Form onSubmit={submitForm}>
     >
-      <TextInput name="name" required minLength={3} />
+      <TextInput name="name" onValidate={validateUsername} required minLength={3} />
+      <button>Submit</button>
+    </Form>
+  );
+}
+```
+
+The `onValidate` prop callback accepts `FormControl` object, which contains everything about the input, if the input fails in the validation, make sure to return the error message, otherwise return nothing for validation to be successful.
+
+### Custom validation
+
+Sometimes we may need to validate only a certain input (call) that will be only executed for that input, in this case, we can pass `onValidate` prop callback to the component props, for example:
+
+```tsx
+// src/App.tsx
+import { Form } from "@mongez/react-form";
+import TextInput from "./components/TextInput";
+
+export default function App() {
+  const submitForm = ({ values }) => {
+    console.log(values);
+  };
+
+  return (
+    <Form onSubmit={submitForm}>
+      <TextInput name="name" required />
       <button>Submit</button>
     </Form>
   );
@@ -1127,6 +1160,7 @@ Here are the available rules that you can use:
   - Requires `match` prop to be present.
   - Translation Key: `validation.match`, receives `:matchingInput` as a placeholder.
   - `match` prop will be preserved from being passed to `otherProps`.
+  - `url` type is also supported, you must set the input type to `url` to make it work and add `urlRule` as well.
 
 Example of usage for each rule:
 

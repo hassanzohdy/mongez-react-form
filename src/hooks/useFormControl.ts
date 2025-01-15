@@ -247,7 +247,11 @@ export function useFormControl<T extends FormControlProps>(
     formControl.errorsList = {};
 
     if (incomingValidate) {
-      validatingRules.unshift(incomingValidate);
+      validatingRules.unshift({
+        validate: incomingValidate,
+        name: "custom",
+        requiresValue: true,
+      });
     }
 
     for (const rule of validatingRules) {
