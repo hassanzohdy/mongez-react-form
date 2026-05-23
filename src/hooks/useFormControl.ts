@@ -25,6 +25,9 @@ export const defaultFormControlOptions = {
   },
 };
 
+const isDomAvailable = () =>
+  typeof document !== "undefined" && typeof window !== "undefined";
+
 const isElementOrAncestorHidden = (element: HTMLElement) => {
   if (!element) {
     return false;
@@ -345,6 +348,9 @@ export function useFormControl<T extends FormControlProps>(
         events.trigger(`form.control.${id}.change`, formControl);
       },
       isVisible: () => {
+        // On non-DOM platforms (e.g. React Native) we cannot inspect the
+        // rendered tree for visibility, so treat every control as visible.
+        if (!isDomAvailable()) return true;
         return isElementOrAncestorHidden(visibleElementRef.current) === false;
       },
       focus: () => {
@@ -352,6 +358,20 @@ export function useFormControl<T extends FormControlProps>(
       },
       blur: () => {
         inputRef.current?.blur();
+      },
+      clear: () => {
+        formControl.change(formControl.multiple ? [] : "", {
+          updateState: true,
+          validate: false,
+          checked: false,
+        });
+
+        formControl.setError(null);
+        formControl.isValid = null;
+        formControl.isDirty = false;
+        formControl.isTouched = false;
+
+        events.trigger(`form.control.${id}.clear`, formControl);
       },
       reset: () => {
         formControl.change(formControl.initialValue, {
@@ -380,6 +400,10 @@ export function useFormControl<T extends FormControlProps>(
         if (value !== undefined) {
           value = formControlOptions.transformValue?.(value, formControl);
           formControl.value = value;
+        }
+
+        if (typeof other.checked !== "undefined") {
+          formControl.checked = other.checked;
         }
 
         formControl.isDirty = true;
@@ -521,13 +545,18 @@ export function useFormControl<T extends FormControlProps>(
   }, [incomingDisabled]);
 
   useEffect(() => {
-    // Check if the form control is touched
+    // Check if the form control is touched.
+    // This hook auto-binds a `focus` listener on the DOM input to mark the
+    // control as touched. On React Native there is no DOM, so we skip it —
+    // native inputs should set `formControl.isTouched = true` from their
+    // own `onFocus` handler if touched-state tracking is needed.
     if (formControl.isTouched) return;
+    if (!isDomAvailable()) return;
 
     const input: HTMLInputElement | undefined =
       formControl.inputRef?.current || document.getElementById(formControl.id);
 
-    if (!input) return;
+    if (!input || typeof (input as any).addEventListener !== "function") return;
 
     const updateTouchState = () => (formControl.isTouched = true);
 

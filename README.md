@@ -889,6 +889,16 @@ export default function TextInput(props: FormControlProps) {
 }
 ```
 
+## Form dirty state
+
+If we want to get the dirty state of the form, we can use `form.isDirty` property.
+
+This property will be true if any of the form controls is dirty.
+
+If the form control is marked as reset or the form control is removed from components tree, the dirty state will be reevaluated again.
+
+So if a dirty form control has been removed and remaining form controls are not dirty, the form will be considered as clean (not dirty).
+
 ## Getting other props
 
 Apart from the previous props, any other prop will be sent to the input will be returned as `otherProps`, for example:
@@ -2439,6 +2449,149 @@ export default function App() {
 ```
 
 When the validation is done, the output of the promise returns list of the inputs which have been validated either they are valid or not.
+
+## React Native
+
+> Added in V3.1.0
+
+The package ships a second form component, `NativeForm`, for use in React Native projects. It exposes the **same API** as `Form` — same `FormContext`, same `useFormControl` hook, same events, same `values()` / `formData()` / `submit()` / `reset()` methods — but it does not depend on the DOM.
+
+### Why a separate component?
+
+The web `Form` component renders an HTML `<form>` element, calls `requestSubmit()`, and uses `event.preventDefault()` on submit — none of which exist in React Native. `NativeForm` skips all of that and exposes the form engine directly.
+
+### Usage
+
+```tsx
+// src/App.tsx
+import { NativeForm } from "@mongez/react-form";
+import TextInput from "./components/TextInput";
+import SubmitButton from "./components/SubmitButton";
+
+export default function App() {
+  const submitForm = ({ values }) => {
+    console.log(values);
+  };
+
+  return (
+    <NativeForm onSubmit={submitForm}>
+      <TextInput name="firstName" required />
+      <TextInput name="lastName" />
+      <SubmitButton>Submit</SubmitButton>
+    </NativeForm>
+  );
+}
+```
+
+The `SubmitButton` component below captures the form via `useForm()` and calls `form.submit()` on press — the recommended pattern. It is defined further down in this section.
+
+By default `NativeForm` renders a React Fragment around its children — no host element is added to the tree. This keeps the package free of any `react-native` import (so the web bundle stays clean and `react-native` is **not** added as a peer dependency).
+
+If you want a wrapper view, pass it via the `component` prop:
+
+```tsx
+import { NativeForm } from "@mongez/react-form";
+import { View } from "react-native";
+
+<NativeForm onSubmit={submitForm} component={View} style={{ padding: 16 }}>
+  {/* ... */}
+</NativeForm>
+```
+
+The ref of that component will be stored on `form.formElement`.
+
+### Submitting the form
+
+There is no `<form>` element in React Native, so submission is always programmatic. Use any of:
+
+- `form.submit()` from the `useForm` hook or `getActiveForm()`.
+- A submit button component built on top of `useSubmitButton`.
+
+```tsx
+// src/components/SubmitButton.tsx
+import { useForm, useSubmitButton } from "@mongez/react-form";
+import { Pressable, Text, ActivityIndicator } from "react-native";
+
+export default function SubmitButton({ children }) {
+  const form = useForm();
+  // `useSubmitButton` listens to the form's events and exposes:
+  //   - `disabled`     : true while submitting OR while any control is invalid
+  //   - `isSubmitting` : true between `form.submitting(true)` and `form.submitting(false)`
+  // It updates automatically as controls validate, reset, or disable.
+  const { disabled, isSubmitting } = useSubmitButton();
+
+  return (
+    <Pressable
+      disabled={disabled}
+      onPress={() => form?.submit()}
+      style={{
+        opacity: disabled ? 0.5 : 1,
+        padding: 12,
+        backgroundColor: "#2563eb",
+        borderRadius: 6,
+        alignItems: "center",
+        flexDirection: "row",
+        justifyContent: "center",
+        gap: 8,
+      }}
+    >
+      {isSubmitting && <ActivityIndicator color="#fff" />}
+      <Text style={{ color: "#fff" }}>
+        {isSubmitting ? "Submitting..." : children}
+      </Text>
+    </Pressable>
+  );
+}
+```
+
+With this in place the button is automatically disabled in three situations:
+
+1. While the form is being submitted (between `form.submitting(true)` and `form.submitting(false)`) — prevents double-submits.
+2. While any registered form control is invalid — prevents the user from triggering a submit that would only fail validation.
+3. While `form.disable()` has been called on the whole form.
+
+It re-enables itself when controls become valid again, when the form is reset, or when `form.submitting(false)` is called (e.g. in the `.catch()` of your API request — see [Change form submitting state](#change-form-submitting-state) above).
+
+### Writing a form control for React Native
+
+`useFormControl` works on React Native unchanged. Wire `inputRef` to the `TextInput` so `formControl.focus()` and `formControl.blur()` keep working:
+
+```tsx
+// src/components/TextInput.tsx
+import { useFormControl, type FormControlProps } from "@mongez/react-form";
+import { TextInput as RNTextInput } from "react-native";
+
+export default function TextInput(props: FormControlProps) {
+  const { value, changeValue, inputRef, formControl, error } =
+    useFormControl(props);
+
+  return (
+    <>
+      <RNTextInput
+        ref={inputRef}
+        value={value}
+        onChangeText={changeValue}
+        onFocus={() => (formControl.isTouched = true)}
+        editable={!formControl.disabled}
+      />
+      {error}
+    </>
+  );
+}
+```
+
+Two things to note:
+
+1. The auto-touch listener that `useFormControl` attaches on the web (a DOM `focus` event listener) is a no-op on React Native. If you want `formControl.isTouched` to track focus, set it manually from your input's `onFocus`, as shown above.
+2. `formControl.isVisible()` always returns `true` on React Native, since there is no DOM tree to walk. This means `form.validateVisible()` behaves identically to `form.validate()` on native — usually fine, because RN steppers typically unmount inactive steps rather than hiding them.
+
+### What about `Form` vs `NativeForm` — can I share input components?
+
+Yes. The `useFormControl` hook, all rules, `HiddenInput`, `useForm`, `useSubmitButton`, `useRadioInput`, the events system, and `FormContext` all work on both platforms unchanged. Only the top-level form component differs.
+
+### `BaseForm` (advanced)
+
+Both `Form` and `NativeForm` extend an abstract `BaseForm` class that holds the platform-agnostic form engine. You can extend `BaseForm` yourself to support other React renderers (e.g. `react-three-fiber`, custom hosts) — implement `submit()` and `render()` and you're done.
 
 ## TODO
 

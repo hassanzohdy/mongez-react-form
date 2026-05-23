@@ -166,6 +166,10 @@ export type FormControl = {
    */
   blur: () => void;
   /**
+   * Clear form control value
+   */
+  clear: () => void;
+  /**
    * Triggered when form resets its values
    */
   reset: () => void;
@@ -382,9 +386,22 @@ export type ReactComponent =
 
 export interface FormInterface {
   /**
-   * Form element
+   * Form element.
+   *
+   * On web this is the rendered `HTMLFormElement`. On React Native (or
+   * other non-DOM platforms) it is the ref of whatever `component` was
+   * passed to the form (e.g. a `View`), or `null` when no component is
+   * provided.
    */
-  formElement: HTMLFormElement;
+  formElement: any;
+  /**
+   * Form dirty state
+   */
+  isDirty: boolean;
+  /**
+   * Form dirty controls
+   */
+  dirtyControls: FormControl[];
   /**
    * Trigger form submission
    */
