@@ -1,0 +1,20 @@
+{
+  "name": "mongez-react-form",
+  "description": "Skills for working with @mongez/react-form — a headless React form handler for Web and React Native. Provides invokable skills for creating form controls, wiring submit buttons, defining validation rules, listening to form events, and React Native usage.",
+  "version": "3.1.1",
+  "author": {
+    "name": "Hasan Zohdy",
+    "url": "https://github.com/hassanzohdy"
+  },
+  "homepage": "https://github.com/hassanzohdy/mongez-react-form",
+  "repository": "https://github.com/hassanzohdy/mongez-react-form",
+  "license": "MIT",
+  "keywords": [
+    "react",
+    "react-native",
+    "form",
+    "validation",
+    "headless",
+    "mongez"
+  ]
+}

@@ -1,8 +1,18 @@
 {
     "name": "@mongez/react-form",
-    "version": "3.1.1",
+    "version": "3.1.2",
     "description": "A Powerful React form handler.",
     "main": "src/index.ts",
+    "files": [
+        "src",
+        "skills",
+        ".claude-plugin",
+        "llms.txt",
+        "llms-full.txt",
+        "README.md",
+        "MARKETPLACE.md",
+        "LICENSE"
+    ],
     "dependencies": {
         "@mongez/events": "2.1.0",
         "@mongez/supportive-is": "^2.0.4",
@@ -22,7 +32,8 @@
         "material-io",
         "semantic",
         "react-form-hook",
-        "formik"
+        "formik",
+        "react-native-form"
     ],
     "author": "hassanzohdy",
     "license": "MIT",

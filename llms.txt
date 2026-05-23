@@ -1,0 +1,52 @@
+# @mongez/react-form
+
+> Headless React form handler for both Web and React Native. Provides a `Form` / `NativeForm` component plus a `useFormControl` hook that handles registration, validation, value collection, dirty/touched/disabled state, controlled and uncontrolled inputs, and a localized validation rule system.
+
+Mongez React Form is unopinionated about UI — you build the input components, the library handles state and validation. Same `useFormControl` hook works on both Web (DOM `<input>`) and React Native (`TextInput`). The Web entry point is `Form`; the React Native entry point is `NativeForm`. Both extend an abstract `BaseForm` class that contains the platform-agnostic engine.
+
+## Documentation
+
+- [Full documentation (LLM-optimized)](./llms-full.txt): single-file canonical reference covering installation, all hooks, all components, validation rules, events, and the React Native usage path.
+- [README](./README.md): human-facing documentation with tutorial-style examples.
+
+## Key entry points
+
+- [`Form` component](./src/components/Form.tsx): web form (renders `<form>` element, handles DOM submit).
+- [`NativeForm` component](./src/components/NativeForm.tsx): React Native form (renders Fragment by default, programmatic submit only).
+- [`useFormControl` hook](./src/hooks/useFormControl.ts): register an input as a form control. Returns `value`, `changeValue`, `error`, `checked`, `setChecked`, `inputRef`, `disabled`, `formControl`, etc.
+- [`useForm` hook](./src/hooks/useForm.ts): access the current form instance from any descendant.
+- [`useSubmitButton` hook](./src/hooks/useSubmitButton.tsx): wire a submit button — exposes `disabled` (auto-tracks validity + in-flight submit) and `isSubmitting`.
+- [`useRadioInput` hook](./src/hooks/useRadioInput.tsx): for radio-group children.
+
+## Validation rules
+
+Located in [`src/rules/`](./src/rules/). Each rule implements the `InputRule` interface and is composed by passing it in the `rules` array to `useFormControl`. Built-in rules: `requiredRule`, `minLengthRule`, `maxLengthRule`, `lengthRule`, `minRule`, `maxRule`, `emailRule`, `numberRule`, `floatRule`, `integerRule`, `patternRule`, `alphabetRule`, `matchRule`, `urlRule`.
+
+## Types
+
+[`src/types.ts`](./src/types.ts) — canonical type definitions: `FormInterface`, `FormControl`, `FormControlProps`, `FormControlHook`, `InputRule`, `FormSubmitOptions`, `FormEventType`.
+
+## For AI agents working on a consuming project
+
+If you have Claude Code installed, install the plugin for richer integration:
+
+```
+/plugin marketplace add hassanzohdy/mongez-react-form
+/plugin install react-form@mongez-react-form
+```
+
+This installs invokable skills (`getting-started`, `create-form-control`, `submit-button`, `validation-rules`, `react-native-usage`, `form-events`) that load on demand when relevant to the task at hand. The same skills are also shipped inside the npm tarball under `skills/` if you prefer to copy them into your project's `.claude/skills/` manually.
+
+## Optional setup
+
+Validation messages translate via `@mongez/localization`. In your app entry:
+
+```ts
+import { extend } from "@mongez/localization";
+import { enValidationTranslation, arValidationTranslation } from "@mongez/react-form";
+
+extend("en", { validation: enValidationTranslation });
+extend("ar", { validation: arValidationTranslation });
+```
+
+Six locales ship out of the box: `en`, `ar`, `fr`, `es`, `it`, `de`.

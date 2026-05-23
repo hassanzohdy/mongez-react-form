@@ -1,0 +1,671 @@
+# @mongez/react-form — Full Documentation (LLM-optimized)
+
+A headless React form handler for Web and React Native. The library owns state, validation, and value collection; the consumer owns rendering.
+
+This file is structured for LLM consumption: each section is self-contained, canonical patterns appear once, and the API reference is at the end. For tutorial-style human-readable docs, see README.md.
+
+---
+
+## 1. Installation
+
+```bash
+npm install @mongez/react-form
+```
+
+Runtime dependencies (`@mongez/events`, `@mongez/localization`, `@mongez/supportive-is`, `@mongez/reinforcements`) install transitively.
+
+## 2. One-time setup — locale registration
+
+Validation messages flow through `@mongez/localization`. Register the bundles under the `validation` namespace at app entry:
+
+```ts
+import { extend } from "@mongez/localization";
+import {
+  enValidationTranslation,
+  arValidationTranslation,
+  frValidationTranslation,
+  esValidationTranslation,
+  itValidationTranslation,
+  deValidationTranslation,
+} from "@mongez/react-form";
+
+extend("en", { validation: enValidationTranslation });
+extend("ar", { validation: arValidationTranslation });
+// ...register only the locales the app uses
+```
+
+Without this, error messages render as raw keys like `validation.required`.
+
+---
+
+## 3. Form components
+
+Two components, same API, different platforms:
+
+- **`Form`** — Web. Renders an HTML `<form>` element. Browser submit event drives the submission.
+- **`NativeForm`** — React Native. Renders a Fragment by default (or any component passed via `component` prop). Submission is always programmatic via `form.submit()`.
+
+Both implement `FormInterface` and share the abstract `BaseForm` engine.
+
+### Form props (both Web and Native)
+
+```ts
+type FormProps = {
+  onSubmit?: (options: FormSubmitOptions) => void;
+  onError?: (invalidControls: FormControl[]) => void;
+  component?: React.ComponentType<any>;        // override the rendered element
+  defaultValue?: Record<string, any>;          // default values for every control by name (dot-notation supported)
+  ignoreEmptyValues?: boolean;                 // omit empty values from form.values()
+  id?: string;                                 // form id, auto-generated if absent
+  children: React.ReactNode;
+};
+```
+
+### `FormSubmitOptions` (the argument to `onSubmit`)
+
+```ts
+{
+  form: FormInterface;
+  event?: React.FormEvent;        // undefined when programmatically submitted (and always on Native)
+  values: Record<string, any>;    // getter — calls form.values() each access
+  formData: FormData;             // getter — calls form.formData() each access
+}
+```
+
+### Canonical form (Web)
+
+```tsx
+import { Form } from "@mongez/react-form";
+
+<Form
+  onSubmit={({ values, form }) => api.save(values).catch(() => form.submitting(false))}
+  onError={(invalidControls) => scrollTo(invalidControls[0])}
+  defaultValue={{ user: { firstName: "John" } }}
+  ignoreEmptyValues
+>
+  {/* ...inputs... */}
+</Form>
+```
+
+### Canonical form (React Native)
+
+```tsx
+import { NativeForm } from "@mongez/react-form";
+import { View } from "react-native";
+
+<NativeForm onSubmit={handle} component={View} style={{ padding: 16 }}>
+  {/* ...inputs... */}
+</NativeForm>
+```
+
+---
+
+## 4. Form controls — the canonical pattern
+
+Every input is built around `useFormControl`. The hook registers the input with the surrounding form and returns a state bundle.
+
+### Canonical text input
+
+```tsx
+import { useFormControl, type FormControlProps } from "@mongez/react-form";
+
+export default function TextInput(props: FormControlProps) {
+  const { value, changeValue, id, error, inputRef, otherProps } =
+    useFormControl(props);
+
+  return (
+    <>
+      <input
+        id={id}
+        ref={inputRef}
+        value={value}
+        onChange={(e) => changeValue(e.target.value)}
+        {...otherProps}
+      />
+      {error && <span className="error">{error}</span>}
+    </>
+  );
+}
+```
+
+Equivalent on React Native:
+
+```tsx
+import { useFormControl, type FormControlProps } from "@mongez/react-form";
+import { TextInput as RNTextInput, Text, View } from "react-native";
+
+export default function TextInput(props: FormControlProps) {
+  const { value, changeValue, inputRef, formControl, error, disabled } =
+    useFormControl(props);
+
+  return (
+    <View>
+      <RNTextInput
+        ref={inputRef}
+        value={value}
+        onChangeText={changeValue}
+        onFocus={() => (formControl.isTouched = true)}
+        editable={!disabled}
+      />
+      {error && <Text style={{ color: "red" }}>{error}</Text>}
+    </View>
+  );
+}
+```
+
+### Checkbox
+
+For checkboxes use `checked` / `setChecked`, not `value` / `changeValue`. **Must** set `type: "checkbox"`.
+
+```tsx
+const { checked, setChecked, id } = useFormControl({ ...props, type: "checkbox" });
+```
+
+Optional collection behavior via the second argument:
+
+```ts
+useFormControl(props, {
+  uncheckedValue: 0,           // value to emit when unchecked
+  collectUnchecked: true,      // include unchecked controls in form.values()
+});
+```
+
+### Radio group
+
+Build a `RadioGroup` (one `useFormControl`) that provides `RadioGroupContext`. Each `RadioInput` consumes via `useRadioInput(value)`:
+
+```tsx
+import { useFormControl, RadioGroupContext, requiredRule, useRadioInput } from "@mongez/react-form";
+
+export function RadioGroup({ children, ...props }) {
+  const { value, changeValue } = useFormControl({ ...props, rules: [requiredRule] });
+  return (
+    <RadioGroupContext.Provider value={{ value, changeValue }}>
+      {children}
+    </RadioGroupContext.Provider>
+  );
+}
+
+export function RadioInput({ value, children }) {
+  const { isSelected, changeValue } = useRadioInput(value);
+  return (
+    <label>
+      <input type="radio" checked={isSelected} onChange={changeValue} />
+      {children}
+    </label>
+  );
+}
+```
+
+### Multi-value control
+
+```ts
+const { value, changeValue } = useFormControl(props, { multiple: true });
+// value is always an array
+```
+
+### Hidden input
+
+```tsx
+import { HiddenInput } from "@mongez/react-form";
+<HiddenInput name="csrfToken" value={token} />
+```
+
+### Hook return shape (`FormControlHook`)
+
+```ts
+{
+  id: string;
+  name: string;
+  type: string;
+  value: any;
+  changeValue: (value, options?: FormControlChangeOptions) => void;
+  error: ReactNode;
+  errorsList: { [ruleName: string]: ReactNode };
+  setError: (error: ReactNode) => void;
+  checked: boolean;
+  setChecked: (checked: boolean) => void;
+  inputRef: RefObject;
+  visibleElementRef: RefObject;
+  formControl: FormControl;        // escape hatch — the underlying registration
+  disabled: boolean;
+  disable: () => void;
+  enable: () => void;
+  isInvalid: boolean;              // touched AND failing validation
+  otherProps: object;              // pass-through props (excludes hook + rule-preserved keys)
+  validate: () => void;
+}
+```
+
+---
+
+## 5. Validation
+
+### Composition
+
+Pass `rules: InputRule[]` in the first argument to `useFormControl`. Rules run in array order; the first failing rule short-circuits unless `{ validateAll: true }` is set in the second argument.
+
+```tsx
+import {
+  useFormControl, requiredRule, minLengthRule, emailRule,
+} from "@mongez/react-form";
+
+useFormControl({ ...props, rules: [requiredRule, minLengthRule, emailRule] });
+```
+
+### Built-in rules
+
+| Rule | Activated by prop | Type-gated | Notes |
+|---|---|---|---|
+| `requiredRule` | `required` | — | Empty = null/undefined/""/[] |
+| `minLengthRule` | `minLength` | — | Strings + arrays |
+| `maxLengthRule` | `maxLength` | — | Strings + arrays |
+| `lengthRule` | `length` | — | Exact length |
+| `minRule` | `min` | — | Numeric |
+| `maxRule` | `max` | — | Numeric |
+| `emailRule` | — | `type="email"` | |
+| `numberRule` | — | `type="number"` | |
+| `integerRule` | — | `type="integer"` | |
+| `floatRule` | — | `type="float"` | |
+| `urlRule` | — | `type="url"` | |
+| `alphabetRule` | — | `type="alphabet"` | |
+| `patternRule` | `pattern` (RegExp) | — | |
+| `matchRule` | `match` (other input name) | — | Subscribes to the other input's changes |
+
+`requiresType` rules only run when `formControl.type` matches. `requiresValue: true` rules (the default) skip empty values — that's why `requiredRule` must come first and is the only rule with `requiresValue: false`.
+
+### Per-instance message overrides
+
+```tsx
+// Replace the entire error string
+<TextInput pattern={/^[a-z]+$/} errors={{ pattern: "Lowercase only" }} />
+
+// Replace named placeholders within the localized template
+<TextInput match="password" errorKeys={{ matchingInput: "Password" }} />
+```
+
+### Per-instance custom validation
+
+```tsx
+<TextInput
+  name="username"
+  validate={async ({ value }) => {
+    if (!value) return;
+    if (await isTaken(value)) return "Username already taken";
+  }}
+/>
+```
+
+The `validate` prop accepts sync or async functions. Async returns block downstream rules until resolved.
+
+### Writing a custom rule
+
+```ts
+import { trans } from "@mongez/localization";
+import type { InputRule } from "@mongez/react-form";
+
+export const phoneNumberRule: InputRule = {
+  name: "phoneNumber",
+  requiresType: "phoneNumber",
+  validate: ({ value }) => {
+    if (!/^01[0-2|5]{1}[0-9]{8}$/.test(value)) {
+      return trans("validation.phoneNumber");
+    }
+  },
+};
+```
+
+`InputRule` shape:
+
+```ts
+{
+  name?: string;
+  validate: (options: InputRuleOptions) => ReactNode | undefined | Promise<...>;
+  requiresValue?: boolean;     // default true: skip on empty value
+  requiresType?: string;       // run only when control's type matches
+  preservedProps?: string[];   // keep these props OUT of otherProps
+  onInit?: (options) => EventSubscription | undefined;  // setup on mount
+}
+```
+
+### `validateAll` mode
+
+```ts
+useFormControl(opts, { validateAll: true });
+// error becomes ReactNode[], errorsList[ruleName] populated for every failing rule
+```
+
+---
+
+## 6. Submit buttons
+
+`useSubmitButton()` exposes auto-tracked button state:
+
+```ts
+{ disabled, isSubmitting, isDirty, disable, setSubmitState }
+```
+
+### Web
+
+```tsx
+import { useSubmitButton } from "@mongez/react-form";
+export function SubmitButton({ children }) {
+  const { disabled, isSubmitting } = useSubmitButton();
+  return <button type="submit" disabled={disabled}>{isSubmitting ? "..." : children}</button>;
+}
+```
+
+### React Native
+
+```tsx
+import { useForm, useSubmitButton } from "@mongez/react-form";
+import { Pressable, Text } from "react-native";
+export function SubmitButton({ children }) {
+  const form = useForm();
+  const { disabled, isSubmitting } = useSubmitButton();
+  return (
+    <Pressable disabled={disabled} onPress={() => form?.submit()}>
+      <Text>{isSubmitting ? "..." : children}</Text>
+    </Pressable>
+  );
+}
+```
+
+### Re-enabling after a failed request
+
+```ts
+api.save(values).catch(() => form.submitting(false));
+```
+
+This is mandatory — without it the button stays disabled forever.
+
+---
+
+## 7. Form events
+
+Subscribe via `form.on(event, callback)`. Returns an `EventSubscription` — unsubscribe in `useEffect` cleanup.
+
+### Event catalog
+
+| Event | Payload | When |
+|---|---|---|
+| `register` / `registering` | `(formControl, form)` | A control registers |
+| `unregister` | `(formControl, form)` | A control unregisters |
+| `validating` | `(form)` | Pre-validation — return `false` to abort |
+| `validation` | `(isValid, validatedInputs, form)` | Validation completed |
+| `validControl` / `invalidControl` | `(formControl, form)` | Per-control transition |
+| `validControls` / `invalidControls` | `(controls[], form)` | Debounced aggregate state |
+| `submitting` | `(isSubmitting, form)` | In-flight state changes |
+| `submit` | `(form)` | After submission completes (and again on `submitting(false)`) |
+| `resetting` / `reset` | `(form)` | Reset lifecycle |
+| `dirty` | `(isDirty, form)` | Aggregate dirty state changed |
+| `disable` | `(isDisabled, form)` | `form.disable()` / `form.enable()` |
+
+### Submit ordering
+
+`validating` → per-control validation → `validControl` / `invalidControl` per control → `validation` → `validControls` or `invalidControls` (debounced) → if invalid: `onError` prop called → if valid: `submitting(true)` event → `onSubmit` prop called → `submit` event.
+
+`submit` may fire twice per user action (once after sync submit, once on `submitting(false)`). Listeners must be idempotent.
+
+### Per-control events
+
+```ts
+formControl.onChange(callback);
+formControl.onReset(callback);
+formControl.onDestroy(callback);
+```
+
+---
+
+## 8. Form-level helpers
+
+### Access from anywhere
+
+```ts
+import { useForm, getActiveForm, getForm } from "@mongez/react-form";
+
+useForm();                  // hook — returns the surrounding form or null
+getActiveForm();            // module-level — returns the most recently mounted form
+getForm("form-id");         // module-level — returns by id
+```
+
+### Programmatic API (`FormInterface`)
+
+```ts
+form.submit();                                   // trigger validation + submission
+form.validate(controls?);                        // Promise<FormControl[]>
+form.validateVisible();                          // validate only visible controls (Web only; on RN it's identical to validate())
+form.values(names?);                             // collect values as nested object
+form.value(name);                                // single control value by name
+form.formData();                                 // FormData object (for multipart uploads)
+form.controls(names?);                           // array of FormControl
+form.control(name, getBy?);                      // single FormControl by name or id
+form.change(name, value);                        // mutate a control's value programmatically
+form.reset();                                    // reset all to initial values
+form.resetErrors();                              // clear errors only
+form.disable(isDisabled);                        // disable/enable all controls
+form.enable();                                   // shorthand for disable(false)
+form.isValid();                                  // boolean
+form.isSubmitting();                             // boolean
+form.submitting(true | false);                   // toggle in-flight state
+form.on(event, callback);                        // event subscription
+form.id;                                         // string
+form.formElement;                                // HTMLFormElement (Web) | any (Native)
+```
+
+### Default values
+
+Set at the form level (preferred for shared default sets):
+
+```tsx
+<Form defaultValue={{ user: { firstName: "John", lastName: "Doe" } }}>
+```
+
+Or per-control (overrides form-level):
+
+```tsx
+<TextInput name="user.firstName" defaultValue="Jane" />
+```
+
+Per-control `defaultValue` wins; otherwise the form-level value is looked up by name (dot-notation honored).
+
+### Ignoring empty values
+
+```tsx
+<Form ignoreEmptyValues>
+```
+
+Causes `form.values()` to skip null/undefined/empty-string/empty-array values. Set globally via `setFormConfigurations({ ignoreEmptyValues: true })`.
+
+### Configuration
+
+```ts
+import { setFormConfigurations } from "@mongez/react-form";
+
+setFormConfigurations({
+  ignoreEmptyValues: true,        // default false
+  formComponent: MyCustomForm,    // default "form" — replaces the rendered element for ALL Web Forms
+});
+```
+
+---
+
+## 9. Input name and value collection
+
+The `name` prop supports **dot notation** and is mapped into nested objects:
+
+- `user.firstName` → `{ user: { firstName: "..." } }`
+- `addresses.0.city` → `{ addresses: [{ city: "..." }] }`
+- `tags[0]` → `tags.0` (same as `tags.0`)
+- Repeated names → collected into an array, or use `multiple: true` to force array form
+
+`form.formData()` emits the same nested structure as bracket notation on the wire:
+
+- `{ user: { firstName: "X" } }` → `user[firstName]=X`
+- `{ tags: ["a", "b"] }` → `tags[]=a&tags[]=b`
+
+---
+
+## 10. Stepper / multi-step forms
+
+Use `form.validateVisible()` between steps. Each input (or its wrapper) must attach `visibleElementRef`:
+
+```tsx
+const { visibleElementRef, value, changeValue, error } = useFormControl(props);
+
+return (
+  <div ref={visibleElementRef}>
+    <input value={value} onChange={(e) => changeValue(e.target.value)} />
+  </div>
+);
+```
+
+```ts
+await form.validateVisible();
+if (form.isValid()) goToNextStep();
+```
+
+**Inactive steps must stay mounted but hidden** for this to work — `visibleElementRef.current.hidden` (or any ancestor's `hidden`) is what the check looks for. Unmounted steps are simply not registered. On React Native, `validateVisible()` is identical to `validate()` (the DOM-based visibility check is a no-op on Native).
+
+---
+
+## 11. Active forms registry
+
+```ts
+getActiveForm();           // most recently mounted form
+getForm("form-id");        // by id
+```
+
+The "active form" tracks the most recently mounted form globally — when forms unmount, the previous active form (if still mounted) is restored. Useful for non-React code (deep-link handlers, global keyboard shortcuts, autosave drivers).
+
+---
+
+## 12. Type reference
+
+### `FormControl` (key fields)
+
+```ts
+{
+  id: string;
+  name: string;
+  type: string;
+  value: any;
+  initialValue: any;
+  checked: boolean;
+  initialChecked: boolean;
+  isDirty: boolean;
+  isTouched: boolean;
+  isValid: boolean | null;     // null = not yet validated
+  error: ReactNode;
+  errorsList: { [ruleName: string]: ReactNode };
+  disabled: boolean;
+  multiple?: boolean;
+  isControlled: boolean;
+  rendered: boolean;
+  defaultValue?: any;
+  uncheckedValue?: any;
+  collectUnchecked?: boolean;
+  inputRef: any;
+  visibleElementRef: any;
+  data?: any;
+
+  change(value, opts?): void;
+  setChecked(checked): void;
+  setError(error): void;
+  validate(): ReactNode;
+  isCollectable(): boolean;
+  collectValue(): any;
+  isVisible(): boolean;
+  focus(): void;
+  blur(): void;
+  clear(): void;
+  reset(): void;
+  disable(isDisabled): void;
+  unregister(): void;
+
+  onChange(callback): EventSubscription;
+  onReset(callback): EventSubscription;
+  onDestroy(callback): EventSubscription;
+}
+```
+
+### `FormControlProps` (consumer-facing prop type)
+
+```ts
+{
+  name: string;                                  // required
+  id?: string;
+  type?: string;                                 // default "text"
+  value?: any;                                   // controlled value
+  defaultValue?: any;                            // uncontrolled initial value
+  checked?: boolean;                             // controlled checked
+  defaultChecked?: boolean;
+  required?: boolean;
+  disabled?: boolean;
+  readOnly?: boolean;
+  placeholder?: string;
+  label?: ReactNode;
+  rules?: InputRule[];
+  validate?: InputRule["validate"];              // per-instance custom validation
+  errors?: { [ruleName: string]: ReactNode };    // override messages per rule
+  errorKeys?: { [placeholder: string]: ReactNode }; // override message placeholders
+  onChange?: (value, options) => void;
+  onError?: (error: ReactNode) => void;
+  validateOn?: "change" | "blur";
+  [key: string]: any;                            // anything else flows to otherProps
+}
+```
+
+### `InputRule`
+
+```ts
+{
+  name?: string;
+  validate: (opts: InputRuleOptions) => ReactNode | undefined | Promise<ReactNode | undefined>;
+  requiresValue?: boolean;       // default true
+  requiresType?: string;
+  preservedProps?: string[];
+  onInit?: (opts) => EventSubscription | undefined;
+}
+```
+
+### `InputRuleOptions` (the argument to `validate`)
+
+```ts
+{
+  value: any;
+  name: string;
+  formControl: FormControl;
+  form: FormInterface | null;
+  checked: boolean;
+  errorKeys: { [key: string]: ReactNode };
+  [key: string]: any;            // also includes everything from the props (label, placeholder, etc.)
+}
+```
+
+---
+
+## 13. Common anti-patterns to avoid
+
+- Listing `requiredRule` after value-dependent rules — they skip empty values and won't run.
+- Returning `false` from a `validate` function — must return a `ReactNode` or `undefined`. `false` is treated as truthy.
+- Spreading raw `props` (not `otherProps`) onto the host element — leaks hook-internal props.
+- Forgetting `form.submitting(false)` in the API-failure path — button stays disabled.
+- Subscribing to events without unsubscribing — leaks on remount, duplicate handlers.
+- Mixing `Form` (Web) and `NativeForm` (Native) in the same code path — pick the one matching the platform.
+- Using `<button onClick={() => form.submit()}>` on Web inside `<Form>` — works, but `<button type="submit">` is simpler and lets the browser handle the event natively.
+- Forgetting to set `formControl.isTouched = true` manually in RN inputs' `onFocus` — the auto-touch DOM listener is a no-op on Native.
+
+---
+
+## 14. Architecture notes (for advanced consumers)
+
+`Form` and `NativeForm` both extend an abstract `BaseForm` class:
+
+- **`BaseForm`** holds the platform-agnostic engine: control registration, validation pipeline, value collection, event bus, dirty/disabled tracking, default-value resolution.
+- **`Form`** (Web) renders `<form>`, uses `requestSubmit()` polyfill, handles DOM submit events with `preventDefault` / `stopPropagation`.
+- **`NativeForm`** renders a Fragment by default (or any component passed in), submits programmatically only.
+
+To support an additional renderer (e.g. `react-three-fiber`, custom host), extend `BaseForm` and implement `submit()` + `render()`.
+
+DOM dependencies in `useFormControl` (visibility check, auto-touch focus listener) are guarded with `typeof document !== "undefined"`, so the same hook works on Web and Native unchanged.
