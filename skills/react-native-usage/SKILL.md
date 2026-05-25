@@ -1,5 +1,7 @@
 ---
+name: mongez-react-form-react-native-usage
 description: Use when integrating @mongez/react-form into a React Native (or Expo) project. Explains the NativeForm component, the Fragment-by-default behavior, programmatic-only submission, how to wire a RN TextInput through useFormControl, and the two cross-platform caveats (auto-touch listener, isVisible).
+when_to_use: User imports NativeForm from @mongez/react-form, is building a form in a React Native or Expo project, or is asking why form submission does not fire in RN or how to wire onChangeText, onFocus, or Pressable into a form control.
 ---
 
 # Using @mongez/react-form in React Native

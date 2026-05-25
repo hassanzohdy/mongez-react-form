@@ -430,8 +430,8 @@ export abstract class BaseForm<P extends FormProps = FormProps>
     return values;
   }
 
-  public formData() {
-    const formData = new FormData();
+  public formData(): FormData {
+    const formData: FormData = new FormData();
 
     const values = this.collectValues();
 

@@ -1,5 +1,7 @@
 ---
+name: mongez-react-form-submit-button
 description: Use when building a submit button or any UI element that needs to track form-level state (submitting, invalid controls, dirty, disabled). Explains the useSubmitButton hook, when each piece of state changes, and how to recover from a failed API request so the button re-enables.
+when_to_use: User is building a submit button with useSubmitButton, asking why a submit button stays disabled after a failed API request, or needing to track isSubmitting, isDirty, or disabled state derived from the parent Form or NativeForm.
 ---
 
 # Building a smart submit button

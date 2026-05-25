@@ -13,6 +13,11 @@ export const enValidationTranslation = {
   integer: "This input accepts only integer digits",
   float: "This input accepts only integer or float digits",
   alphabet: "This input accepts only alphabets",
+  strongMinLength: "Password must be at least :length characters",
+  strongUppercase: "Password must contain an uppercase letter",
+  strongLowercase: "Password must contain a lowercase letter",
+  strongDigit: "Password must contain a number",
+  strongSymbol: "Password must contain a symbol",
 };
 
 export const arValidationTranslation = {
@@ -30,6 +35,11 @@ export const arValidationTranslation = {
   integer: "هذا الحقل لا يقبل غير أرقام صحيحة",
   float: "هذا الحقل لا يقبل غير أرقام صحيحة او عشرية",
   alphabet: "هذا الحقل لا يقبل غير أحرف فقط",
+  strongMinLength: "يجب أن تتكون كلمة المرور من :length حروف على الأقل",
+  strongUppercase: "يجب أن تحتوي كلمة المرور على حرف كبير",
+  strongLowercase: "يجب أن تحتوي كلمة المرور على حرف صغير",
+  strongDigit: "يجب أن تحتوي كلمة المرور على رقم",
+  strongSymbol: "يجب أن تحتوي كلمة المرور على رمز",
 };
 
 export const frValidationTranslation = {
@@ -47,6 +57,11 @@ export const frValidationTranslation = {
   integer: "Ce champ ne peut contenir que des chiffres entiers",
   float: "Ce champ ne peut contenir que des chiffres entiers ou décimaux",
   alphabet: "Ce champ ne peut contenir que des lettres",
+  strongMinLength: "Le mot de passe doit contenir au moins :length caractères",
+  strongUppercase: "Le mot de passe doit contenir une lettre majuscule",
+  strongLowercase: "Le mot de passe doit contenir une lettre minuscule",
+  strongDigit: "Le mot de passe doit contenir un chiffre",
+  strongSymbol: "Le mot de passe doit contenir un symbole",
 };
 
 export const esValidationTranslation = {
@@ -64,6 +79,11 @@ export const esValidationTranslation = {
   integer: "Este campo solo acepta dígitos enteros",
   float: "Este campo solo acepta dígitos enteros o decimales",
   alphabet: "Este campo solo acepta letras",
+  strongMinLength: "La contraseña debe tener al menos :length caracteres",
+  strongUppercase: "La contraseña debe contener una letra mayúscula",
+  strongLowercase: "La contraseña debe contener una letra minúscula",
+  strongDigit: "La contraseña debe contener un número",
+  strongSymbol: "La contraseña debe contener un símbolo",
 };
 
 export const itValidationTranslation = {
@@ -81,6 +101,11 @@ export const itValidationTranslation = {
   integer: "Questo campo accetta solo cifre intere",
   float: "Questo campo accetta solo cifre intere o decimali",
   alphabet: "Questo campo accetta solo lettere",
+  strongMinLength: "La password deve contenere almeno :length caratteri",
+  strongUppercase: "La password deve contenere una lettera maiuscola",
+  strongLowercase: "La password deve contenere una lettera minuscola",
+  strongDigit: "La password deve contenere un numero",
+  strongSymbol: "La password deve contenere un simbolo",
 };
 
 export const deValidationTranslation = {
@@ -98,4 +123,9 @@ export const deValidationTranslation = {
   integer: "Dieses Feld akzeptiert nur ganze Zahlen",
   float: "Dieses Feld akzeptiert nur ganze oder Dezimalzahlen",
   alphabet: "Dieses Feld akzeptiert nur Buchstaben",
+  strongMinLength: "Das Passwort muss mindestens :length Zeichen lang sein",
+  strongUppercase: "Das Passwort muss einen Großbuchstaben enthalten",
+  strongLowercase: "Das Passwort muss einen Kleinbuchstaben enthalten",
+  strongDigit: "Das Passwort muss eine Zahl enthalten",
+  strongSymbol: "Das Passwort muss ein Symbol enthalten",
 };

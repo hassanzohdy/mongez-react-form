@@ -1,5 +1,7 @@
 ---
+name: mongez-react-form-validation-rules
 description: Use when adding validation to form controls, choosing the right built-in rules, overriding error messages, or writing a custom rule. Covers the full rules list, the InputRule interface, async validation, per-instance message overrides via errors / errorKeys props, and the validateAll mode.
+when_to_use: User is adding requiredRule, minLengthRule, emailRule, or any other built-in rule to a form control; writing a custom InputRule; overriding a validation error message via the errors or errorKeys props; or implementing async server-side validation or a password-strength meter with strongRule.
 ---
 
 # Validation rules
@@ -36,6 +38,7 @@ All exported from `@mongez/react-form`. Each requires a corresponding prop on th
 | `patternRule` | `pattern` (RegExp) | |
 | `alphabetRule` | `type="alphabet"` | Letters only |
 | `matchRule` | `match` (other input name) | Must equal that input's value |
+| `strongRule` | `strong` (boolean or `StrongPasswordCriteria`); `type="password"` | Five composable criteria, per-criterion errors via `errorsList["strong.<key>"]` |
 
 A rule with `requiresType: "X"` is only evaluated when the form control's `type` matches `X`. A rule with `requiresValue: true` (the default) is skipped when the value is empty — that's why `requiredRule` must be listed *before* other rules and is the only one with `requiresValue: false`.
 
@@ -161,6 +164,83 @@ const { error, errorsList } = useFormControl(
 ```
 
 Use when you want to show all violations at once (password strength meters, multi-criteria checklists).
+
+## `strongRule` — composite password validation
+
+`strongRule` is a meta-rule: one rule that validates five criteria and emits per-criterion errors into `formControl.errorsList` so callers can render password-strength meters / checklists without composing five separate rules.
+
+### Activation
+
+Activated by the `strong` prop. Requires `type="password"`.
+
+```tsx
+const { value, changeValue, errorsList } = useFormControl({
+  ...props,
+  rules: [requiredRule, strongRule],
+});
+```
+
+```tsx
+<PasswordInput type="password" strong />                          // all defaults
+<PasswordInput type="password" strong={{ minLength: 12 }} />      // override one
+<PasswordInput type="password" strong={{ symbol: false }} />      // disable one
+```
+
+### Default criteria
+
+```ts
+{
+  minLength: 8,   // set to 0 to disable
+  uppercase: true,
+  lowercase: true,
+  digit: true,
+  symbol: true,
+}
+```
+
+### Per-criterion error access
+
+`formControl.errorsList` contains both the canonical `strong` entry (whatever the first failing message is, same as every other rule) **and** namespaced sub-entries:
+
+```ts
+errorsList["strong"]           // first failing message (consumed by hook → `error`)
+errorsList["strong.minLength"] // populated only if length check failed
+errorsList["strong.uppercase"] // populated only if uppercase check failed
+errorsList["strong.lowercase"]
+errorsList["strong.digit"]
+errorsList["strong.symbol"]
+```
+
+A criterion that passes does NOT appear in `errorsList`. Use that to drive a checklist UI:
+
+```tsx
+{["minLength", "uppercase", "lowercase", "digit", "symbol"].map((key) => {
+  const failing = Boolean(errorsList[`strong.${key}`]);
+  return <li style={{ color: failing ? "red" : "green" }}>{labels[key]}</li>;
+})}
+```
+
+### Customizing messages
+
+Override per-criterion by passing the namespaced key in `errors`:
+
+```tsx
+<PasswordInput
+  strong
+  errors={{
+    "strong.minLength": "Needs at least 8 chars",
+    "strong.symbol": "Add ! @ # $ or similar",
+  }}
+/>
+```
+
+### Translation keys (all 6 locales)
+
+`validation.strongMinLength` (with `:length` placeholder), `validation.strongUppercase`, `validation.strongLowercase`, `validation.strongDigit`, `validation.strongSymbol`.
+
+### Anti-pattern
+
+Don't combine `strongRule` with separate `minLengthRule` — they'll produce duplicate length errors. The `minLength` criterion inside `strongRule` already covers length checking for passwords.
 
 ## `onInit` hook for rules
 

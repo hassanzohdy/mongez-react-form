@@ -1,5 +1,7 @@
 ---
+name: mongez-react-form-getting-started
 description: Use when setting up @mongez/react-form for the first time in a Web or React Native project — covers installation, locale registration for validation messages, and the minimal "first form" snippet so a working baseline is in place before any other skill is invoked.
+when_to_use: User is installing @mongez/react-form for the first time, asking how to set up a form in a new project, or asking why validation errors show as raw keys like "validation.required" instead of human-readable text.
 ---
 
 # Getting Started with @mongez/react-form

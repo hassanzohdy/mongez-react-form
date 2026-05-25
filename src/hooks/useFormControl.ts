@@ -374,10 +374,17 @@ export function useFormControl<T extends FormControlProps>(
         events.trigger(`form.control.${id}.clear`, formControl);
       },
       reset: () => {
+        // Clear the dirty flag BEFORE firing change() so the form-level
+        // listener registered in BaseForm.register sees `isDirty === false`
+        // and removes this control from `dirtyControls`. We pass
+        // `dirty: false` so change() does not clobber the flag back to true.
+        formControl.isDirty = false;
+
         formControl.change(formControl.initialValue, {
           checked: formControl.initialChecked,
           updateState: true,
           validate: false,
+          dirty: false,
         });
 
         formControl.setError(null);
@@ -394,6 +401,7 @@ export function useFormControl<T extends FormControlProps>(
         {
           updateState = true,
           validate = true,
+          dirty = true,
           ...other
         }: FormControlChangeOptions = {}
       ) {
@@ -406,7 +414,7 @@ export function useFormControl<T extends FormControlProps>(
           formControl.checked = other.checked;
         }
 
-        formControl.isDirty = true;
+        formControl.isDirty = dirty;
 
         events.trigger(`form.control.${id}.change`, {
           value: formControl.value,
@@ -481,27 +489,42 @@ export function useFormControl<T extends FormControlProps>(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Hold a stable reference to the latest rest props so the `onInit` effect
+  // below does not need `props` (a fresh object every render) as a dep.
+  const latestPropsRef = useRef(props);
+  latestPropsRef.current = props;
+
+  // Build a stable identity for `rules` so consumers passing a fresh
+  // array literal each render do not retrigger the `onInit` subscription
+  // loop below. Two arrays with the same rule names (in the same order)
+  // are treated as equal.
+  const rulesKey = useMemo(
+    () => rules.map((rule, index) => rule.name ?? `__anonymous_${index}`).join("|"),
+    [rules]
+  );
+
   useEffect(() => {
     // now find all rules that have onInit method and call it
-    const events: EventSubscription[] = [];
+    const subscriptions: EventSubscription[] = [];
     for (const rule of rules) {
       if ((rule as any).onInit) {
         const output = (rule as any).onInit({
           formControl,
           form,
-          ...props,
+          ...latestPropsRef.current,
         });
 
         if (output) {
-          events.push(output);
+          subscriptions.push(output);
         }
       }
     }
 
     return () => {
-      events.forEach((event) => event?.unsubscribe());
+      subscriptions.forEach((subscription) => subscription?.unsubscribe());
     };
-  }, [form, formControl, props, rules]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form, formControl, rulesKey]);
 
   const changeValue = (value: any, options: any) => {
     formControl.change(value, {

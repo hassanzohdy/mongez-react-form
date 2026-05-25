@@ -1,0 +1,23 @@
+{
+  "name": "mongez-react-form",
+  "description": "Marketplace for @mongez/react-form skills — invokable Claude Code guidance for the @mongez/react-form library (Web + React Native).",
+  "owner": {
+    "name": "Hasan Zohdy",
+    "email": "hassanzohdy@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "mongez-react-form",
+      "source": "./",
+      "description": "Skills for working with @mongez/react-form — covers form-control authoring, submit buttons, validation rules, form events, and React Native usage.",
+      "homepage": "https://github.com/hassanzohdy/mongez-react-form",
+      "repository": "https://github.com/hassanzohdy/mongez-react-form",
+      "license": "MIT",
+      "author": {
+        "name": "Hasan Zohdy"
+      },
+      "keywords": ["react", "react-native", "form", "validation", "mongez"],
+      "category": "react"
+    }
+  ]
+}

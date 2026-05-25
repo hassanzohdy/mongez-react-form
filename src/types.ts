@@ -93,6 +93,14 @@ export type FormControlChangeOptions = {
    * @default true
    */
   validate?: boolean;
+  /**
+   * Whether this change should mark the control as dirty.
+   * Internal callers (e.g. `reset()`) pass `false` so the value
+   * write does not flip the dirty flag back on.
+   *
+   * @default true
+   */
+  dirty?: boolean;
   [key: string]: any;
 };
 

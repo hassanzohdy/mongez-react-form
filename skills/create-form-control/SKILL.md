@@ -1,5 +1,7 @@
 ---
+name: mongez-react-form-create-form-control
 description: Use when building a new form input component (text, checkbox, radio, select, multi-value, file input, etc.) that needs to register itself with a parent Form or NativeForm. Explains the useFormControl hook contract, the controlled vs uncontrolled paths, the canonical input shape per type, error rendering, and the otherProps pass-through.
+when_to_use: User is creating a custom input component with useFormControl, asking how to wire an input into a Form or NativeForm, or asking how to handle checked state, multi-value, otherProps, or inputRef in a form control.
 ---
 
 # Creating a form control with `useFormControl`

@@ -271,6 +271,7 @@ useFormControl({ ...props, rules: [requiredRule, minLengthRule, emailRule] });
 | `alphabetRule` | — | `type="alphabet"` | |
 | `patternRule` | `pattern` (RegExp) | — | |
 | `matchRule` | `match` (other input name) | — | Subscribes to the other input's changes |
+| `strongRule` | `strong` (boolean or object) | `type="password"` | Composite: 5 criteria, per-criterion errors in `errorsList["strong.<key>"]` |
 
 `requiresType` rules only run when `formControl.type` matches. `requiresValue: true` rules (the default) skip empty values — that's why `requiredRule` must come first and is the only rule with `requiresValue: false`.
 
@@ -327,6 +328,37 @@ export const phoneNumberRule: InputRule = {
   onInit?: (options) => EventSubscription | undefined;  // setup on mount
 }
 ```
+
+### `strongRule` (composite password rule)
+
+The only built-in rule with non-trivial configuration. Activated by the `strong` prop, requires `type="password"`.
+
+```ts
+type StrongPasswordCriteria = {
+  minLength?: number;    // default 8 — set to 0 to disable
+  uppercase?: boolean;   // default true
+  lowercase?: boolean;   // default true
+  digit?: boolean;       // default true
+  symbol?: boolean;      // default true
+};
+
+<PasswordInput type="password" strong />                          // all defaults
+<PasswordInput type="password" strong={{ minLength: 12 }} />      // override
+<PasswordInput type="password" strong={{ symbol: false }} />      // disable one
+```
+
+Each failing criterion populates a namespaced entry on `formControl.errorsList`:
+
+```
+errorsList["strong"]            // first failing message (canonical rule entry)
+errorsList["strong.minLength"]  // only if length check failed
+errorsList["strong.uppercase"]  // only if uppercase check failed
+errorsList["strong.lowercase"]
+errorsList["strong.digit"]
+errorsList["strong.symbol"]
+```
+
+Use this to drive password-strength checklist UIs without composing five separate rules. Translation keys: `validation.strongMinLength` (with `:length`), `validation.strongUppercase`, `validation.strongLowercase`, `validation.strongDigit`, `validation.strongSymbol`. Override per-criterion via `errors={{ "strong.minLength": "..." }}`. Don't combine with `minLengthRule` — duplicates the length error.
 
 ### `validateAll` mode
 
@@ -658,14 +690,153 @@ The "active form" tracks the most recently mounted form globally — when forms 
 
 ---
 
-## 14. Architecture notes (for advanced consumers)
+## 14. Architecture & extending `BaseForm`
 
-`Form` and `NativeForm` both extend an abstract `BaseForm` class:
+### Class hierarchy
 
-- **`BaseForm`** holds the platform-agnostic engine: control registration, validation pipeline, value collection, event bus, dirty/disabled tracking, default-value resolution.
-- **`Form`** (Web) renders `<form>`, uses `requestSubmit()` polyfill, handles DOM submit events with `preventDefault` / `stopPropagation`.
-- **`NativeForm`** renders a Fragment by default (or any component passed in), submits programmatically only.
+```
+BaseForm<P extends FormProps>   (abstract — engine, no rendering)
+  ├── Form          (Web — renders <form>, DOM submit handling)
+  └── NativeForm    (React Native — Fragment default, programmatic submit)
+```
 
-To support an additional renderer (e.g. `react-three-fiber`, custom host), extend `BaseForm` and implement `submit()` + `render()`.
+`BaseForm` is exported from the package root. Subclass it to support any other React renderer (`react-three-fiber`, terminal UIs, server-rendered validation, custom hosts).
 
-DOM dependencies in `useFormControl` (visibility check, auto-touch focus listener) are guarded with `typeof document !== "undefined"`, so the same hook works on Web and Native unchanged.
+### What `BaseForm` provides out of the box
+
+Inheriting from `BaseForm` gives you the full `FormInterface` for free:
+
+**Control registry:** `register(formControl)`, `unregister(formControl)`, `control(value, getBy?)`, `controls(names?)`, internal `formControls[]` array. Automatically wires per-control `onChange` subscriptions to maintain `dirtyControls`.
+
+**Validation pipeline:** `validate(controls?)`, `validateVisible()`, plus the events `validating`, `validation`, `validControl`, `invalidControl`, `validControls`, `invalidControls`. Listener returning `false` from `validating` aborts the run.
+
+**Value collection:** `values(names?)`, `value(name)`, `formData()`, `collectValues(names?)`, `shouldIgnoreEmptyValues()`. Honors dot-notation names (`user.firstName` → nested objects), array indices (`tags.0`), `multiple: true` controls, and `ignoreEmptyValues`.
+
+**State tracking:** `isDirty`, `dirtyControls[]`, `setIsDirty()`, `isSubmitting()`, `submitting(boolean)`, `isValid()`, `disable(isDisabled?)`, `enable()`. Each transition fires the matching event.
+
+**Event bus:** `on(event, cb)`, `trigger(event, ...args)`, `triggerAll(event, ...args)`. Built on `@mongez/events`. Event names are typed via `FormEventType`.
+
+**Active-form registry:** Constructor auto-registers via `setActiveForm()` + `addToFormsList()`. `componentWillUnmount` auto-unregisters. So `getActiveForm()` and `getForm(id)` work without any subclass setup.
+
+**Reset:** `reset()`, `resetErrors()`. `reset()` fires `resetting` → calls each control's `reset()` → resets internal flags → fires `reset`.
+
+**Default-value resolution:** `props.defaultValue` is exposed as `this.defaultValue` and consumed by `useFormControl` via the `FormContext` lookup chain.
+
+**Shared submit pipeline:** Protected `handleSubmit(event?)` method — runs `validate()`, short-circuits on invalid form / already-submitting, calls `props.onSubmit({ form, event, values, formData })` with `values` and `formData` as getters (lazy), then fires the `submit` event.
+
+### What you must implement
+
+Two abstract surfaces:
+
+1. **`submit(): void`** — programmatic submit. Typical implementation calls `this.handleSubmit()`.
+2. **`render(): ReactNode`** — must wrap children in `<FormContext.Provider value={this}>` so descendants' `useFormControl` calls find the form. Beyond that, render whatever fits the platform.
+
+### Canonical subclass templates
+
+**Headless (no host element):**
+
+```tsx
+import { BaseForm, FormContext, type FormProps, type FormInterface } from "@mongez/react-form";
+
+export class HeadlessForm extends BaseForm implements FormInterface {
+  public formElement = null;
+
+  public submit() {
+    if (this.isSubmitting()) return;
+    this.handleSubmit();
+  }
+
+  public render() {
+    return (
+      <FormContext.Provider value={this}>
+        {(this.props as FormProps).children}
+      </FormContext.Provider>
+    );
+  }
+}
+```
+
+**Web (mirrors what `Form.tsx` does):**
+
+```tsx
+import { BaseForm, FormContext } from "@mongez/react-form";
+
+export class CustomWebForm extends BaseForm {
+  public formElement!: HTMLFormElement;
+
+  public submit() {
+    if (!this.formElement || this.isSubmitting()) return;
+    this.formElement.requestSubmit();
+  }
+
+  protected async triggerSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    await this.handleSubmit(e);
+  }
+
+  public render() {
+    return (
+      <FormContext.Provider value={this}>
+        <form
+          ref={(el) => (this.formElement = el!)}
+          onSubmit={this.triggerSubmit.bind(this)}
+          noValidate
+        >
+          {(this.props as any).children}
+        </form>
+      </FormContext.Provider>
+    );
+  }
+}
+```
+
+### Generic prop type
+
+`BaseForm<P extends FormProps = FormProps>` — pass a wider prop type to your subclass when it needs platform-specific props:
+
+```tsx
+type MyFormProps = FormProps & { view: "modal" | "inline" };
+
+export class MyForm extends BaseForm<MyFormProps> {
+  public submit() { this.handleSubmit(); }
+  public render() {
+    const { view, children } = this.props;
+    return (
+      <FormContext.Provider value={this}>
+        <div className={`form form-${view}`}>{children}</div>
+      </FormContext.Provider>
+    );
+  }
+}
+```
+
+### When NOT to subclass
+
+If all you need is a different rendered element, **don't subclass — use the `component` prop:**
+
+```tsx
+<Form component={MyStyledFormWrapper}>...</Form>
+<NativeForm component={View} style={{ padding: 16 }}>...</NativeForm>
+```
+
+Subclass only when submit semantics, rendering rules, or platform integration genuinely differ from both Web and Native.
+
+### DOM-guarded code in `useFormControl`
+
+The same `useFormControl` hook runs on Web and Native unchanged. DOM-specific code paths are guarded with `typeof document !== "undefined"`:
+
+- `formControl.isVisible()` walks `parentElement` chain on Web; on Native it always returns `true`. Consequence: `form.validateVisible()` on Native is identical to `form.validate()`.
+- The auto-touch DOM `focus` event listener is a no-op on Native. Native input components must set `formControl.isTouched = true` manually in their own `onFocus` handler if they want the flag tracked.
+- `inputRef.current.focus()` / `.blur()` work on both — React Native's `TextInput` ref exposes both methods natively.
+
+### Where the platform-specific code lives
+
+When extending `BaseForm` or contributing back, these are the only files you need to read:
+
+- `src/components/BaseForm.ts` — the engine (≈400 lines, no rendering).
+- `src/components/Form.tsx` — Web concrete (≈55 lines).
+- `src/components/NativeForm.tsx` — Native concrete (≈45 lines).
+- `src/hooks/useFormControl.ts` — the hook, with DOM guards inline.
+
+All other files (rules, hooks, contexts, configurations, active-form registry, types) are 100% platform-agnostic.

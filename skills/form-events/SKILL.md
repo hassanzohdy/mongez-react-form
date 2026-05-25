@@ -1,5 +1,7 @@
 ---
+name: mongez-react-form-form-events
 description: Use when the user needs to subscribe to form lifecycle events — to react to submission, validation outcomes, dirty state, reset, or per-control register/unregister. Explains every event in FormEventType, what payload it carries, when it fires relative to others, and how to subscribe and unsubscribe.
+when_to_use: User is subscribing to form.on() events such as submit, validating, invalidControls, dirty, reset, or register; implementing autosave, scroll-to-error, analytics tracking, or conditional submission blocking via the validating veto; or subscribing to per-control onChange, onReset, or onDestroy events.
 ---
 
 # Form events
@@ -26,7 +28,7 @@ useEffect(() => {
 
 ## The event catalog
 
-Event names are typed via `FormEventType` in [`src/types.ts`](../../src/types.ts).
+Event names are typed via `FormEventType` in [`src/types.ts` on GitHub](https://github.com/hassanzohdy/mongez-react-form/blob/main/src/types.ts).
 
 | Event | Payload | Fires when |
 |---|---|---|

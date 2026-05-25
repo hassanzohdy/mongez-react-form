@@ -1,33 +1,46 @@
 {
-    "name": "@mongez/react-form",
-    "version": "3.1.5",
-    "description": "A Powerful React form handler.",
-    "main": "src/index.ts",
-    "dependencies": {
-        "@mongez/events": "2.1.0",
-        "@mongez/supportive-is": "^2.0.4",
-        "@mongez/localization": ">=3.0.0"
-    },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/hassanzohdy/mongez-react-form"
-    },
-    "peerDependencies": {
-        "react": ">=16.8.0"
-    },
-    "keywords": [
-        "react",
-        "form",
-        "validation",
-        "material-io",
-        "semantic",
-        "react-form-hook",
-        "formik",
-        "react-native-form"
-    ],
-    "author": "hassanzohdy",
-    "license": "MIT",
-    "devDependencies": {
-        "react": "^18.2.0"
-    }
+  "name": "@mongez/react-form",
+  "version": "3.3.0",
+  "description": "A Powerful React form handler.",
+  "main": "src/index.ts",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@mongez/events": "2.1.0",
+    "@mongez/supportive-is": "^2.0.4",
+    "@mongez/localization": ">=3.0.0",
+    "@mongez/reinforcements": ">=3.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hassanzohdy/mongez-react-form"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0"
+  },
+  "keywords": [
+    "react",
+    "react-native",
+    "form",
+    "form-validation",
+    "headless",
+    "react-form",
+    "react-native-form"
+  ],
+  "author": "hassanzohdy",
+  "license": "MIT",
+  "devDependencies": {
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/react": "^16.0.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "happy-dom": "^15.7.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "typescript": "^5.4.0",
+    "vitest": "^2.1.0"
+  }
 }
