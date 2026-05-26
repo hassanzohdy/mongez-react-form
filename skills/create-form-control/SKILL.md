@@ -1,7 +1,9 @@
 ---
 name: mongez-react-form-create-form-control
-description: Use when building a new form input component (text, checkbox, radio, select, multi-value, file input, etc.) that needs to register itself with a parent Form or NativeForm. Explains the useFormControl hook contract, the controlled vs uncontrolled paths, the canonical input shape per type, error rendering, and the otherProps pass-through.
-when_to_use: User is creating a custom input component with useFormControl, asking how to wire an input into a Form or NativeForm, or asking how to handle checked state, multi-value, otherProps, or inputRef in a form control.
+description: |
+  Use when building a new form input component (text, checkbox, radio, select, multi-value, file input, etc.) that needs to register itself with a parent Form or NativeForm. Explains the useFormControl hook contract, the controlled vs uncontrolled paths, the canonical input shape per type, error rendering, and the otherProps pass-through.
+  TRIGGER when: code imports `useFormControl`, `useRadioInput`, `RadioGroupContext`, `HiddenInput`, `FormControlProps`, `FormControlHook`, or `FormControl` from `@mongez/react-form`; user asks "how do I build a custom text input / checkbox / radio / multi-select for @mongez/react-form", "how do I wire `inputRef` / `otherProps` / `checked` / `setChecked`", or "how do I make a multi-value input"; `import { useFormControl } from "@mongez/react-form"` in a component file.
+  SKIP: `mongez-react-form-validation-rules` for choosing or writing rules (rules go into the `rules` array, but the rules system itself is a separate skill); `mongez-react-form-submit-button` for submit-button wiring; `mongez-react-form-form-events` for subscribing to lifecycle events; raw React `useState` form inputs unrelated to `@mongez/react-form`; `react-hook-form`'s `useController` or `Controller`.
 ---
 
 # Creating a form control with `useFormControl`

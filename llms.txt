@@ -35,7 +35,20 @@ If you have Claude Code installed, install the plugin for richer integration:
 /plugin install react-form@mongez-react-form
 ```
 
-This installs invokable skills (`getting-started`, `create-form-control`, `submit-button`, `validation-rules`, `react-native-usage`, `form-events`) that load on demand when relevant to the task at hand. The same skills are also shipped inside the npm tarball under `skills/` if you prefer to copy them into your project's `.claude/skills/` manually.
+This installs invokable skills that load on demand when relevant to the task at hand. The same skills are also shipped inside the npm tarball under `skills/` if you prefer to copy them into your project's `.claude/skills/` manually.
+
+- `getting-started` — install, locale registration, minimal first form.
+  - *Auto-trigger:* loaded when installing `@mongez/react-form` for the first time or registering validation locale bundles at app entry.
+- `create-form-control` — building custom inputs (text / checkbox / radio / multi-value / hidden) around `useFormControl`.
+  - *Auto-trigger:* loaded when importing `useFormControl`, `useRadioInput`, `HiddenInput`, or `FormControlProps` in a component file.
+- `submit-button` — smart submit buttons with `useSubmitButton` and disabled/submitting state.
+  - *Auto-trigger:* loaded when importing `useSubmitButton` or calling `form.submitting(...)` / `form.submit()`.
+- `validation-rules` — built-in rules, custom `InputRule`, async validation, `strongRule`, message overrides.
+  - *Auto-trigger:* loaded when importing any built-in rule (`requiredRule`, `emailRule`, `strongRule`, …) or the `InputRule` type.
+- `react-native-usage` — `NativeForm` plus RN-specific wiring (`onChangeText`, `onFocus`, `Pressable` submit).
+  - *Auto-trigger:* loaded when importing `NativeForm`, or using `useFormControl` alongside imports from `react-native`.
+- `form-events` — subscribing to lifecycle events (`submit`, `validating`, `dirty`, `invalidControls`, per-control `onChange`).
+  - *Auto-trigger:* loaded when calling `form.on(...)`, `useForm()`, `getActiveForm()`, or referencing `FormEventType` events.
 
 ## Optional setup
 

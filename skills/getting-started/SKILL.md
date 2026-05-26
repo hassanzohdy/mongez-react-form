@@ -1,7 +1,9 @@
 ---
 name: mongez-react-form-getting-started
-description: Use when setting up @mongez/react-form for the first time in a Web or React Native project — covers installation, locale registration for validation messages, and the minimal "first form" snippet so a working baseline is in place before any other skill is invoked.
-when_to_use: User is installing @mongez/react-form for the first time, asking how to set up a form in a new project, or asking why validation errors show as raw keys like "validation.required" instead of human-readable text.
+description: |
+  Use when setting up @mongez/react-form for the first time in a Web or React Native project — covers installation, locale registration for validation messages, and the minimal "first form" snippet so a working baseline is in place before any other skill is invoked.
+  TRIGGER when: code imports `Form`, `NativeForm`, `useFormControl`, `enValidationTranslation`, `arValidationTranslation`, `frValidationTranslation`, `esValidationTranslation`, `itValidationTranslation`, or `deValidationTranslation` from `@mongez/react-form`; user asks "how do I install @mongez/react-form", "how do I set up a form in a new project", or "why does my validation show validation.required instead of a real message"; `import { Form, useFormControl } from "@mongez/react-form"` at app entry.
+  SKIP: `mongez-react-form-create-form-control` for writing custom input components; `mongez-react-form-validation-rules` for picking/composing rules; `mongez-react-form-react-native-usage` for RN-specific wiring beyond initial install; `react-hook-form`, `formik`, or `final-form` projects; locale wiring for non-form `@mongez/localization` usage.
 ---
 
 # Getting Started with @mongez/react-form

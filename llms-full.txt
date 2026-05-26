@@ -8,6 +8,9 @@ This file is structured for LLM consumption: each section is self-contained, can
 
 ## 1. Installation
 
+> **Auto-trigger:** code imports `Form`, `NativeForm`, `useFormControl`, `enValidationTranslation`, `arValidationTranslation`, `frValidationTranslation`, `esValidationTranslation`, `itValidationTranslation`, or `deValidationTranslation` from `@mongez/react-form`; user asks "how do I install @mongez/react-form", "how do I set up a form in a new project", or "why does my validation show validation.required instead of a real message"; `import { Form, useFormControl } from "@mongez/react-form"` at app entry.
+> **Skip when:** `mongez-react-form-create-form-control` for writing custom input components; `mongez-react-form-validation-rules` for picking/composing rules; `mongez-react-form-react-native-usage` for RN-specific wiring beyond initial install; `react-hook-form`, `formik`, or `final-form` projects; locale wiring for non-form `@mongez/localization` usage.
+
 ```bash
 npm install @mongez/react-form
 ```
@@ -39,6 +42,9 @@ Without this, error messages render as raw keys like `validation.required`.
 ---
 
 ## 3. Form components
+
+> **Auto-trigger:** code imports `NativeForm` from `@mongez/react-form`, or imports `useFormControl` / `useForm` / `useSubmitButton` in a file that also imports from `react-native` (e.g. `TextInput`, `Pressable`, `View`, `Text` from `"react-native"`); user asks "how do I use @mongez/react-form on React Native or Expo", "why doesn't my form submit fire on RN", "how do I wire `onChangeText` / `onFocus` / `Pressable` into a form control", or "how do I make a checkbox on React Native"; `import { NativeForm } from "@mongez/react-form"`.
+> **Skip when:** `mongez-react-form-getting-started` once install and locale registration are done; `mongez-react-form-create-form-control` for the platform-agnostic hook contract; `mongez-react-form-submit-button` for non-RN button patterns; Web-only `Form` component usage; `react-hook-form`/`formik` on RN.
 
 Two components, same API, different platforms:
 
@@ -101,6 +107,9 @@ import { View } from "react-native";
 ---
 
 ## 4. Form controls — the canonical pattern
+
+> **Auto-trigger:** code imports `useFormControl`, `useRadioInput`, `RadioGroupContext`, `HiddenInput`, `FormControlProps`, `FormControlHook`, or `FormControl` from `@mongez/react-form`; user asks "how do I build a custom text input / checkbox / radio / multi-select for @mongez/react-form", "how do I wire `inputRef` / `otherProps` / `checked` / `setChecked`", or "how do I make a multi-value input"; `import { useFormControl } from "@mongez/react-form"` in a component file.
+> **Skip when:** `mongez-react-form-validation-rules` for choosing or writing rules (rules go into the `rules` array, but the rules system itself is a separate skill); `mongez-react-form-submit-button` for submit-button wiring; `mongez-react-form-form-events` for subscribing to lifecycle events; raw React `useState` form inputs unrelated to `@mongez/react-form`; `react-hook-form`'s `useController` or `Controller`.
 
 Every input is built around `useFormControl`. The hook registers the input with the surrounding form and returns a state bundle.
 
@@ -241,6 +250,9 @@ import { HiddenInput } from "@mongez/react-form";
 
 ## 5. Validation
 
+> **Auto-trigger:** code imports `requiredRule`, `minLengthRule`, `maxLengthRule`, `lengthRule`, `minRule`, `maxRule`, `emailRule`, `numberRule`, `integerRule`, `floatRule`, `urlRule`, `patternRule`, `alphabetRule`, `matchRule`, `strongRule`, or `InputRule` from `@mongez/react-form`; user asks "how do I validate email / required / min length / pattern / password strength in @mongez/react-form", "how do I write a custom validation rule", or "how do I override a validation error message"; `rules: [...]` array passed to `useFormControl` with rule identifiers.
+> **Skip when:** `mongez-react-form-create-form-control` for the input component contract itself (rules plug into it but aren't the same topic); `mongez-react-form-form-events` for lifecycle events; `mongez-react-form-getting-started` for locale bundle registration; `@mongez/supportive-is` raw predicate checks unrelated to the rules system; `zod`, `yup`, `valibot`, or HTML5 `pattern`/`required` constraint validation.
+
 ### Composition
 
 Pass `rules: InputRule[]` in the first argument to `useFormControl`. Rules run in array order; the first failing rule short-circuits unless `{ validateAll: true }` is set in the second argument.
@@ -371,6 +383,9 @@ useFormControl(opts, { validateAll: true });
 
 ## 6. Submit buttons
 
+> **Auto-trigger:** code imports `useSubmitButton` or calls `form.submitting(true|false)`, `form.submit()`, `form.isSubmitting()`, or `form.disable()` from `@mongez/react-form`; user asks "how do I build a submit button for @mongez/react-form", "why is my submit button stuck disabled after a failed API request", or "how do I disable submit until the form is dirty"; `import { useSubmitButton } from "@mongez/react-form"` in a button component.
+> **Skip when:** `mongez-react-form-form-events` for subscribing to `submit` / `submitting` / `invalidControls` events directly (use that when not using `useSubmitButton`); `mongez-react-form-create-form-control` for input components rather than submit buttons; native `<button type="submit">` outside a `@mongez/react-form` `<Form>`; `react-hook-form`'s `formState.isSubmitting`.
+
 `useSubmitButton()` exposes auto-tracked button state:
 
 ```ts
@@ -414,6 +429,9 @@ This is mandatory — without it the button stays disabled forever.
 ---
 
 ## 7. Form events
+
+> **Auto-trigger:** code calls `form.on(...)`, `useForm()`, `getActiveForm()`, or `getForm(...)`, or imports `FormEventType`, `FormInterface`, or `EventSubscription` from `@mongez/react-form`; references events like `submit`, `submitting`, `validating`, `validation`, `validControl`, `invalidControl`, `validControls`, `invalidControls`, `dirty`, `register`, `unregister`, `reset`, `resetting`, or `disable`; user asks "how do I autosave on dirty change", "how do I scroll to the first invalid input", "how do I block submission conditionally", or "how do I track form analytics on submit/validation failure".
+> **Skip when:** `mongez-react-form-submit-button` when `useSubmitButton` already covers the disabled/submitting state derivation; `mongez-react-form-validation-rules` for writing/composing rules (rules fire validation events but the rule authoring topic is separate); `mongez-react-form-create-form-control` for the input component contract; raw `addEventListener` on a DOM `<form>`; `react-hook-form`'s `watch` / `formState` subscriptions.
 
 Subscribe via `form.on(event, callback)`. Returns an `EventSubscription` — unsubscribe in `useEffect` cleanup.
 

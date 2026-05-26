@@ -1,7 +1,9 @@
 ---
 name: mongez-react-form-validation-rules
-description: Use when adding validation to form controls, choosing the right built-in rules, overriding error messages, or writing a custom rule. Covers the full rules list, the InputRule interface, async validation, per-instance message overrides via errors / errorKeys props, and the validateAll mode.
-when_to_use: User is adding requiredRule, minLengthRule, emailRule, or any other built-in rule to a form control; writing a custom InputRule; overriding a validation error message via the errors or errorKeys props; or implementing async server-side validation or a password-strength meter with strongRule.
+description: |
+  Use when adding validation to form controls, choosing the right built-in rules, overriding error messages, or writing a custom rule. Covers the full rules list, the InputRule interface, async validation, per-instance message overrides via errors / errorKeys props, and the validateAll mode.
+  TRIGGER when: code imports `requiredRule`, `minLengthRule`, `maxLengthRule`, `lengthRule`, `minRule`, `maxRule`, `emailRule`, `numberRule`, `integerRule`, `floatRule`, `urlRule`, `patternRule`, `alphabetRule`, `matchRule`, `strongRule`, or `InputRule` from `@mongez/react-form`; user asks "how do I validate email / required / min length / pattern / password strength in @mongez/react-form", "how do I write a custom validation rule", or "how do I override a validation error message"; `rules: [...]` array passed to `useFormControl` with rule identifiers.
+  SKIP: `mongez-react-form-create-form-control` for the input component contract itself (rules plug into it but aren't the same topic); `mongez-react-form-form-events` for lifecycle events; `mongez-react-form-getting-started` for locale bundle registration; `@mongez/supportive-is` raw predicate checks unrelated to the rules system; `zod`, `yup`, `valibot`, or HTML5 `pattern`/`required` constraint validation.
 ---
 
 # Validation rules

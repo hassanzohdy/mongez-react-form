@@ -1,7 +1,9 @@
 ---
 name: mongez-react-form-react-native-usage
-description: Use when integrating @mongez/react-form into a React Native (or Expo) project. Explains the NativeForm component, the Fragment-by-default behavior, programmatic-only submission, how to wire a RN TextInput through useFormControl, and the two cross-platform caveats (auto-touch listener, isVisible).
-when_to_use: User imports NativeForm from @mongez/react-form, is building a form in a React Native or Expo project, or is asking why form submission does not fire in RN or how to wire onChangeText, onFocus, or Pressable into a form control.
+description: |
+  Use when integrating @mongez/react-form into a React Native (or Expo) project. Explains the NativeForm component, the Fragment-by-default behavior, programmatic-only submission, how to wire a RN TextInput through useFormControl, and the two cross-platform caveats (auto-touch listener, isVisible).
+  TRIGGER when: code imports `NativeForm` from `@mongez/react-form`, or imports `useFormControl` / `useForm` / `useSubmitButton` in a file that also imports from `react-native` (e.g. `TextInput`, `Pressable`, `View`, `Text` from `"react-native"`); user asks "how do I use @mongez/react-form on React Native or Expo", "why doesn't my form submit fire on RN", "how do I wire `onChangeText` / `onFocus` / `Pressable` into a form control", or "how do I make a checkbox on React Native"; `import { NativeForm } from "@mongez/react-form"`.
+  SKIP: `mongez-react-form-getting-started` once install and locale registration are done; `mongez-react-form-create-form-control` for the platform-agnostic hook contract; `mongez-react-form-submit-button` for non-RN button patterns; Web-only `Form` component usage; `react-hook-form`/`formik` on RN.
 ---
 
 # Using @mongez/react-form in React Native
