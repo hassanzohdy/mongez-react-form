@@ -90,12 +90,12 @@ A consumer activates each rule by passing the corresponding prop. Without the pr
   name="confirmPassword"
   match="password"
   errorKeys={{
-    matchingInput: "Password",  // -> "This input is not matching with Password"
+    matchingElement: "Password",  // -> "This input is not matching with Password"
   }}
 />
 ```
 
-`errorKeys` replaces named placeholders (`:length`, `:matchingInput`, `:min`, etc.) inside the default localized message.
+`errorKeys` is consulted by rules for human-readable substitutions. The hook always populates `errorKeys.name` from `label`/`placeholder`/`name` and the message's `:input` placeholder is filled from it. `matchRule` additionally reads `errorKeys.matchingElement` to fill the `:matchingInput` placeholder. Numeric placeholders like `:length`, `:min`, `:max` are filled directly from the input's own props (`minLength`, `min`, `max`) and are not overridable via `errorKeys` — to change those values, pass a different prop; to change the surrounding text, replace the whole message via `errors[ruleName]` or override the locale bundle.
 
 ### Override globally via locale bundles
 
@@ -224,17 +224,20 @@ A criterion that passes does NOT appear in `errorsList`. Use that to drive a che
 
 ### Customizing messages
 
-Override per-criterion by passing the namespaced key in `errors`:
+`strongRule` writes its per-criterion messages directly from the localization bundle (via `trans("validation.strongMinLength", ...)` etc.) and does NOT consult the per-instance `errors` prop for individual criteria — `errors["strong.minLength"]` will not be picked up. To change per-criterion text, override the locale keys globally:
 
-```tsx
-<PasswordInput
-  strong
-  errors={{
-    "strong.minLength": "Needs at least 8 chars",
-    "strong.symbol": "Add ! @ # $ or similar",
-  }}
-/>
+```ts
+import { extend } from "@mongez/localization";
+
+extend("en", {
+  validation: {
+    strongMinLength: "Needs at least :length chars",
+    strongSymbol: "Add ! @ # $ or similar",
+  },
+});
 ```
+
+Per-instance, you can replace the whole rule's first-message via `errors.strong` (this hits the generic `errors[ruleName]` path in the hook, which only sees the first failing message), but there is no per-criterion override at the prop level.
 
 ### Translation keys (all 6 locales)
 
