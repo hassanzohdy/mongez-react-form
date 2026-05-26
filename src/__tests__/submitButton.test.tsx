@@ -49,12 +49,17 @@ function FormCapture({ onForm }: { onForm: (form: FormInterface) => void }) {
   return null;
 }
 
-// Flush both microtasks AND the 0ms setTimeout that
-// BaseForm.checkIfIsValid uses to debounce validControls/invalidControls
-// emissions.
+// Flush both microtasks AND the setTimeout-based debounce that
+// BaseForm.checkIfIsValid uses to coalesce validControls/invalidControls
+// emissions. Two ticks are needed on slower CI runners: the first flushes
+// the debounced trigger; the second flushes the React state update that
+// the event listener schedules.
 async function flushDebounced() {
   await act(async () => {
-    await new Promise((r) => setTimeout(r, 0));
+    await new Promise((r) => setTimeout(r, 20));
+  });
+  await act(async () => {
+    await new Promise((r) => setTimeout(r, 20));
   });
 }
 
