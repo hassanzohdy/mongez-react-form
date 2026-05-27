@@ -12,13 +12,44 @@ Apply this skill when the user is integrating `@mongez/react-form` into a fresh 
 
 ## 1. Install
 
-```bash
+```sh
+# npm
 npm install @mongez/react-form
-# or
+
+# yarn
 yarn add @mongez/react-form
+
+# pnpm
+pnpm add @mongez/react-form
 ```
 
-The package's runtime dependencies (`@mongez/events`, `@mongez/localization`, `@mongez/supportive-is`, `@mongez/reinforcements`) install transitively.
+Peer dep: `react >= 18`. Runtime deps install transitively: `@mongez/events`, `@mongez/localization`, `@mongez/supportive-is`, `@mongez/reinforcements`.
+
+### Quick example (shape of the API before the full setup)
+
+Build a thin input component around `useFormControl`, drop it inside `<Form>`, get values on submit:
+
+```tsx
+import { Form, useFormControl, requiredRule, emailRule } from "@mongez/react-form";
+
+function TextInput(props) {
+  const { value, changeValue, error, otherProps } =
+    useFormControl({ ...props, rules: [requiredRule, emailRule] });
+  return (
+    <>
+      <input value={value} onChange={(e) => changeValue(e.target.value)} {...otherProps} />
+      {error && <span>{error}</span>}
+    </>
+  );
+}
+
+<Form onSubmit={({ values }) => api.signup(values)}>
+  <TextInput name="email" type="email" required />
+  <button type="submit">Sign up</button>
+</Form>
+```
+
+Read on for the full setup — locale registration, web vs RN form components, and the complete first form.
 
 ## 2. Register validation translations (one-time, at app entry)
 
