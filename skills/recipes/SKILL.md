@@ -2,8 +2,6 @@
 name: mongez-react-form-recipes
 description: |
   Idiomatic composition recipes for `@mongez/react-form` — submitting and surfacing backend errors per-field, debounced async field validation, dynamic field arrays with add/remove, multi-step wizard forms with shared state, autosave on dirty, cross-field validation, and sharing rules between Web and React Native.
-  TRIGGER when: code combines `Form`/`NativeForm` with `useFormControl`, `useForm`, `useSubmitButton`, or `form.on` events; user asks "how do I show server validation errors on the right field", "how do I debounce an async validator", "how do I add/remove inputs dynamically", "how do I autosave while typing", "how do I do a multi-step form", or "how do I share validation between Web and React Native".
-  SKIP: per-feature dives — load `mongez-react-form-create-form-control`, `mongez-react-form-validation-rules`, `mongez-react-form-submit-button`, `mongez-react-form-form-events`, or `mongez-react-form-react-native-usage`; first-time setup — load `mongez-react-form-getting-started`; `react-hook-form` / `formik` / `final-form` projects.
 ---
 
 # Recipes

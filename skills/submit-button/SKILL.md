@@ -2,8 +2,6 @@
 name: mongez-react-form-submit-button
 description: |
   Use when building a submit button or any UI element that needs to track form-level state (submitting, invalid controls, dirty, disabled). Explains the useSubmitButton hook, when each piece of state changes, and how to recover from a failed API request so the button re-enables.
-  TRIGGER when: code imports `useSubmitButton` or calls `form.submitting(true|false)`, `form.submit()`, `form.isSubmitting()`, or `form.disable()` from `@mongez/react-form`; user asks "how do I build a submit button for @mongez/react-form", "why is my submit button stuck disabled after a failed API request", or "how do I disable submit until the form is dirty"; `import { useSubmitButton } from "@mongez/react-form"` in a button component.
-  SKIP: `mongez-react-form-form-events` for subscribing to `submit` / `submitting` / `invalidControls` events directly (use that when not using `useSubmitButton`); `mongez-react-form-create-form-control` for input components rather than submit buttons; native `<button type="submit">` outside a `@mongez/react-form` `<Form>`; `react-hook-form`'s `formState.isSubmitting`.
 ---
 
 # Building a smart submit button

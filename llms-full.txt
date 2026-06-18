@@ -62,7 +62,7 @@ type FormProps = {
   component?: React.ComponentType<any>;        // override the rendered element
   defaultValue?: Record<string, any>;          // default values for every control by name (dot-notation supported)
   ignoreEmptyValues?: boolean;                 // omit empty values from form.values()
-  id?: string;                                 // form id, auto-generated if absent
+  id?: string;                                 // form id; pass a static, unique value in SSR apps (auto-generated via Math.random() when absent — see §3 SSR)
   children: React.ReactNode;
 };
 ```
@@ -103,6 +103,22 @@ import { View } from "react-native";
   {/* ...inputs... */}
 </NativeForm>
 ```
+
+### SSR — pass a static `id` to every `<Form>`
+
+In server-rendered apps (Next.js, Remix, Astro, TanStack Start, …), always give each `<Form>` an explicit, static `id`:
+
+```tsx
+<Form id="signup" onSubmit={({ values }) => api.signup(values)}>
+  {/* ...inputs... */}
+</Form>
+```
+
+When `id` is omitted, the form generates one at construction with `Math.random()` (`frm-<random>`) and renders it as the `<form id="form-frm-…">` attribute. The server render and the client hydration each run that generation independently and produce **different** ids — React reports a hydration mismatch and discards the server markup for that subtree. A static `id` makes the rendered attribute deterministic (`form-signup`) and identical on both sides.
+
+- Keep each form's `id` unique on the page — it also drives the internal form id and its event prefix (`form.<id>`), so duplicate ids cross-wire events.
+- Inputs don't need this: a control's id derives from its `name` (`input-<name>`), which is already deterministic. Only the `<Form>` wrapper falls back to a random id.
+- Client-only apps (plain SPA, React Native `NativeForm`) never hydrate server markup, so the random id is harmless there — but a static `id` is still a good habit and makes the `<form>` easier to target in tests and styles.
 
 ---
 
@@ -701,6 +717,7 @@ The "active form" tracks the most recently mounted form globally — when forms 
 - Returning `false` from a `validate` function — must return a `ReactNode` or `undefined`. `false` is treated as truthy.
 - Spreading raw `props` (not `otherProps`) onto the host element — leaks hook-internal props.
 - Forgetting `form.submitting(false)` in the API-failure path — button stays disabled.
+- Omitting a static `id` on `<Form>` in SSR apps — the auto-generated `Math.random()` id differs between server and client and triggers a React hydration mismatch. Pass a stable, unique `id` per form.
 - Subscribing to events without unsubscribing — leaks on remount, duplicate handlers.
 - Mixing `Form` (Web) and `NativeForm` (Native) in the same code path — pick the one matching the platform.
 - Using `<button onClick={() => form.submit()}>` on Web inside `<Form>` — works, but `<button type="submit">` is simpler and lets the browser handle the event natively.

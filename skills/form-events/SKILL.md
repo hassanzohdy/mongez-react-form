@@ -2,8 +2,6 @@
 name: mongez-react-form-form-events
 description: |
   Use when the user needs to subscribe to form lifecycle events — to react to submission, validation outcomes, dirty state, reset, or per-control register/unregister. Explains every event in FormEventType, what payload it carries, when it fires relative to others, and how to subscribe and unsubscribe.
-  TRIGGER when: code calls `form.on(...)`, `useForm()`, `getActiveForm()`, or `getForm(...)`, or imports `FormEventType`, `FormInterface`, or `EventSubscription` from `@mongez/react-form`; references events like `submit`, `submitting`, `validating`, `validation`, `validControl`, `invalidControl`, `validControls`, `invalidControls`, `dirty`, `register`, `unregister`, `reset`, `resetting`, or `disable`; user asks "how do I autosave on dirty change", "how do I scroll to the first invalid input", "how do I block submission conditionally", or "how do I track form analytics on submit/validation failure".
-  SKIP: `mongez-react-form-submit-button` when `useSubmitButton` already covers the disabled/submitting state derivation; `mongez-react-form-validation-rules` for writing/composing rules (rules fire validation events but the rule authoring topic is separate); `mongez-react-form-create-form-control` for the input component contract; raw `addEventListener` on a DOM `<form>`; `react-hook-form`'s `watch` / `formState` subscriptions.
 ---
 
 # Form events

@@ -18,6 +18,10 @@ Mongez React Form is unopinionated about UI — you build the input components, 
 - [`useSubmitButton` hook](./src/hooks/useSubmitButton.tsx): wire a submit button — exposes `disabled` (auto-tracks validity + in-flight submit) and `isSubmitting`.
 - [`useRadioInput` hook](./src/hooks/useRadioInput.tsx): for radio-group children.
 
+## SSR (Next.js, Remix, Astro, …)
+
+In server-rendered apps, **pass a static, unique `id` to every `<Form>`**. With no `id`, the form generates one at construction with `Math.random()` (`frm-<random>`) and renders it as the `<form id="form-…">` attribute; the server render and the client hydration produce different values → React hydration mismatch. A static `id` (e.g. `<Form id="signup">`) makes the attribute deterministic on both sides. Input ids are derived from `name` (`input-<name>`) and are already SSR-safe — only the `<Form>` wrapper needs an explicit id.
+
 ## Validation rules
 
 Located in [`src/rules/`](./src/rules/). Each rule implements the `InputRule` interface and is composed by passing it in the `rules` array to `useFormControl`. Built-in rules: `requiredRule`, `minLengthRule`, `maxLengthRule`, `lengthRule`, `minRule`, `maxRule`, `emailRule`, `numberRule`, `floatRule`, `integerRule`, `patternRule`, `alphabetRule`, `matchRule`, `urlRule`.
