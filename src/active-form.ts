@@ -29,25 +29,32 @@ export function setActiveForm(form: FormInterface): void {
 }
 
 /**
- * Remove the given form from being active form
+ * Remove the given form from being active form.
+ *
+ * The id is purged from `activeFormsIds` **unconditionally** — not only when the
+ * form is the current active one — otherwise a form unmounted while a different
+ * form is active would leave a dead id behind. Over a long-lived app that
+ * mounts/unmounts forms out of LIFO order (modals, routes, wizards) those dead
+ * ids would accumulate and the "restore last active form" logic would resolve
+ * stale ids and fail to restore a still-live form.
  */
 export function removeActiveForm(form: FormInterface): void {
+  const index = activeFormsIds.indexOf(form.id);
+  if (index > -1) {
+    activeFormsIds.splice(index, 1);
+  }
+
+  // Only re-pick an active form when the one being removed WAS active.
   if (activeForm && form.id === activeForm.id) {
     activeForm = null;
 
-    const index = activeFormsIds.indexOf(form.id);
-    if (index > -1) {
-      activeFormsIds.splice(index, 1);
+    // Walk from the most recent, skipping any id whose form is already gone.
+    for (let i = activeFormsIds.length - 1; i >= 0; i--) {
+      const candidate = getForm(activeFormsIds[i]);
 
-      if (activeFormsIds.length > 0) {
-        // get last active form and mark it as active form
-        const lastActiveFormId = activeFormsIds[activeFormsIds.length - 1];
-
-        const lastActiveForm = getForm(lastActiveFormId);
-
-        if (lastActiveForm) {
-          setActiveForm(lastActiveForm);
-        }
+      if (candidate) {
+        setActiveForm(candidate);
+        break;
       }
     }
   }

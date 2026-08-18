@@ -1,7 +1,7 @@
 ---
 name: mongez-react-form-form-events
 description: |
-  Use when the user needs to subscribe to form lifecycle events — to react to submission, validation outcomes, dirty state, reset, or per-control register/unregister. Explains every event in FormEventType, what payload it carries, when it fires relative to others, and how to subscribe and unsubscribe.
+  Use when the user needs to subscribe to form lifecycle events — to react to submission, validation outcomes, dirty state, reset, value changes, or per-control register/unregister. Explains every event in FormEventType, what payload it carries, when it fires relative to others (including the v4 form-level change event), and how to subscribe and unsubscribe.
 ---
 
 # Form events
@@ -37,7 +37,7 @@ Event names are typed via `FormEventType` in [`src/types.ts` on GitHub](https://
 | `register` | `(formControl, form)` | A control has registered |
 | `unregistering` | `(formControl, form)` | (Reserved — currently not dispatched) |
 | `unregister` | `(formControl, form)` | A control has unregistered |
-| `change` | `(payload)` | (Form-level — currently dispatched on form-control level, see below) |
+| `change` | `(formControl, form)` | **(v4)** A form-level broadcast fired on *every* control value change — the engine emits it from each registered control's `onChange`. Consumed by `useWatch`; subscribe directly for custom reactive logic. |
 | `dirty` | `(isDirty, form)` | Form's overall dirty state changed |
 | `validating` | `(form)` | About to validate (return `false` from a listener to abort the validation entirely) |
 | `validation` | `(isValid, validatedInputs, form)` | Validation completed |
@@ -126,6 +126,23 @@ form.on("validating", () => {
 ```
 
 Returning `false` from a `validating` listener is the only event-level veto in the system.
+
+### React to any value change (v4 `change` event)
+
+The form-level `change` event fires on every control edit, with the changed control as the first argument:
+
+```tsx
+useEffect(() => {
+  if (!form) return;
+  const sub = form.on("change", (formControl) => {
+    console.log(`${formControl.name} ->`, formControl.value);
+    // e.g. recompute a derived total, toggle dependent UI, etc.
+  });
+  return () => sub.unsubscribe();
+}, [form]);
+```
+
+For the common "read a field reactively and re-render" case, prefer the **`useWatch`** hook (it subscribes to this same event for you) — see the **watching-values** skill. Use a raw `change` subscription when you need a side effect rather than a render.
 
 ### Analytics — track form completion
 

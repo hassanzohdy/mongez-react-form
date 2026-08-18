@@ -1,7 +1,7 @@
 ---
 name: mongez-react-form-validation-rules
 description: |
-  Use when adding validation to form controls, choosing the right built-in rules, overriding error messages, or writing a custom rule. Covers the full rules list, the InputRule interface, async validation, per-instance message overrides via errors / errorKeys props, and the validateAll mode.
+  Use when adding validation to form controls, choosing the right built-in rules, overriding error messages, or writing a custom rule. Covers the full rules list, the InputRule interface, async validation that genuinely gates submission in v4, per-field Standard Schema, per-instance message overrides via errors / errorKeys props, and the validateAll mode.
 ---
 
 # Validation rules
@@ -17,6 +17,8 @@ A rule is plain data: an `InputRule` object passed in the `rules` array to `useF
 - `Promise<ReactNode | undefined>` → async; other rules block until it resolves
 
 The hook runs rules in array order. The first failing rule short-circuits the rest, unless `{ validateAll: true }` is passed in the second argument.
+
+**Rule ordering (v4).** The pipeline is built as: the per-instance `validate` prop first (as a `"custom"` rule), then the `rules` array in order, then a per-field `schema` (if any) appended **last**. Keep `requiredRule` first inside your `rules` array.
 
 ## Built-in rules
 
@@ -35,7 +37,7 @@ All exported from `@mongez/react-form`. Each requires a corresponding prop on th
 | `integerRule` | `type="integer"` | |
 | `floatRule` | `type="float"` | |
 | `urlRule` | `type="url"` | |
-| `patternRule` | `pattern` (RegExp) | |
+| `patternRule` | `pattern` (RegExp) | Compiled patterns are cached; source capped at 200 chars. A value over 2000 chars **fails the rule** (ReDoS guard — not truncated and matched). An oversized or invalid pattern skips validation (fails safe) rather than blocking submit |
 | `alphabetRule` | `type="alphabet"` | Letters only |
 | `matchRule` | `match` (other input name) | Must equal that input's value |
 | `strongRule` | `strong` (boolean or `StrongPasswordCriteria`); `type="password"` | Five composable criteria, per-criterion errors via `errorsList["strong.<key>"]` |
@@ -148,6 +150,30 @@ const validateUsername = async ({ value }) => {
 ```
 
 When the validator returns a Promise, subsequent rules wait for it to resolve, and the error message is set once the promise settles. Use the `validate` prop (per-instance) for one-off async checks, or wrap as an `InputRule` for reusable async logic.
+
+### v4: async validation genuinely gates submission
+
+In v4, `formControl.validate()` returns `ReactNode | Promise<ReactNode>` and the engine **awaits every control** in `form.validate()` before deciding whether to submit. So a pending async rule actually holds back the submit — there's no more race where the form submits before the server check returns.
+
+Three things to know:
+
+- **Sync fast path.** If every rule resolves synchronously, validation stays synchronous (no extra microtask) — the common case keeps its original timing. The pipeline only returns a Promise once a rule actually returns one.
+- **`isValidating`.** While an async rule is in-flight, `formControl.isValidating` (and the hook's returned `isValidating`) is `true`. Render a spinner from it (see the **create-form-control** skill).
+- **Stale results are discarded.** Each validation run captures a monotonic sequence token (`validationSeq`); if the user types again before an async rule resolves, the newer run wins and the older promise's result is dropped — no flicker of an outdated error.
+
+`form.validate()` / `form.validateVisible()` both return `Promise<FormControl[]>` — `await` them before reading `form.isValid()`.
+
+## Per-field Standard Schema (v4)
+
+Beyond the rules array, a single control can be validated by a Standard Schema (zod / valibot / `@warlock.js/seal`) via the `schema` prop or the `{ schema }` option. It is wrapped as an async `InputRule` (`requiresValue: false`, so empty values are still handed to the schema and the schema's own `optional`/`required` semantics apply) and appended last:
+
+```tsx
+import { v } from "@warlock.js/seal";
+
+<TextInput name="age" schema={v.number().min(18)} />
+```
+
+The first schema issue's message becomes the rendered error. For whole-form schemas and `onSubmit` type inference, see the **standard-schema-validation** skill.
 
 ## `validateAll` mode
 

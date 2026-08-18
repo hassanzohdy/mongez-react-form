@@ -1,53 +1,65 @@
-import React from "react";
+"use client";
+
+import React, { forwardRef, useImperativeHandle } from "react";
 import { FormContext } from "../contexts/FormContext";
-import { FormInterface, FormProps } from "./../types";
-import { BaseForm } from "./BaseForm";
+import { StandardSchemaV1 } from "../standard-schema/types";
+import { FormInterface, FormProps } from "../types";
+import { useFormEngine } from "./useFormEngine";
 
 /**
- * React Native form. Renders no host element by default (just a Fragment)
- * so it does not depend on `react-native` being installed; pass a
- * `component` prop (e.g. `View`) to wrap children with a host view.
- *
- * Use the same `Form` API otherwise — registration, validation, values
- * collection, events, and the `FormContext` are all identical to the web
- * `Form`.
+ * Generic call signature preserving schema inference and `ref` support.
  */
-export class NativeForm extends BaseForm implements FormInterface {
-  public formElement: any = null;
+type NativeFormComponent = <
+  Schema extends StandardSchemaV1 | undefined = undefined,
+>(
+  props: FormProps<Schema> & { ref?: React.Ref<FormInterface> }
+) => React.ReactElement | null;
 
-  public submit() {
-    if (this.isSubmitting()) return;
+/**
+ * React Native form. Renders no host element by default (just a Fragment) so it
+ * does not depend on `react-native` being installed; pass a `component` prop
+ * (e.g. `View`) to wrap children with a host view.
+ *
+ * Same engine, context, hooks, validation, and value collection as the web
+ * `Form`. Submission is programmatic only — call `form.submit()`.
+ */
+export const NativeForm = forwardRef(function NativeForm(
+  props: FormProps<any>,
+  ref: React.Ref<FormInterface>
+) {
+  const { engine } = useFormEngine(props, (formEngine) =>
+    formEngine.handleSubmit()
+  );
 
-    this.handleSubmit();
-  }
+  useImperativeHandle(ref, () => engine, [engine]);
 
-  public render() {
-    const {
-      onError: _e,
-      onSubmit: _s,
-      component: Component,
-      children,
-      ignoreEmptyValues: _ignoreEmptyValues,
-      defaultValue: _defaultValue,
-      id: _id,
-      ...otherProps
-    } = this.props as FormProps;
+  const {
+    onError: _onError,
+    onSubmit: _onSubmit,
+    component: Component,
+    children,
+    ignoreEmptyValues: _ignoreEmptyValues,
+    defaultValue: _defaultValue,
+    values: _values,
+    schema: _schema,
+    validateOn: _validateOn,
+    focusFirstError: _focusFirstError,
+    id: _id,
+    ...otherProps
+  } = props;
 
-    const content = Component ? (
-      <Component
-        ref={(node: any) => {
-          this.formElement = node;
-        }}
-        {...otherProps}
-      >
-        {children}
-      </Component>
-    ) : (
-      <>{children}</>
-    );
+  const content = Component ? (
+    <Component
+      ref={(node: any) => {
+        engine.formElement = node;
+      }}
+      {...otherProps}
+    >
+      {children}
+    </Component>
+  ) : (
+    <>{children}</>
+  );
 
-    return (
-      <FormContext.Provider value={this}>{content}</FormContext.Provider>
-    );
-  }
-}
+  return <FormContext.Provider value={engine}>{content}</FormContext.Provider>;
+}) as unknown as NativeFormComponent;

@@ -1,3 +1,5 @@
+"use client";
+
 import { useFormControl } from "../hooks";
 import { HiddenInputProps } from "../types";
 

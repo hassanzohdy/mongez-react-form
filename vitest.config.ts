@@ -31,6 +31,9 @@ function localSiblingAliases(): Record<string, string> {
 export default defineConfig({
   plugins: [react()],
   test: {
+    // Pin NODE_ENV so an inherited `NODE_ENV=production` in the shell can't
+    // make React resolve its production build under test (act(...) throws).
+    env: { NODE_ENV: "test" },
     environment: "happy-dom",
     globals: false,
     include: ["src/**/*.test.{ts,tsx}"],

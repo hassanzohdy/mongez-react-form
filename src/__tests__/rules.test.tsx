@@ -1,6 +1,6 @@
 import { act, fireEvent, render } from "@testing-library/react";
 import React from "react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { Form } from "../components/Form";
 import { useFormControl } from "../hooks/useFormControl";
 import {
@@ -255,6 +255,88 @@ describe("Validation rules", () => {
     fireEvent.change(getByTestId("input-hex"), { target: { value: "deadbeef" } });
     await submit(getByText);
     expect(queryByTestId("error-hex")).toBeNull();
+  });
+
+  it("patternRule reuses a cached compiled RegExp for the same pattern source", () => {
+    const options = {
+      value: "ABC-123",
+      pattern: "^[A-Z]{3}-[0-9]{3}$",
+      errorKeys: { name: "code" },
+    } as any;
+
+    const RegExpSpy = vi.spyOn(global, "RegExp");
+
+    patternRule.validate(options);
+    expect(RegExpSpy).toHaveBeenCalledTimes(1);
+
+    patternRule.validate(options);
+    patternRule.validate(options);
+
+    expect(RegExpSpy).toHaveBeenCalledTimes(1);
+
+    RegExpSpy.mockRestore();
+  });
+
+  it("patternRule fails safe on an invalid or oversized pattern instead of throwing or hanging", () => {
+    const invalidPattern = "(unterminated group";
+    expect(() =>
+      patternRule.validate({
+        value: "anything",
+        pattern: invalidPattern,
+        errorKeys: { name: "field" },
+      } as any),
+    ).not.toThrow();
+    expect(
+      patternRule.validate({
+        value: "anything",
+        pattern: invalidPattern,
+        errorKeys: { name: "field" },
+      } as any),
+    ).toBeUndefined();
+
+    const oversizedPattern = "a".repeat(500);
+    expect(() =>
+      patternRule.validate({
+        value: "anything",
+        pattern: oversizedPattern,
+        errorKeys: { name: "field" },
+      } as any),
+    ).not.toThrow();
+    expect(
+      patternRule.validate({
+        value: "anything",
+        pattern: oversizedPattern,
+        errorKeys: { name: "field" },
+      } as any),
+    ).toBeUndefined();
+  });
+
+  it("patternRule rejects the tested value length instead of scanning unbounded input", () => {
+    const start = performance.now();
+    const result = patternRule.validate({
+      value: "a".repeat(1_000_000) + "!",
+      pattern: "^[a-z]+$",
+      errorKeys: { name: "field" },
+    } as any);
+    const elapsed = performance.now() - start;
+
+    // Over-length input is rejected before testing, so this must resolve
+    // quickly rather than scanning a million characters.
+    expect(elapsed).toBeLessThan(200);
+    expect(result).not.toBeUndefined();
+  });
+
+  it("patternRule fails a value over MAX_VALUE_LENGTH even when its valid prefix matches an anchored pattern", () => {
+    // Regression for the truncate-then-test bypass: an anchored pattern must
+    // not pass just because the first MAX_VALUE_LENGTH chars are valid.
+    const validPrefix = "a".repeat(2000);
+    const result = patternRule.validate({
+      value: validPrefix + "!!!not-valid-hex-or-alpha!!!",
+      pattern: "^[a-z]+$",
+      errorKeys: { name: "field" },
+    } as any);
+
+    expect(result).not.toBeUndefined();
   });
 
   it("patternRule preserves the `pattern` prop from otherProps", () => {

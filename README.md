@@ -19,16 +19,18 @@
 
 `@mongez/react-form` ships one `useFormControl` hook that owns the value, runs a localized rule pipeline, and registers itself with the nearest `<Form>` (web) or `<NativeForm>` (React Native) — same hooks, same rules, on both platforms. Validation rules are plain data objects, not strings, so you can compose them, override messages per instance, or write your own. Dot-notation `name` props (`user.email`, `addresses.0.city`) nest collected values into objects on submit. No schema layer, no `<Controller>` wrappers, no `register("name")` boilerplate.
 
-```tsx
-import { Form, useFormControl, requiredRule, emailRule } from "@mongez/react-form";
+You build your own input — the library stays headless. A thin wrapper around `useFormControl` + `getInputProps()` is ~3 lines, fully accessible, with no footguns (readable English errors render with **zero setup**):
 
-function TextInput(props) {
-  const { value, changeValue, error, otherProps } =
-    useFormControl({ ...props, rules: [requiredRule, emailRule] });
+```tsx
+import { Form, useFormControl, requiredRule, emailRule, type FormControlProps } from "@mongez/react-form";
+
+function TextInput(props: FormControlProps) {
+  const { error, getInputProps, getErrorProps } =
+    useFormControl({ rules: [requiredRule, emailRule], ...props });
   return (
     <>
-      <input value={value} onChange={(e) => changeValue(e.target.value)} {...otherProps} />
-      {error && <span>{error}</span>}
+      <input {...getInputProps()} />
+      {error && <span {...getErrorProps()}>{error}</span>}
     </>
   );
 }
@@ -39,22 +41,31 @@ function TextInput(props) {
 </Form>
 ```
 
+`getInputProps()` wires `id` / `value` / `onChange` / `onBlur` / `ref` / ARIA for you. Want full control over the wiring (and on React Native, where inputs emit values directly)? Spread the raw `value` / `changeValue` / `otherProps` instead — see [`useFormControl`](#useformcontrol) below.
+
 ---
 
 ## Features
 
 | Feature | Description |
 |---|---|
-| **`<Form>` and `<NativeForm>`** | Concrete components for web (`<form>` element) and React Native (Fragment + optional `component` prop). Same context, same hooks. |
-| **`useFormControl`** | Register any input, get back `value` / `changeValue` / `error` / `checked` / `inputRef` / `otherProps`. Always controlled internally. |
+| **`<Form>` and `<NativeForm>`** | Function components (v4, `forwardRef`) for web (`<form>` element) and React Native (Fragment + optional `component` prop). SSR-safe ids via `useId()`. Same context, same hooks. |
+| **`useFormControl`** | Register any input, get back `value` / `changeValue` / `error` / `checked` / `inputRef` / `otherProps`. v4 adds `getInputProps` / `getErrorProps` / `isValidating` / `onBlur`. Always controlled internally. |
+| **`useFormState`** (v4) | One-stop reactive snapshot: `{ isValid, isDirty, isSubmitting, isSubmitted, isValidating, formErrors }`. |
 | **Dot-notation `name`** | `user.email` and `addresses.0.city` nest into `{ user: { email }, addresses: [{ city }] }` on submit. |
-| **Composable rule pipeline** | Plain `InputRule` data with `validate`, `requiresType`, `requiresValue`, `preservedProps`. Built-ins cover required, length, min/max, email, url, pattern, match, strong-password, and more. Async returns supported. |
+| **Composable rule pipeline** | Plain `InputRule` data with `validate`, `requiresType`, `requiresValue`, `preservedProps`. Built-ins cover required, length, min/max, email, url, pattern, match, strong-password, and more. **Async validation genuinely gates submission** (v4). |
+| **Standard Schema** (v4) | Validate the whole form (`<Form schema={...}>`) or a single field (`schema` prop) with `@warlock.js/seal`, `zod`, `valibot`, … — **zero runtime dependency**. Types `onSubmit` values. |
 | **Locale-aware errors** | Messages flow through `@mongez/localization`. Bundles ship for `en`, `ar`, `fr`, `es`, `it`, `de`. |
+| **Hydration** (v4) | Reactive `values` prop, `form.fill()` / `setValues()`, and `form.setErrors()` (bulk 422 mapping). `defaultValue` is the reset baseline. |
+| **`useFieldArray`** (v4) | Dynamic, reorderable lists with stable keys: `append` / `remove` / `move` / `swap` / `insert` / `prepend` / `replace`. |
+| **`useWatch`** (v4) | Reactively read live values (`useWatch()` / `useWatch(name)` / `useWatch(names[])`) via a form-level `change` event. |
+| **`validateOn`** (v4) | `"change"` \| `"blur"` \| `"submit"`, per-control / per-form / global. |
+| **`focusFirstError`** (v4) | `<Form focusFirstError>` moves focus to the first invalid control on a failed submit. |
 | **`useRadioInput` + `RadioGroupContext`** | One `useFormControl` owns the selected value; each radio reads it through context. |
 | **`HiddenInput`** | One-line component for csrf tokens, hidden ids, computed values. |
 | **`useSubmitButton`** | Subscribes to `submitting` / `invalidControls` / `dirty` events; returns `disabled` / `isSubmitting` / `isDirty`. |
 | **React Native support** | `react-native` is **not** a peer dep; `NativeForm` renders a Fragment unless you pass `component={View}`. |
-| **`BaseForm` engine** | Abstract class you can subclass to support any React renderer. |
+| **`FormEngine`** (v4) | React-free engine class holding all form logic. Held in a ref by `Form` / `NativeForm` and exposed via `ref`. (`BaseForm` is a deprecated alias.) |
 
 ---
 
@@ -79,32 +90,27 @@ Peer: `react >= 18`. Runtime deps install transitively: `@mongez/events`, `@mong
 ## Quick start
 
 ```tsx
-import { extend } from "@mongez/localization";
 import {
   Form, useFormControl, useSubmitButton,
-  requiredRule, emailRule, enValidationTranslation,
+  requiredRule, emailRule,
   type FormControlProps,
 } from "@mongez/react-form";
 
-// 1. Register validation messages once at app entry — without this,
-//    errors render as raw keys like "validation.required".
-extend("en", { validation: enValidationTranslation });
-
-// 2. Build a thin UI wrapper around useFormControl — this is YOUR component.
+// 1. Build a thin UI wrapper around useFormControl — this is YOUR component.
+//    getInputProps() wires id / value / onChange / onBlur / ref / ARIA for you.
 function TextInput(props: FormControlProps) {
-  const { value, changeValue, id, error, inputRef, otherProps } =
+  const { error, getInputProps, getErrorProps } =
     useFormControl({ rules: [requiredRule, emailRule], ...props });
 
   return (
     <>
-      <input id={id} ref={inputRef} value={value}
-             onChange={(e) => changeValue(e.target.value)} {...otherProps} />
-      {error && <span className="error">{error}</span>}
+      <input {...getInputProps()} />
+      {error && <span className="error" {...getErrorProps()}>{error}</span>}
     </>
   );
 }
 
-// 3. SubmitButton auto-disables while invalid or in-flight.
+// 2. SubmitButton auto-disables while invalid or in-flight.
 function SubmitButton({ children }: { children: React.ReactNode }) {
   const { disabled, isSubmitting } = useSubmitButton();
   return (
@@ -114,15 +120,15 @@ function SubmitButton({ children }: { children: React.ReactNode }) {
   );
 }
 
-// 4. Drop them into a Form. `values` is collected by name; dot-notation supported.
-<Form onSubmit={({ values, form }) =>
-  api.signup(values).catch(() => form.submitting(false))
-}>
+// 3. Drop them into a Form. `values` is collected by name; dot-notation supported.
+<Form onSubmit={async ({ values }) => { await api.signup(values); }}>
   <TextInput name="user.firstName" required />
   <TextInput name="user.email" type="email" required />
   <SubmitButton>Sign up</SubmitButton>
 </Form>;
 ```
+
+Validation errors render as readable English out of the box — **no setup**. To customize messages or add another locale, `extend("en", { validation: { ...enValidationTranslation, required: "Required" } })` at app entry (it overrides the shipped defaults). Returning a promise from `onSubmit` auto-clears the submitting state on settle.
 
 That's the happy path. Everything below is depth on the same surface.
 
@@ -130,7 +136,7 @@ That's the happy path. Everything below is depth on the same surface.
 
 ## Form components — Web vs React Native
 
-Both components extend the same `BaseForm` engine and provide identical `FormContext`, `useFormControl` behavior, validation pipeline, and value collection. Only the host element differs.
+Both are function components (v4) built over the same React-free `FormEngine` class — identical `FormContext`, `useFormControl` behavior, validation pipeline, and value collection. The engine instance is exposed via `ref` (typed `FormInterface`). Only the host element differs.
 
 | | `Form` (web) | `NativeForm` (React Native) |
 |---|---|---|
@@ -151,9 +157,13 @@ import { View } from "react-native";
 </NativeForm>;
 ```
 
-`FormProps` (both): `onSubmit({ form, event?, values, formData })`, `onError(invalidControls)`, `component`, `defaultValue`, `ignoreEmptyValues`, `id`.
+`FormProps` (both): `onSubmit({ form, event?, values, formData })`, `onError(invalidControls)`, `component`, `defaultValue`, `values` (v4, reactive), `schema` (v4, Standard Schema), `validateOn` (v4), `ignoreEmptyValues`, `id`.
 
 > **`values` and `formData` on the `onSubmit` payload are getters.** They re-collect on every access — don't reference them twice if collection is expensive.
+
+> **SSR (v4):** ids are derived from `useId()`, so `<Form>` hydrates cleanly without a static `id`. Pass an explicit `id` only when you want a fixed, human-readable one (it also sets the event prefix `form.<id>`).
+>
+> **Next.js App Router:** the components and hooks ship a `"use client"` boundary, so you can import `<Form>` / `useFormControl` straight into a Server Component tree without marking your own file. The pure exports (rules, types, `standard-schema` helpers, `FormEngine`) stay server-importable. `getActiveForm()` / `getForm()` are client-only conveniences (populated by mount effects) — they return `null` during server render.
 
 ---
 
@@ -163,14 +173,18 @@ The `TextInput` shown in Quick start above is the canonical wrapper pattern. Thr
 
 - **Spread `otherProps`, not raw `props`**, onto the host element. `otherProps` excludes hook-internal keys (`name`, `rules`, `errors`, `onChange`, `value`, `defaultValue`, `errorKeys`, ...) and any `preservedProps` declared by active rules (`minLength`, `pattern`, `match`, `strong`, ...).
 - **Wire `inputRef`** if you want `formControl.focus()` / `.blur()` to work, or auto-touch tracking on web.
-- The hook is **always controlled internally** — `value` from the hook is the source of truth even when the consumer passes a `value` prop. The `id` defaults to `input-<sanitized-name>` (dots become dashes).
+- The hook is **always controlled internally** — `value` from the hook is the source of truth even when the consumer passes a `value` prop. The `id` defaults to `input-<sanitized-name>` (dots become dashes), computed by the exported `useControlId({ id?, name })` hook — call it yourself if you need the same id outside `useFormControl`. **Renamed from `useId` in v4** so importing it no longer shadows React 18's own `useId`.
 
 ### Hook return shape
 
 ```ts
 {
-  id, name, type, value, error, errorsList, checked, disabled, isInvalid,
+  id, name, type, value, error, errorId, errorsList, checked, disabled, isInvalid,
   changeValue, setError, setChecked, disable, enable,
+  isValidating,       // v4: true while an async validation rule is in-flight
+  onBlur,             // v4: blur handler — triggers validation when validateOn="blur"
+  getInputProps,      // v4: a11y-complete prop bag for the host input
+  getErrorProps,      // v4: { id, role: "alert", "aria-live": "polite" } for the error node
   inputRef,           // attach to host input — enables focus()/blur() and auto-touch
   visibleElementRef,  // attach to wrapper — enables validateVisible()
   formControl,        // escape hatch — full registration object
@@ -179,6 +193,24 @@ The `TextInput` shown in Quick start above is the canonical wrapper pattern. Thr
 ```
 
 `name` is dot-notation normalized (`tags[0]` → `tags.0`). `type` defaults to `"text"`. `error` is a `ReactNode` (or an array of `ReactNode` when the hook's second arg is `{ validateAll: true }`). `isInvalid` is `true` only when the control is both touched and failed validation.
+
+### Accessibility prop bags (v4)
+
+For a fully-wired, accessible input, spread `getInputProps()` onto the host input and `getErrorProps()` onto the error node — they handle `id`, `value`/`checked`, `onChange`, `onBlur`, `ref`, `disabled`, and `aria-invalid` / `aria-required` / `aria-describedby` for you:
+
+```tsx
+function TextInput(props: FormControlProps) {
+  const { error, getInputProps, getErrorProps } = useFormControl(props);
+  return (
+    <>
+      <input {...getInputProps()} />
+      {error && <span {...getErrorProps()}>{error}</span>}
+    </>
+  );
+}
+```
+
+`getInputProps(overrides)` merges your pass-through `otherProps`, then the overrides, so `getInputProps({ className: "field" })` works. `getErrorProps()` returns `{ id: errorId, role: "alert", "aria-live": "polite" }`.
 
 ### Checkbox
 
@@ -261,7 +293,7 @@ Rules run in array order; the first failure short-circuits the rest unless you p
 | `minRule` / `maxRule` | `min` / `max` props | — | Numeric — `Number(value) < Number(min)`. |
 | `emailRule` / `urlRule` / `alphabetRule` | — | `type="email"` / `"url"` / `"alphabet"` | Built-in regex / `isUrl` from `@mongez/supportive-is`. |
 | `numberRule` / `integerRule` / `floatRule` | — | `type="number"` / `"integer"` / `"float"` | Numeric coercion + `Number.isInteger` for integers. |
-| `patternRule` | `pattern` prop | — | RegExp or string. |
+| `patternRule` | `pattern` prop | — | RegExp or string. Compiled patterns are cached by source+flags; the source is capped at 200 characters and a value over 2000 characters **fails the rule** instead of being matched on a truncated prefix (ReDoS guard). An oversized or invalid pattern skips validation (fails safe) rather than blocking every submission. |
 | `matchRule` | `match` prop (other input's name) | — | Re-runs when the matched input changes. |
 | `strongRule` | `strong` prop | `type="password"` | 5 composable criteria; per-criterion errors in `errorsList["strong.<key>"]`. |
 
@@ -341,6 +373,138 @@ export const phoneNumberRule: InputRule = {
 
 > **Add custom messages to the locale bundle.** When using `trans("validation.phoneNumber", ...)`, register the key alongside built-ins: `extend("en", { validation: { ...enValidationTranslation, phoneNumber: "..." } })`.
 
+### Async validation gates submission (v4)
+
+When a rule (or per-instance `validate`) returns a Promise, v4 **awaits it before submitting** — a failing async rule blocks `onSubmit`. Sync rules keep their synchronous timing (no extra microtask); the pipeline only goes async when a rule actually returns a Promise. While in flight, the control's `isValidating` flag is `true` (use it for a spinner), and stale async results are discarded if the value changes again before they resolve.
+
+### `validateOn` (v4)
+
+Control when a field validates: `"change"` (default), `"blur"`, or `"submit"`. Resolution order, most specific wins: per-control prop → `<Form validateOn>` → `setFormConfigurations({ validateOn })` → `"change"`. Wire the hook's `onBlur` (or use `getInputProps`) for `"blur"` mode. After a field errors once (or the form has been submitted), it reverts to live revalidation on change so cleared errors update immediately.
+
+```tsx
+<Form validateOn="blur">
+  <TextInput name="email" type="email" required />
+  <TextInput name="coupon" validateOn="change" /> {/* override per-control */}
+</Form>
+```
+
+---
+
+## Standard Schema validation (v4)
+
+Validate with any [Standard Schema](https://standardschema.dev) validator — `@warlock.js/seal`, `zod`, `valibot`, `arktype`, … — with **zero runtime dependency** (the form duck-types on the `~standard` property).
+
+**Whole-form** — `<Form schema={...}>` runs the schema against collected values on submit and maps each issue back to its control by `path`. It also types `onSubmit`'s `values` as the schema's inferred output:
+
+```tsx
+import { z } from "zod";
+
+const schema = z.object({
+  email: z.string().email("Enter a valid email"),
+  age: z.coerce.number(),
+});
+
+<Form schema={schema} onSubmit={({ values }) => {
+  values.email; // string
+  values.age;   // number
+}}>
+  <TextInput name="email" type="email" />
+  <TextInput name="age" type="number" />
+  <SubmitButton>Save</SubmitButton>
+</Form>;
+```
+
+Issues whose control is not in the validated subset are ignored, so `form.validateVisible()` (multi-step wizards) won't fail on hidden fields.
+
+**Per-field** — pass `schema` on one control to validate it with a single-field schema (wrapped as a rule, appended last):
+
+```tsx
+<TextInput name="email" schema={z.string().email("Bad email")} />
+```
+
+Type helpers exported from the package: `StandardSchemaV1`, `InferFormValues<Schema>`, `InferFormInput<Schema>`, `isStandardSchema`, `standardSchemaToRule`, `runStandardSchema`, `issuePathToName`.
+
+---
+
+## Hydration — `values`, `fill`, `setValues`, `setErrors` (v4)
+
+**Which value setter do I use?**
+
+| You want to… | Use |
+|---|---|
+| Set an initial value that's also the **reset baseline** | `defaultValue` (on `<Form>` for shared defaults, or per-control to override) |
+| Hydrate from data that loads **after mount** (edit forms) | `<Form values={record}>` (reactive — re-hydrates on identity change) |
+| Imperatively write many values (e.g. from an event handler) | `form.fill(values)` / `form.setValues(values)` |
+| Change one field programmatically | `form.change(name, value)` |
+| Map a server **422** error response onto controls | `form.setErrors({ "user.email": "Taken" })` |
+| Reset to the original baseline / to **new** values | `form.reset()` / `form.reset(newValues)` |
+
+`defaultValue` is the **reset baseline** (`form.reset()` restores it). For data that arrives *after* mount (edit forms whose record loads async), use the reactive **`values`** prop — changing its identity re-hydrates already-mounted controls and seeds later-mounting ones:
+
+```tsx
+function EditUser({ id }) {
+  const { data: user } = useQuery(["user", id], () => api.getUser(id));
+  return (
+    <Form values={user} onSubmit={({ values }) => api.updateUser(id, values)}>
+      <TextInput name="firstName" />
+      <TextInput name="email" type="email" />
+      <SubmitButton>Save</SubmitButton>
+    </Form>
+  );
+}
+```
+
+Imperatively, `form.fill(values, { dirty?, validate? })` (alias `form.setValues`) bulk-writes onto controls without touching the reset baseline. `form.setErrors({ "dot.name": message })` maps a server 422 response onto controls in one call:
+
+```tsx
+catch (error) {
+  if (error?.status === 422) form.setErrors(error.body.errors);
+}
+```
+
+---
+
+## Field arrays — `useFieldArray` (v4)
+
+Dynamic, reorderable lists with **stable keys** (a surviving row keeps its value when others are removed/reordered). Row input names derive from the index, so the form collects them as an array.
+
+```tsx
+import { useFieldArray } from "@mongez/react-form";
+
+function Addresses() {
+  const { fields, append, remove } = useFieldArray("addresses");
+  return (
+    <>
+      {fields.map((field) => (
+        <div key={field.key}>
+          <TextInput name={`${field.name}.city`} required />
+          <button type="button" onClick={() => remove(field.index)}>Remove</button>
+        </div>
+      ))}
+      <button type="button" onClick={() => append()}>Add address</button>
+    </>
+  );
+}
+```
+
+Full helper set: `{ fields, append, prepend, remove, insert, move, swap, replace }`. Key on `field.key`, name on `field.name`.
+
+---
+
+## Watching values — `useWatch` (v4)
+
+Reactively read live values from any descendant — re-renders on any control change or form reset. Powered by a new form-level `change` event.
+
+```tsx
+import { useWatch } from "@mongez/react-form";
+
+const all   = useWatch();              // whole values object
+const email = useWatch("user.email");  // one control
+const [a, b] = useWatch(["a", "b"]);   // several, in order
+```
+
+Use `useWatch()` in render (reactive); use `form.values()` in callbacks (one-shot). Keep watching components small — they re-render on every change.
+
 ---
 
 ## Submit button — `useSubmitButton`
@@ -355,17 +519,23 @@ const { disabled, isSubmitting, isDirty } = useSubmitButton();
 | `isSubmitting` | `submitting(true)` | `submitting(false)` |
 | `isDirty` | `dirty` event with `true` | When all dirty controls reset / unregister |
 
-> **Always call `form.submitting(false)` in the failure path** — otherwise the button stays disabled forever after an API error.
+> **Awaited submit (v4):** if `onSubmit` **returns a Promise**, the engine auto-clears the submitting state when it settles (success or failure) — no manual `form.submitting(false)` needed. If `onSubmit` is synchronous (or you swallow the error inside the handler so nothing is returned), call `form.submitting(false)` yourself in the failure path or the button stays disabled forever.
 
 ```tsx
-const handleSubmit = async ({ values, form }) => {
+// v4: return the promise — the engine manages the submitting state
+const handleSubmit = async ({ values }) => {
+  await api.createAccount(values);
+  navigate("/welcome");
+};
+
+// Or own it fully (sync handler, or error swallowed here):
+const handleSubmitManual = async ({ values, form }) => {
   try {
     await api.createAccount(values);
     navigate("/welcome");
   } catch (err) {
     showToast(err.message);
-  } finally {
-    form.submitting(false); // ALWAYS — never trust the happy path alone
+    form.submitting(false); // re-enables the button
   }
 };
 ```
@@ -420,6 +590,8 @@ Default values: form-level (preferred for shared defaults) or per-control (overr
 ```
 
 `<Form ignoreEmptyValues>` (or globally, `setFormConfigurations({ ignoreEmptyValues: true })`) makes `form.values()` skip `null` / `undefined` / `""` / `[]`. Does **not** affect `form.formData()`.
+
+> **Hardening (v4) for schema/CMS-driven field names.** Names are usually author-written, but when they're built from server or CMS data, dot-notation expansion is a surface worth guarding: a `__proto__` / `constructor` / `prototype` segment (e.g. `__proto__.isAdmin`) is now rejected rather than written through to `Object.prototype`, and a numeric segment above `10,000` (e.g. `items.4000000000.x`) is treated as a plain object key instead of an array index, so it can't force-allocate a sparse array. See the `patternRule` row above for the matching ReDoS guard on the `pattern` rule.
 
 ### Form events
 
@@ -676,6 +848,22 @@ function ScrollToFirstError() {
 ```
 
 Web-only — on RN, replace `scrollIntoView` with `scrollToIndex` / `measureLayout` on your `ScrollView` ref.
+
+---
+
+## Migrating to v4
+
+Most apps upgrade with **no code changes**. Review these only if they apply:
+
+- **`Form` / `NativeForm` are now function components.** A `ref` yields the React-free `FormEngine` (still assignable to `FormInterface`) instead of a class-component instance. All methods (`validate`, `values`, `submit`, `reset`, `on`, `control`, …) are unchanged — just update the ref type to `FormInterface` / `FormEngine`.
+- **`BaseForm` is deprecated** — it's now an alias of `FormEngine` (removed in v5). To customize rendering, compose a thin function component that lazily instantiates a `FormEngine` (see `useFormEngine`) instead of subclassing `BaseForm`.
+- **`formControl.validate()` may return a `Promise<ReactNode>`.** If you call it directly and inspect the result, `await` it (or handle the union) so async rules/schemas are covered. The built-in submit pipeline already awaits internally.
+- **Async `onSubmit` no longer needs manual `form.submitting(false)`** — return the promise and the engine clears the state when it settles. Keep manual calls only for synchronous handlers (or when you swallow the error inside the handler).
+- **Late-arriving edit data** belongs in the reactive `values` prop (or `form.fill(record)`), not `defaultValue` — `defaultValue` is strictly the reset baseline now.
+- **SSR ids are automatic** via `useId()`; you can drop the static-`id` workaround that older versions needed to avoid hydration mismatches (still fine to keep for readable ids).
+- **`validateOn` / `schema` no longer leak onto the DOM** — if you filtered them out of forwarded props yourself, you can drop that workaround.
+- **`useId` renamed to `useControlId`.** `import { useId } from "@mongez/react-form"` no longer resolves — rename the import to `useControlId`; the return value and usage are unchanged. (The rename stops the package from shadowing React 18's own `useId`.)
+- **`useValue`, `useError`, and `useChecked` hooks removed with no alias.** Replace them with `useFormControl(props)` (destructure `value`, `error`, `checked` from its return) or `useWatch(name)` for a reactive read outside a control.
 
 ---
 

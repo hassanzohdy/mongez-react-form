@@ -1,8 +1,12 @@
 {
   "name": "@mongez/react-form",
-  "version": "3.4.8",
+  "version": "4.0.0",
   "description": "A Powerful React form handler.",
   "main": "src/index.ts",
+  "sideEffects": [
+    "**/locales/register-defaults*",
+    "**/index*"
+  ],
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest"

@@ -1,8 +1,12 @@
 # @mongez/react-form
 
-> Headless React form handler for both Web and React Native. Provides a `Form` / `NativeForm` component plus a `useFormControl` hook that handles registration, validation, value collection, dirty/touched/disabled state, controlled and uncontrolled inputs, and a localized validation rule system.
+> Headless React form handler for both Web and React Native. Provides a `Form` / `NativeForm` component plus a `useFormControl` hook that handles registration, async-capable validation, value collection, dirty/touched/disabled state, controlled and uncontrolled inputs, reactive hydration, Standard Schema interop, and a localized validation rule system.
 
-Mongez React Form is unopinionated about UI — you build the input components, the library handles state and validation. Same `useFormControl` hook works on both Web (DOM `<input>`) and React Native (`TextInput`). The Web entry point is `Form`; the React Native entry point is `NativeForm`. Both extend an abstract `BaseForm` class that contains the platform-agnostic engine.
+Mongez React Form is unopinionated about UI — you build the input components, the library handles state and validation. Same `useFormControl` hook works on both Web (DOM `<input>`) and React Native (`TextInput`). The Web entry point is `Form`; the React Native entry point is `NativeForm`.
+
+**v4 is a major rewrite.** `Form` and `NativeForm` are now **function components** (`forwardRef`) built over a plain, React-free engine class — `FormEngine` (which implements `FormInterface`). `FormEngine` replaces the old abstract `React.Component` base; `BaseForm` is now a **deprecated alias** for `FormEngine`, kept for one major. The form id is derived from React's `useId()`, so the old `Math.random()` SSR hydration mismatch is gone. v4 also adds genuine async-validation gating (`isValidating`), Standard Schema support (seal/zod/valibot, zero runtime dep), reactive hydration (`values` prop, `form.fill`, `form.setValues`, `form.setDefaultValue`), bulk server errors (`form.setErrors`), `validateOn: "change" | "blur" | "submit"`, awaited submit, and three new hooks: `useFieldArray`, `useWatch`, and accessibility helpers (`getInputProps` / `getErrorProps`).
+
+**Breaking in v4:** `useId` was renamed to `useControlId` (stops shadowing React 18's own `useId`); `useValue`, `useError`, and `useChecked` were removed with no alias — use `useFormControl` or `useWatch` instead. v4 also hardens dot-notation name collection: `__proto__` / `constructor` / `prototype` name segments are rejected (prototype-pollution guard), numeric segments above 10,000 are treated as object keys instead of array indices (sparse-array memory guard), and `patternRule` caches compiled patterns, caps the pattern source at 200 chars, and fails closed on values over 2000 chars (ReDoS guard). See `CHANGELOG.md`'s `[4.0.0]` entry for the full migration guide.
 
 ## Documentation
 
@@ -11,24 +15,41 @@ Mongez React Form is unopinionated about UI — you build the input components, 
 
 ## Key entry points
 
-- [`Form` component](./src/components/Form.tsx): web form (renders `<form>` element, handles DOM submit).
-- [`NativeForm` component](./src/components/NativeForm.tsx): React Native form (renders Fragment by default, programmatic submit only).
-- [`useFormControl` hook](./src/hooks/useFormControl.ts): register an input as a form control. Returns `value`, `changeValue`, `error`, `checked`, `setChecked`, `inputRef`, `disabled`, `formControl`, etc.
+- [`Form` component](./src/components/Form.tsx): web form **function component** (`forwardRef`; renders `<form>` element, handles DOM submit, exposes the `FormEngine` via `ref`).
+- [`NativeForm` component](./src/components/NativeForm.tsx): React Native form **function component** (`forwardRef`; renders a Fragment by default, programmatic submit only, exposes the engine via `ref`).
+- [`FormEngine` class](./src/engine/FormEngine.ts): the React-free engine implementing `FormInterface` — registration, async validation, value collection, hydration, events, submit pipeline. Held in a ref by `Form` / `NativeForm`; subclass it for custom renderers. `BaseForm` is a deprecated alias.
+- [`useFormControl` hook](./src/hooks/useFormControl.ts): register an input as a form control. Returns `value`, `changeValue`, `error`, `errorId`, `checked`, `setChecked`, `inputRef`, `disabled`, `isValidating`, `onBlur`, `getInputProps`, `getErrorProps`, `formControl`, etc.
+- [`useFieldArray` hook](./src/hooks/useFieldArray.ts): manage a dynamic list of repeated field rows with stable keys — `{ fields, append, prepend, remove, insert, move, swap, replace }`.
+- [`useWatch` hook](./src/hooks/useWatch.ts): reactively read form values — `useWatch()`, `useWatch(name)`, or `useWatch(names[])`.
 - [`useForm` hook](./src/hooks/useForm.ts): access the current form instance from any descendant.
+- [`useControlId` hook](./src/hooks/form-hooks.ts): derive the same stable DOM id `useFormControl` uses internally (`input-<sanitized-name>`). Renamed from `useId` in v4 to stop shadowing React 18's own `useId`.
+- [`useFormState` hook](./src/hooks/useFormState.ts): reactive form-level snapshot — `{ isValid, isDirty, isSubmitting, isSubmitted, isValidating, formErrors }`.
 - [`useSubmitButton` hook](./src/hooks/useSubmitButton.tsx): wire a submit button — exposes `disabled` (auto-tracks validity + in-flight submit) and `isSubmitting`.
 - [`useRadioInput` hook](./src/hooks/useRadioInput.tsx): for radio-group children.
+- [Standard Schema interop](./src/standard-schema/adapter.ts): consume any Standard-Schema validator (`@warlock.js/seal`, `zod`, `valibot`, …) with **zero runtime dependency** — `isStandardSchema`, `standardSchemaToRule`, `runStandardSchema`, `issuePathToName`, plus `InferFormValues` / `InferFormInput` / `StandardSchemaV1` type helpers.
 
 ## SSR (Next.js, Remix, Astro, …)
 
-In server-rendered apps, **pass a static, unique `id` to every `<Form>`**. With no `id`, the form generates one at construction with `Math.random()` (`frm-<random>`) and renders it as the `<form id="form-…">` attribute; the server render and the client hydration produce different values → React hydration mismatch. A static `id` (e.g. `<Form id="signup">`) makes the attribute deterministic on both sides. Input ids are derived from `name` (`input-<name>`) and are already SSR-safe — only the `<Form>` wrapper needs an explicit id.
+**v4 makes the form id SSR-safe automatically.** When no `id` is passed, the form id is now derived from React's `useId()` (`form-<react-id>`), which is stable across server render and client hydration — the old `Math.random()` hydration mismatch is **resolved**, so no `id` is required for SSR correctness. You may still pass an explicit, static `id` (e.g. `<Form id="signup">`) to make the `<form>` easy to target in tests/styles and to control the event prefix (`form.<id>`); keep it unique per page since duplicate ids cross-wire events. Input ids are derived from `name` (`input-<name>`) and are already SSR-safe.
+
+**Next.js App Router (RSC):** the components and hooks ship a `"use client"` boundary at the leaf-module level, so importing `<Form>` / `useFormControl` / any hook into a Server Component tree works without the consumer marking their own file. Pure, framework-agnostic exports (rules, types, `standard-schema` helpers, `configurations`, `locales`, `FormEngine`) carry no directive and stay server-importable. `getActiveForm()` / `getForm()` read a client-only module singleton (populated by mount effects) and return `null` on the server. The package declares `"sideEffects"` so the default-English-messages registration (`locales/register-defaults`) survives tree-shaking. Works on Pages Router / Remix / Astro / Gatsby too (they render client components on the server fine).
 
 ## Validation rules
 
-Located in [`src/rules/`](./src/rules/). Each rule implements the `InputRule` interface and is composed by passing it in the `rules` array to `useFormControl`. Built-in rules: `requiredRule`, `minLengthRule`, `maxLengthRule`, `lengthRule`, `minRule`, `maxRule`, `emailRule`, `numberRule`, `floatRule`, `integerRule`, `patternRule`, `alphabetRule`, `matchRule`, `urlRule`.
+Located in [`src/rules/`](./src/rules/). Each rule implements the `InputRule` interface and is composed by passing it in the `rules` array to `useFormControl`. Built-in rules: `requiredRule`, `minLengthRule`, `maxLengthRule`, `lengthRule`, `minRule`, `maxRule`, `emailRule`, `numberRule`, `floatRule`, `integerRule`, `patternRule`, `alphabetRule`, `matchRule`, `urlRule`, `strongRule`. Rules may be **async** — a rule whose `validate` returns a `Promise` now genuinely gates submission (the engine awaits each control's validation), while sync rules keep their original synchronous timing via a sync-fast-path.
+
+## Standard Schema interop
+
+v4 can validate with any [Standard Schema](https://standardschema.dev) validator (`@warlock.js/seal`, `zod`, `valibot`, `arktype`, …) **without a runtime dependency** — it only duck-types the `~standard` property. Two entry points:
+
+- **Whole-form:** `<Form schema={...}>` validates the collected values on submit; each issue is mapped back to its control by `issue.path` → dot-notation name → `control.setError`. Issues whose control is not in the validated subset are ignored (so `validateVisible` won't fail on hidden fields). `FormProps<Schema>` infers `onSubmit` values as `InferFormValues<Schema>`.
+- **Per-field:** `useFormControl({ schema })` (or the `schema` prop) wraps the schema as an `InputRule` appended last in that control's pipeline.
+
+Helpers from [`src/standard-schema/`](./src/standard-schema/): `isStandardSchema`, `standardSchemaToRule`, `runStandardSchema`, `issuePathToName`, and the `StandardSchemaV1`, `InferFormValues`, `InferFormInput` types.
 
 ## Types
 
-[`src/types.ts`](./src/types.ts) — canonical type definitions: `FormInterface`, `FormControl`, `FormControlProps`, `FormControlHook`, `InputRule`, `FormSubmitOptions`, `FormEventType`.
+[`src/types.ts`](./src/types.ts) — canonical type definitions: `FormInterface`, `FormControl`, `FormControlProps`, `FormControlHook`, `InputRule`, `FormSubmitOptions`, `FormProps`, `FormEventType`, `ValidateOn`, `FillOptions`, `FieldArrayItem`, `FieldArrayHelpers`, `FormConfigurations`.
 
 ## For AI agents working on a consuming project
 
@@ -53,6 +74,16 @@ This installs invokable skills that load on demand when relevant to the task at 
   - *Auto-trigger:* loaded when importing `NativeForm`, or using `useFormControl` alongside imports from `react-native`.
 - `form-events` — subscribing to lifecycle events (`submit`, `validating`, `dirty`, `invalidControls`, per-control `onChange`).
   - *Auto-trigger:* loaded when calling `form.on(...)`, `useForm()`, `getActiveForm()`, or referencing `FormEventType` events.
+- `field-arrays` — dynamic repeated field rows with `useFieldArray` (`append` / `prepend` / `remove` / `insert` / `move` / `swap` / `replace`, stable keys).
+  - *Auto-trigger:* loaded when importing `useFieldArray` or building an add/remove/reorder list of inputs.
+- `form-hydration` — seeding a form with initial or late-arriving data: `defaultValue` vs the reactive `values` prop, `form.fill` / `setValues` / `setErrors`.
+  - *Auto-trigger:* loaded when passing `values` or `defaultValue` to `<Form>`, or calling `form.fill(...)` / `form.setValues(...)` / `form.setErrors(...)`.
+- `standard-schema-validation` — whole-form and per-field validation with any Standard Schema validator (zod, valibot, arktype, `@warlock.js/seal`).
+  - *Auto-trigger:* loaded when passing a `schema` prop to `<Form>` or `useFormControl`, or importing `InferFormValues` / `InferFormInput` / `StandardSchemaV1`.
+- `watching-values` — reactively reading field values with `useWatch` (whole form, one name, or several names).
+  - *Auto-trigger:* loaded when importing `useWatch` or building dependent fields / live previews / computed summaries.
+- `recipes` — idiomatic composition recipes: server-error mapping, debounced async validation, wizards, autosave, cross-field validation.
+  - *Auto-trigger:* loaded when the task spans multiple concerns above and needs an end-to-end pattern rather than a single API.
 
 ## Optional setup
 

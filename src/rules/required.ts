@@ -1,7 +1,7 @@
 import { trans } from "@mongez/localization";
 import { type InputRule } from "../types";
 
-const isEmpty = (value) => {
+const isEmpty = (value: any) => {
   return (
     value === undefined ||
     value === null ||

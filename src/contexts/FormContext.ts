@@ -1,4 +1,4 @@
 import React from "react";
-import type { FormContextDefinition } from "../types";
+import type { FormContextData } from "../types";
 
-export const FormContext = React.createContext<FormContextDefinition>(null);
+export const FormContext = React.createContext<FormContextData>(null);

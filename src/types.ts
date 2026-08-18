@@ -1,11 +1,47 @@
 import { EventSubscription } from "@mongez/events";
 import React, { ReactNode } from "react";
+import { InferFormValues, StandardSchemaV1 } from "./standard-schema/types";
 
 /**
  * Active forms list
  */
 export type ActiveForms = {
   [key: string]: FormInterface;
+};
+
+/**
+ * Resolve the shape of the values handed to `onSubmit` from the form's schema.
+ * Falls back to a loose record when no schema is provided.
+ *
+ * The `[Schema] extends [undefined]` guard runs FIRST and is deliberate: under
+ * a consumer's non-strict `tsconfig` (`strictNullChecks: false`), `undefined
+ * extends StandardSchemaV1` is `true`, which would wrongly collapse the
+ * schema-less case to `unknown`. Checking `[Schema] extends [undefined]`
+ * up front catches the default generic correctly in both strict and non-strict
+ * modes (a real schema object is never assignable to `undefined`).
+ */
+export type FormValues<Schema> = [Schema] extends [undefined]
+  ? Record<string, any>
+  : Schema extends StandardSchemaV1
+    ? InferFormValues<Schema>
+    : Record<string, any>;
+
+/**
+ * Options for the bulk hydration helpers `form.fill()` / `form.setValues()`.
+ */
+export type FillOptions = {
+  /**
+   * Whether filled controls should be marked dirty.
+   *
+   * @default false
+   */
+  dirty?: boolean;
+  /**
+   * Whether filled controls should be validated after writing.
+   *
+   * @default false
+   */
+  validate?: boolean;
 };
 
 export type HiddenInputProps = {
@@ -23,7 +59,7 @@ export type HiddenInputProps = {
   defaultValue?: any;
 };
 
-export type FormSubmitOptions = {
+export type FormSubmitOptions<Schema = undefined> = {
   /**
    * Form instance
    */
@@ -34,9 +70,12 @@ export type FormSubmitOptions = {
    */
   event?: React.FormEvent;
   /**
-   * Form values
+   * Form values.
+   *
+   * When a `schema` is passed to the form, this is typed as the schema's
+   * inferred **output** shape; otherwise it is a loose record.
    */
-  values: Record<string, any>;
+  values: FormValues<Schema>;
   /**
    * Get form values as FormData
    */
@@ -45,35 +84,71 @@ export type FormSubmitOptions = {
 
 // Form props will be default form element props + the following
 
-export type FormProps = Omit<
-  React.FormHTMLAttributes<HTMLFormElement>,
-  "onSubmit" | "onError" | "defaultValue"
-> & {
-  /**
-   * Triggered when form validation results to error
-   */
-  onError?: (invalidInputs: FormControl[]) => void;
-  /**
-   * Triggered when form validation is passed and now its in the submit process
-   */
-  onSubmit?: (options: FormSubmitOptions) => void;
-  /**
-   * Form element
-   *
-   * @default form
-   */
-  component?: React.ComponentType<any>;
-  /**
-   * Default value that will be passed to all form controls
-   */
-  defaultValue?: Record<string, any> | undefined;
-  /**
-   * Whether to ignore empty values
-   *
-   * @default false
-   */
-  ignoreEmptyValues?: boolean;
-};
+export type FormProps<Schema extends StandardSchemaV1 | undefined = undefined> =
+  Omit<
+    React.FormHTMLAttributes<HTMLFormElement>,
+    "onSubmit" | "onError" | "defaultValue" | "values"
+  > & {
+    /**
+     * Triggered when form validation results to error
+     */
+    onError?: (invalidInputs: FormControl[]) => void;
+    /**
+     * Triggered when form validation is passed and now its in the submit process.
+     *
+     * If the handler returns a Promise, the form keeps its submitting state until
+     * the promise settles and then auto-clears it (success or failure) — you no
+     * longer need to call `form.submitting(false)` manually in that case.
+     */
+    onSubmit?: (
+      options: FormSubmitOptions<Schema>
+    ) => void | Promise<any>;
+    /**
+     * Form element
+     *
+     * @default form
+     */
+    component?: React.ComponentType<any>;
+    /**
+     * Default value that will be passed to all form controls.
+     *
+     * This is the **reset baseline** — `form.reset()` restores controls to these
+     * values. For data that arrives after mount (edit forms) prefer the reactive
+     * `values` prop or `form.fill()`.
+     */
+    defaultValue?: Record<string, any> | undefined;
+    /**
+     * Reactive current values. Unlike `defaultValue`, changing the identity of
+     * this object **re-hydrates** already-mounted controls (and seeds controls
+     * that mount later). Ideal for edit forms whose record loads asynchronously.
+     */
+    values?: Record<string, any> | undefined;
+    /**
+     * Whole-form Standard Schema validator (`@warlock.js/seal`, `zod`,
+     * `valibot`, …). Runs against the collected values on submit; each issue is
+     * mapped back to its control by `path`. Also drives `onSubmit` value typing.
+     */
+    schema?: Schema;
+    /**
+     * Default validation trigger for every control in this form. A per-control
+     * `validateOn` prop overrides it.
+     *
+     * @default "change"
+     */
+    validateOn?: ValidateOn;
+    /**
+     * When validation fails, move focus to the first invalid control.
+     *
+     * @default false
+     */
+    focusFirstError?: boolean;
+    /**
+     * Whether to ignore empty values
+     *
+     * @default false
+     */
+    ignoreEmptyValues?: boolean;
+  };
 
 export type FormControlChangeOptions = {
   /**
@@ -131,6 +206,10 @@ export type FormControl = {
    */
   isTouched: boolean;
   /**
+   * Whether an async validation rule is currently in-flight for this control.
+   */
+  isValidating: boolean;
+  /**
    * Form input id, used as a form input flag determiner
    */
   id: string;
@@ -143,9 +222,14 @@ export type FormControl = {
    */
   initialValue: any;
   /**
-   * Triggered when form starts validation
+   * Triggered when form starts validation.
+   *
+   * Returns the rendered error (or `null` when valid) **synchronously** when
+   * every rule is synchronous, and a `Promise` of it only when a rule returns
+   * one (the sync-fast-path). The form `await`s this either way, so async
+   * validation genuinely gates submission.
    */
-  validate: () => ReactNode;
+  validate: () => ReactNode | Promise<ReactNode>;
   /**
    * Set form input error
    */
@@ -177,6 +261,11 @@ export type FormControl = {
    * Clear form control value
    */
   clear: () => void;
+  /**
+   * Abandon any in-flight async validation for this control: discards pending
+   * results and clears `isValidating`. Called by `reset()` / `clear()`.
+   */
+  cancelValidation: () => void;
   /**
    * Triggered when form resets its values
    */
@@ -250,6 +339,10 @@ export type FormControl = {
    */
   onReset: (callback: () => void) => EventSubscription;
   /**
+   * Listen to form control when it is cleared (via `clear()`).
+   */
+  onClear: (callback: () => void) => EventSubscription;
+  /**
    * Disable/Enable form control
    */
   disable: (disable: boolean) => void;
@@ -274,8 +367,6 @@ export type FormControl = {
   data?: any;
 };
 
-export type FormControlType = string | FormControl;
-
 /**
  * Form control events that can be subscribed to by the form control
  */
@@ -289,8 +380,6 @@ export type FormControlEvent =
   | "validation.success"
   | "validation.error"
   | "validation.end";
-
-export type FormContextDefinition = null | FormInterface;
 
 /**
  * Returns when calling form.values() or form.toObject() to list all form inputs with its values
@@ -415,19 +504,33 @@ export interface FormInterface {
    */
   submitting: (submitting: boolean) => void;
   /**
-   * Trigger form validation
+   * Validate the form. Pass a subset of control names (or `FormControl`
+   * objects) to validate only those. Resolves with the validated controls.
    */
-  validate: (formControlNames?: FormControl[]) => Promise<FormControl[]>;
+  validate: (
+    controls?: FormControl[] | string[]
+  ) => Promise<FormControl[]>;
   /**
-   * Trigger form validation only for visible elements in the dom
-   * If formControlNames is passed, then it will be operated only on these names.
+   * Validate only the controls currently visible in the DOM.
    */
   validateVisible: () => Promise<FormControl[]>;
   /**
-   * Trigger form disable/enable state
-   * If formControlNames is passed, then it will be operated only on these names.
+   * Disable (or, with `false`, enable) every control in the form.
    */
   disable: (isDisabled: boolean) => this;
+  /**
+   * Enable every control in the form (shorthand for `disable(false)`).
+   */
+  enable: () => this;
+  /**
+   * Whether the whole form is currently disabled.
+   */
+  isDisabled: () => boolean;
+  /**
+   * Form-level error messages with no owning control (whole-form schema issues
+   * whose path maps to no control). Populated by {@link validate}.
+   */
+  formErrors: React.ReactNode[];
   /**
    * Determine whether the form is being submitted
    */
@@ -460,9 +563,10 @@ export interface FormInterface {
    */
   unregister: (formInput: FormControl) => void;
   /**
-   * Reset form values and validation state
+   * Reset form values and validation state. Pass `values` to reset to a new
+   * baseline (merged into `defaultValue`) instead of the original one.
    */
-  reset: () => this;
+  reset: (values?: Record<string, any>) => this;
   /**
    * Reset form errors
    */
@@ -504,9 +608,53 @@ export interface FormInterface {
    */
   validControl: (formControl: FormControl) => void;
   /**
-   * Default value that will be passed to all form controls
+   * Default value that will be passed to all form controls (reset baseline).
    */
   defaultValue?: Record<string, any>;
+  /**
+   * Reactive hydration snapshot. Read by controls that mount *after* a
+   * `fill()` / reactive `values` update so they seed from the latest data.
+   */
+  hydrationValues?: Record<string, any>;
+  /**
+   * Whole-form Standard Schema validator, if one was provided.
+   */
+  schema?: StandardSchemaV1;
+  /**
+   * Form-level default validation trigger. Per-control `validateOn` overrides.
+   */
+  validateOn?: ValidateOn;
+  /**
+   * Whether the form has attempted submission at least once. Drives
+   * `validateOn: "submit"` revalidation behavior.
+   */
+  wasSubmitted: boolean;
+  /**
+   * Bulk-write values onto already-mounted controls and seed later-mounting
+   * controls. Use for edit-form hydration when the record loads asynchronously.
+   * `defaultValue` remains the reset baseline; `fill()` does not change it.
+   */
+  fill: (values: Record<string, any>, options?: FillOptions) => this;
+  /**
+   * Alias of {@link fill}.
+   */
+  setValues: (values: Record<string, any>, options?: FillOptions) => this;
+  /**
+   * Bulk-assign errors keyed by dot-notation control name — for mapping a
+   * server validation response (e.g. HTTP 422) back onto controls.
+   * Names with no matching control are ignored.
+   */
+  setErrors: (errors: Record<string, React.ReactNode>) => this;
+  /**
+   * Resolve the seed value for a control name from the reactive hydration
+   * snapshot then the reset baseline. Returns `undefined` when neither has it.
+   */
+  getInitialValue: (name: string) => any;
+  /**
+   * Resolve the reset baseline for a control name from `defaultValue` only
+   * (never the hydration snapshot). Returns `undefined` when absent.
+   */
+  getResetBaseline: (name: string) => any;
 }
 
 export type InputRuleOptions = {
@@ -573,7 +721,7 @@ export type ErrorMessages = {
 
 export type ErrorKeys = ErrorMessages;
 
-export type ValidateOn = "change" | "blur";
+export type ValidateOn = "change" | "blur" | "submit";
 
 export type FormControlOptions = {
   /**
@@ -607,6 +755,11 @@ export type FormControlOptions = {
    * Transform input value before setting it
    */
   transformValue?: (value: any, formControl?: FormControl) => any;
+  /**
+   * Per-field Standard Schema validator. Equivalent to passing `schema` in the
+   * control props; useful when authoring a reusable input wrapper.
+   */
+  schema?: StandardSchemaV1;
 };
 
 export type FormControlProps = {
@@ -672,6 +825,11 @@ export type FormControlProps = {
    */
   validate?: InputRule["validate"];
   /**
+   * Per-field Standard Schema validator (`@warlock.js/seal`, `zod`, …). Wrapped
+   * as a rule and run inside this control's pipeline.
+   */
+  schema?: StandardSchemaV1;
+  /**
    * Input validation rules list
    */
   rules?: InputRule[];
@@ -729,9 +887,10 @@ export type FormControlHook = {
    */
   formControl: FormControl;
   /**
-   * Manually validate the input
+   * Manually validate the input. Returns the rendered error (or `null`)
+   * synchronously, or a `Promise` of it when an async rule is involved.
    */
-  validate: (value: any) => void;
+  validate: () => ReactNode | Promise<ReactNode>;
   /**
    * Determine if input is checked
    */
@@ -770,6 +929,96 @@ export type FormControlHook = {
    * An invalid control is a control that is touched and has at least one error
    */
   isInvalid: boolean;
+  /**
+   * Whether an async validation rule is currently in-flight for this control.
+   */
+  isValidating: boolean;
+  /**
+   * Stable id for the error element — wire it as the error node's `id` and the
+   * input's `aria-describedby` (already done for you by `getInputProps`).
+   */
+  errorId: string;
+  /**
+   * Blur handler — triggers validation when `validateOn` is `"blur"`. Spread via
+   * `getInputProps` or wire manually.
+   */
+  onBlur: () => void;
+  /**
+   * Accessibility-complete prop bag for the host input. Spread onto your
+   * `<input>` to get `id`, `name`, `value`/`checked`, `onChange`, `onBlur`,
+   * `ref`, `disabled`, `aria-invalid`, `aria-required`, and `aria-describedby`.
+   * Pass `overrides` to merge/replace any of them.
+   */
+  getInputProps: (overrides?: Record<string, any>) => Record<string, any>;
+  /**
+   * Prop bag for the error message element — `{ id, role, "aria-live" }`.
+   */
+  getErrorProps: () => {
+    id: string;
+    role: "alert";
+    "aria-live": "polite";
+  };
+};
+
+/**
+ * A single row managed by {@link FieldArrayHelpers}. `key` is a stable React
+ * key that survives reordering/removal; `name` is the dot-notation prefix for
+ * the row's inputs (e.g. `addresses.0`).
+ */
+export type FieldArrayItem = {
+  /**
+   * Stable, unique key for this row — use as the React `key`.
+   */
+  key: string;
+  /**
+   * Current index of this row in the array.
+   */
+  index: number;
+  /**
+   * Dot-notation name prefix for inputs in this row, e.g. `addresses.0`.
+   * Compose child input names as `` `${item.name}.city` ``.
+   */
+  name: string;
+};
+
+/**
+ * Return shape of `useFieldArray(name)` — helpers to manage a dynamic list of
+ * repeated field rows with stable keys.
+ */
+export type FieldArrayHelpers = {
+  /**
+   * The current rows. Map over these to render; use `item.key` as the React key
+   * and `item.name` as the input name prefix.
+   */
+  fields: FieldArrayItem[];
+  /**
+   * Append one or more rows to the end.
+   */
+  append: (count?: number) => void;
+  /**
+   * Prepend one or more rows to the start.
+   */
+  prepend: (count?: number) => void;
+  /**
+   * Remove the row at `index` (or the last row when omitted).
+   */
+  remove: (index?: number) => void;
+  /**
+   * Insert a row at `index`.
+   */
+  insert: (index: number) => void;
+  /**
+   * Move a row from one index to another.
+   */
+  move: (from: number, to: number) => void;
+  /**
+   * Swap two rows.
+   */
+  swap: (a: number, b: number) => void;
+  /**
+   * Replace all rows with `count` fresh rows.
+   */
+  replace: (count: number) => void;
 };
 
 export type FormConfigurations = {
@@ -785,4 +1034,11 @@ export type FormConfigurations = {
    * @default `form`
    */
   formComponent?: ReactComponent;
+  /**
+   * Global default validation trigger for all controls. A form-level or
+   * per-control `validateOn` overrides this.
+   *
+   * @default "change"
+   */
+  validateOn?: ValidateOn;
 };

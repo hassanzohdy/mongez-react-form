@@ -1,7 +1,7 @@
 ---
 name: mongez-react-form-submit-button
 description: |
-  Use when building a submit button or any UI element that needs to track form-level state (submitting, invalid controls, dirty, disabled). Explains the useSubmitButton hook, when each piece of state changes, and how to recover from a failed API request so the button re-enables.
+  Use when building a submit button or any UI element that needs to track form-level state (submitting, invalid controls, dirty, disabled). Explains the useSubmitButton hook, when each piece of state changes, the v4 awaited-onSubmit auto-clear, and how to recover from a failed API request so the button re-enables.
 ---
 
 # Building a smart submit button
@@ -81,12 +81,28 @@ export default function SubmitButton({ children }: { children: React.ReactNode }
 3. After `form.reset()`.
 4. When `form.disable(false)` / `form.enable()` is called.
 
-## Recovering from a failed submit
+## v4: awaited `onSubmit` auto-clears the submitting state
 
-The most common bug: API request fails but the button stays disabled forever because `submitting(false)` was never called. Always call it in the failure path:
+In v4, **if your `onSubmit` returns a Promise, the engine clears the submitting state for you when it settles** — on success *or* failure. You no longer need to call `form.submitting(false)` manually in that case; just return (or `await`) the request:
+
+```tsx
+const handleSubmit = async ({ values }) => {
+  // engine sets submitting(true) before calling this, and submitting(false)
+  // automatically once this promise settles — even if it throws.
+  await api.createAccount(values);
+  navigate("/welcome");
+};
+```
+
+How it works: the engine calls `submitting(true)`, invokes `onSubmit`, and if the return value is thenable it attaches `then(clear, clear)` so the button re-enables whichever way the promise resolves. A synchronous (non-Promise) `onSubmit` keeps the **v3 behavior** — the engine does *not* auto-clear, so you must call `form.submitting(false)` yourself when your async work finishes (see below).
+
+## Recovering from a failed submit (sync `onSubmit`)
+
+If `onSubmit` does **not** return a Promise (e.g. it kicks off a `.then()` chain without returning it), the engine can't know when the work finishes — so the classic bug applies: the API request fails but the button stays disabled forever because `submitting(false)` was never called. Either **return the promise** (preferred — see above) or call `submitting(false)` in the failure path:
 
 ```tsx
 const handleSubmit = ({ values, form }) => {
+  // NOTE: not returning this promise, so the engine won't auto-clear.
   api.createAccount(values)
     .then(() => navigate("/welcome"))
     .catch((err) => {
@@ -96,7 +112,7 @@ const handleSubmit = ({ values, form }) => {
 };
 ```
 
-Equivalent with async/await:
+Manual `finally` variant (also fine, but returning the promise is simpler):
 
 ```tsx
 const handleSubmit = async ({ values, form }) => {
@@ -106,7 +122,7 @@ const handleSubmit = async ({ values, form }) => {
   } catch (err) {
     showToast(err.message);
   } finally {
-    form.submitting(false);
+    form.submitting(false);  // redundant if you let the returned promise settle
   }
 };
 ```

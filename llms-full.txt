@@ -6,6 +6,33 @@ This file is structured for LLM consumption: each section is self-contained, can
 
 ---
 
+## 0. What's new in v4 (major rewrite)
+
+v4 keeps the shape of the everyday API (`useFormControl`, the rules system, value collection) compatible but rebuilds the core, and carries **three breaking changes** — see "Breaking changes" below before assuming a no-op upgrade.
+
+- **`Form` / `NativeForm` are now function components** (`forwardRef`). They lazily instantiate a single **`FormEngine`** and expose it via `ref`. The engine is the thing your `ref` and `useForm()` return — it implements `FormInterface`.
+- **`FormEngine` is a plain class** (not a `React.Component`). It is React-free, unit-testable in isolation, and the home of all form logic.
+- **`BaseForm` is a deprecated alias for `FormEngine`** (`export const BaseForm = FormEngine`), kept for one major. To support a custom renderer, subclass `FormEngine` and render a thin function component over it instead of subclassing `BaseForm`.
+- **SSR-safe id via React `useId()`** — the auto-generated form id (`form-<react-id>`) is now stable across server/client, fixing the old `Math.random()` hydration mismatch. No `id` prop is required for SSR.
+- **Async validation genuinely gates submission.** `formControl.validate()` returns `ReactNode | Promise<ReactNode>`. Sync rules stay synchronous (no extra microtask); the path goes async only when a rule returns a Promise. New per-control `isValidating` flag (on `FormControl` and the hook return). Stale async results are discarded via a per-control sequence token.
+- **Standard Schema support** (`@warlock.js/seal`, `zod`, `valibot`, …) with **zero runtime dependency** — whole-form (`<Form schema>`) and per-field (`useFormControl({ schema })`), plus type inference.
+- **Reactive hydration**: the `values` prop re-hydrates mounted controls and seeds later-mounting ones; `form.fill()`, `form.setValues()`, `form.setDefaultValue()`. `defaultValue` stays the reset baseline.
+- **Bulk server errors**: `form.setErrors({ "dot.name": message })` (HTTP 422 mapping).
+- **Awaited submit**: if `onSubmit` returns a Promise, submitting state auto-clears when it settles.
+- **`validateOn: "change" | "blur" | "submit"`** — per-control prop > `<Form validateOn>` > global config > `"change"`.
+- **New hooks**: `useFieldArray`, `useWatch`. **New a11y helpers** on the `useFormControl` return: `getInputProps`, `getErrorProps`, `errorId`, `onBlur`.
+- **Security hardening**: dot-notation name collection rejects `__proto__` / `constructor` / `prototype` segments (prototype-pollution guard) and caps numeric segments at 10,000 before treating them as an array index (sparse-array memory guard); `patternRule` caches compiled patterns, caps the source at 200 chars, and fails closed on values over 2000 chars (ReDoS guard). See §9 and §5.
+
+### Breaking changes
+
+- **`useId` renamed to `useControlId`.** `import { useId } from "@mongez/react-form"` no longer resolves — the rename stops the package from shadowing React 18's own `useId`. Same signature (`{ id?, name }`) and behavior.
+- **`useValue`, `useError`, and `useChecked` hooks removed with no alias.** Use `useFormControl` (destructure `value` / `error` / `checked` from its return) or `useWatch(name)` for a reactive read outside a control.
+- **`Form` / `NativeForm` refs now yield a `FormEngine`**, not a class-component instance. Only code that subclassed `BaseForm` or relied on class-component lifecycle methods on the ref needs review — the `FormInterface` method surface (`validate`, `values`, `submit`, `reset`, `on`, `control`, …) is unchanged.
+
+Each topic has a full section below.
+
+---
+
 ## 1. Installation
 
 > **Auto-trigger:** code imports `Form`, `NativeForm`, `useFormControl`, `enValidationTranslation`, `arValidationTranslation`, `frValidationTranslation`, `esValidationTranslation`, `itValidationTranslation`, or `deValidationTranslation` from `@mongez/react-form`; user asks "how do I install @mongez/react-form", "how do I set up a form in a new project", or "why does my validation show validation.required instead of a real message"; `import { Form, useFormControl } from "@mongez/react-form"` at app entry.
@@ -43,29 +70,54 @@ Without this, error messages render as raw keys like `validation.required`.
 
 ## 3. Form components
 
-> **Auto-trigger:** code imports `NativeForm` from `@mongez/react-form`, or imports `useFormControl` / `useForm` / `useSubmitButton` in a file that also imports from `react-native` (e.g. `TextInput`, `Pressable`, `View`, `Text` from `"react-native"`); user asks "how do I use @mongez/react-form on React Native or Expo", "why doesn't my form submit fire on RN", "how do I wire `onChangeText` / `onFocus` / `Pressable` into a form control", or "how do I make a checkbox on React Native"; `import { NativeForm } from "@mongez/react-form"`.
+> **Auto-trigger:** code imports `Form`, `NativeForm`, `FormEngine`, `useFormEngine`, or `BaseForm` from `@mongez/react-form`, attaches a `ref` to `<Form>` / `<NativeForm>`, or imports `useFormControl` / `useForm` / `useSubmitButton` in a file that also imports from `react-native` (e.g. `TextInput`, `Pressable`, `View`, `Text` from `"react-native"`); user asks "how do I use @mongez/react-form on React Native or Expo", "why doesn't my form submit fire on RN", "how do I get the form engine via ref", "what replaced BaseForm in v4", "how do I wire `onChangeText` / `onFocus` / `Pressable` into a form control", or "how do I make a checkbox on React Native"; `import { NativeForm } from "@mongez/react-form"`.
 > **Skip when:** `mongez-react-form-getting-started` once install and locale registration are done; `mongez-react-form-create-form-control` for the platform-agnostic hook contract; `mongez-react-form-submit-button` for non-RN button patterns; Web-only `Form` component usage; `react-hook-form`/`formik` on RN.
 
-Two components, same API, different platforms:
+Two components, same API, different platforms — **both are function components (`forwardRef`)** built over the React-free `FormEngine`:
 
 - **`Form`** — Web. Renders an HTML `<form>` element. Browser submit event drives the submission.
 - **`NativeForm`** — React Native. Renders a Fragment by default (or any component passed via `component` prop). Submission is always programmatic via `form.submit()`.
 
-Both implement `FormInterface` and share the abstract `BaseForm` engine.
+Both lazily instantiate one `FormEngine` (which implements `FormInterface`) and expose it via `ref`. That same engine is what `useForm()` returns to descendants.
+
+### Accessing the engine via `ref`
+
+```tsx
+import { Form, type FormInterface } from "@mongez/react-form";
+import { useRef } from "react";
+
+const formRef = useRef<FormInterface>(null);
+
+<Form ref={formRef} onSubmit={handle}>{/* ... */}</Form>;
+
+// later, imperatively:
+formRef.current?.fill({ user: { firstName: "Jane" } });
+formRef.current?.submit();
+```
+
+The ref resolves to the `FormEngine` instance — every method on `FormInterface` (`values()`, `validate()`, `fill()`, `setErrors()`, `reset()`, …) is available.
 
 ### Form props (both Web and Native)
 
+`FormProps` extends `React.FormHTMLAttributes<HTMLFormElement>` (minus the overridden keys), so any standard `<form>` attribute (`className`, `style`, `noValidate`, …) flows through to the rendered element.
+
 ```ts
-type FormProps = {
-  onSubmit?: (options: FormSubmitOptions) => void;
+type FormProps<Schema extends StandardSchemaV1 | undefined = undefined> = {
+  onSubmit?: (options: FormSubmitOptions<Schema>) => void | Promise<any>;
   onError?: (invalidControls: FormControl[]) => void;
   component?: React.ComponentType<any>;        // override the rendered element
-  defaultValue?: Record<string, any>;          // default values for every control by name (dot-notation supported)
+  defaultValue?: Record<string, any>;          // RESET BASELINE for every control by name (dot-notation supported)
+  values?: Record<string, any>;                // REACTIVE current values — re-hydrates on identity change (see §15)
+  schema?: Schema;                             // whole-form Standard Schema validator (see §16)
+  validateOn?: "change" | "blur" | "submit";  // default validation trigger for all controls (see §17)
   ignoreEmptyValues?: boolean;                 // omit empty values from form.values()
-  id?: string;                                 // form id; pass a static, unique value in SSR apps (auto-generated via Math.random() when absent — see §3 SSR)
+  id?: string;                                 // form id — OPTIONAL; auto-derived from React useId() and SSR-safe
   children: React.ReactNode;
 };
 ```
+
+- **`onSubmit` may return a `Promise`** — when it does, the engine auto-clears submitting state once it settles (§18). Sync `onSubmit` behaves as before.
+- **`schema` drives `onSubmit` value typing**: `FormProps<Schema>` types `values` as `InferFormValues<Schema>` (§16).
 
 ### `FormSubmitOptions` (the argument to `onSubmit`)
 
@@ -73,7 +125,7 @@ type FormProps = {
 {
   form: FormInterface;
   event?: React.FormEvent;        // undefined when programmatically submitted (and always on Native)
-  values: Record<string, any>;    // getter — calls form.values() each access
+  values: FormValues<Schema>;     // getter — calls form.values() each access; typed from schema when present
   formData: FormData;             // getter — calls form.formData() each access
 }
 ```
@@ -104,9 +156,11 @@ import { View } from "react-native";
 </NativeForm>
 ```
 
-### SSR — pass a static `id` to every `<Form>`
+### SSR — the form id is now SSR-safe automatically
 
-In server-rendered apps (Next.js, Remix, Astro, TanStack Start, …), always give each `<Form>` an explicit, static `id`:
+In v4 the form id is derived from React's `useId()` when no `id` prop is passed (`useFormEngine` computes `props.id ? String(props.id) : "form-" + useId()`). `useId()` returns the same value on the server render and the client hydration, so the rendered `<form id="form-…">` attribute is **deterministic on both sides** — the old `Math.random()` hydration mismatch is gone. **No `id` prop is required for SSR correctness.**
+
+You may still pass an explicit, static `id`:
 
 ```tsx
 <Form id="signup" onSubmit={({ values }) => api.signup(values)}>
@@ -114,17 +168,17 @@ In server-rendered apps (Next.js, Remix, Astro, TanStack Start, …), always giv
 </Form>
 ```
 
-When `id` is omitted, the form generates one at construction with `Math.random()` (`frm-<random>`) and renders it as the `<form id="form-frm-…">` attribute. The server render and the client hydration each run that generation independently and produce **different** ids — React reports a hydration mismatch and discards the server markup for that subtree. A static `id` makes the rendered attribute deterministic (`form-signup`) and identical on both sides.
+- A static `id` makes the `<form>` easy to target in tests and styles, and it sets the event prefix (`form.<id>`) explicitly.
+- Keep each form's `id` unique on the page — the id drives the internal event prefix, so duplicate ids cross-wire events.
+- Inputs derive their id from `name` (`input-<name>`), which is already deterministic. This is implemented by the exported `useControlId({ id?, name })` hook — call it yourself if you need the same id outside `useFormControl`. **Renamed from `useId` in v4** (see "Breaking changes" in §0) so importing it no longer shadows React 18's own `useId`.
 
-- Keep each form's `id` unique on the page — it also drives the internal form id and its event prefix (`form.<id>`), so duplicate ids cross-wire events.
-- Inputs don't need this: a control's id derives from its `name` (`input-<name>`), which is already deterministic. Only the `<Form>` wrapper falls back to a random id.
-- Client-only apps (plain SPA, React Native `NativeForm`) never hydrate server markup, so the random id is harmless there — but a static `id` is still a good habit and makes the `<form>` easier to target in tests and styles.
+> Note on the internal engine id: when constructed without options, `FormEngine` falls back to a counter-based id (`frm-<base36 counter>`), not `Math.random()`. In practice `Form` / `NativeForm` always pass the `useId()`-derived id, so the rendered attribute is the SSR-safe `form-<react-id>`.
 
 ---
 
 ## 4. Form controls — the canonical pattern
 
-> **Auto-trigger:** code imports `useFormControl`, `useRadioInput`, `RadioGroupContext`, `HiddenInput`, `FormControlProps`, `FormControlHook`, or `FormControl` from `@mongez/react-form`; user asks "how do I build a custom text input / checkbox / radio / multi-select for @mongez/react-form", "how do I wire `inputRef` / `otherProps` / `checked` / `setChecked`", or "how do I make a multi-value input"; `import { useFormControl } from "@mongez/react-form"` in a component file.
+> **Auto-trigger:** code imports `useFormControl`, `useRadioInput`, `useFieldArray`, `useWatch`, `RadioGroupContext`, `HiddenInput`, `FormControlProps`, `FormControlHook`, or `FormControl` from `@mongez/react-form`; calls `getInputProps` / `getErrorProps` or reads `isValidating` / `errorId` / `onBlur` from the hook; user asks "how do I build a custom text input / checkbox / radio / multi-select for @mongez/react-form", "how do I wire `inputRef` / `otherProps` / `checked` / `setChecked` / `getInputProps`", "how do I build a dynamic list of fields", "how do I watch a field's value", or "how do I make a multi-value input"; `import { useFormControl } from "@mongez/react-form"` in a component file.
 > **Skip when:** `mongez-react-form-validation-rules` for choosing or writing rules (rules go into the `rules` array, but the rules system itself is a separate skill); `mongez-react-form-submit-button` for submit-button wiring; `mongez-react-form-form-events` for subscribing to lifecycle events; raw React `useState` form inputs unrelated to `@mongez/react-form`; `react-hook-form`'s `useController` or `Controller`.
 
 Every input is built around `useFormControl`. The hook registers the input with the surrounding form and returns a state bundle.
@@ -246,6 +300,7 @@ import { HiddenInput } from "@mongez/react-form";
   value: any;
   changeValue: (value, options?: FormControlChangeOptions) => void;
   error: ReactNode;
+  errorId: string;                 // stable id for the error element (input's aria-describedby)
   errorsList: { [ruleName: string]: ReactNode };
   setError: (error: ReactNode) => void;
   checked: boolean;
@@ -256,11 +311,17 @@ import { HiddenInput } from "@mongez/react-form";
   disabled: boolean;
   disable: () => void;
   enable: () => void;
-  isInvalid: boolean;              // touched AND failing validation
-  otherProps: object;              // pass-through props (excludes hook + rule-preserved keys)
-  validate: () => void;
+  isInvalid: boolean;              // touched AND failing validation (getter)
+  isValidating: boolean;           // an async validation rule is in-flight (see §14)
+  onBlur: () => void;              // blur handler — validates when validateOn === "blur" (see §17)
+  otherProps: object;              // pass-through props (excludes hook + rule-preserved keys; validateOn + schema are stripped out)
+  getInputProps: (overrides?) => object;   // a11y-complete prop bag for the host input (see §19)
+  getErrorProps: () => { id, role, "aria-live" }; // prop bag for the error element (see §19)
+  validate: () => ReactNode | Promise<ReactNode>;
 }
 ```
+
+> **`otherProps` no longer leaks `validateOn` or `schema`.** Both are destructured out before the rest props are assembled, so spreading `otherProps` onto a DOM element won't emit invalid attributes.
 
 ---
 
@@ -297,7 +358,7 @@ useFormControl({ ...props, rules: [requiredRule, minLengthRule, emailRule] });
 | `floatRule` | — | `type="float"` | |
 | `urlRule` | — | `type="url"` | |
 | `alphabetRule` | — | `type="alphabet"` | |
-| `patternRule` | `pattern` (RegExp) | — | |
+| `patternRule` | `pattern` (RegExp) | — | Patterns cached by source+flags; source capped at 200 chars. A value over 2000 chars **fails the rule** (fails closed — it is not truncated and matched, which would let an anchored pattern pass on a valid prefix) (ReDoS guard). An oversized/invalid pattern skips validation instead of failing the field |
 | `matchRule` | `match` (other input name) | — | Subscribes to the other input's changes |
 | `strongRule` | `strong` (boolean or object) | `type="password"` | Composite: 5 criteria, per-criterion errors in `errorsList["strong.<key>"]` |
 
@@ -325,7 +386,7 @@ useFormControl({ ...props, rules: [requiredRule, minLengthRule, emailRule] });
 />
 ```
 
-The `validate` prop accepts sync or async functions. Async returns block downstream rules until resolved.
+The `validate` prop accepts sync or async functions. An async (`Promise`-returning) `validate` flips the control's `isValidating` flag and **genuinely gates submission** — `form.validate()` awaits it before the submit pipeline proceeds (§14). The per-instance `validate` runs **first** in the rule list (before the passed `rules`, then any per-field `schema` last).
 
 ### Writing a custom rule
 
@@ -499,7 +560,7 @@ getForm("form-id");         // module-level — returns by id
 
 ```ts
 form.submit();                                   // trigger validation + submission
-form.validate(controls?);                        // Promise<FormControl[]>
+form.validate(controls?);                        // Promise<FormControl[]> — awaits async rules
 form.validateVisible();                          // validate only visible controls (Web only; on RN it's identical to validate())
 form.values(names?);                             // collect values as nested object
 form.value(name);                                // single control value by name
@@ -507,6 +568,11 @@ form.formData();                                 // FormData object (for multipa
 form.controls(names?);                           // array of FormControl
 form.control(name, getBy?);                      // single FormControl by name or id
 form.change(name, value);                        // mutate a control's value programmatically
+form.fill(values, options?);                     // bulk-write values + seed late controls (§15)
+form.setValues(values, options?);                // alias of fill
+form.setDefaultValue(defaultValue);              // update reset baseline; re-hydrate pristine controls (§15)
+form.setErrors({ "dot.name": message });         // bulk server-error (422) mapping (§15)
+form.getInitialValue(name);                      // seed value from hydration snapshot then baseline
 form.reset();                                    // reset all to initial values
 form.resetErrors();                              // clear errors only
 form.disable(isDisabled);                        // disable/enable all controls
@@ -514,9 +580,12 @@ form.enable();                                   // shorthand for disable(false)
 form.isValid();                                  // boolean
 form.isSubmitting();                             // boolean
 form.submitting(true | false);                   // toggle in-flight state
+form.wasSubmitted;                               // boolean — true after the first submit attempt (§17)
 form.on(event, callback);                        // event subscription
 form.id;                                         // string
 form.formElement;                                // HTMLFormElement (Web) | any (Native)
+form.schema;                                      // the whole-form Standard Schema, if provided
+form.validateOn;                                 // form-level default validation trigger
 ```
 
 ### Default values
@@ -551,6 +620,7 @@ import { setFormConfigurations } from "@mongez/react-form";
 setFormConfigurations({
   ignoreEmptyValues: true,        // default false
   formComponent: MyCustomForm,    // default "form" — replaces the rendered element for ALL Web Forms
+  validateOn: "blur",             // default "change" — global validation trigger for all controls (§17)
 });
 ```
 
@@ -569,6 +639,15 @@ The `name` prop supports **dot notation** and is mapped into nested objects:
 
 - `{ user: { firstName: "X" } }` → `user[firstName]=X`
 - `{ tags: ["a", "b"] }` → `tags[]=a&tags[]=b`
+
+### Security hardening on dot-notation expansion (v4)
+
+Field names are usually author-written, but schema-driven and CMS-driven forms build them from server data — treat a rendered form's field names as a potential input boundary:
+
+- **Prototype-pollution guard.** A name segment of `__proto__`, `constructor`, or `prototype` (e.g. `__proto__.isAdmin`) is rejected rather than written through to `Object.prototype`; the partial branch built before the rejected segment is discarded, not left on the result.
+- **Sparse-array memory guard.** A numeric segment above `10,000` (e.g. `items.4000000000.x`) is treated as a plain object key instead of an array index, so it can't force-allocate a multi-billion-length array.
+
+Both guards live in `createNestedObjectFromDotNotation` in `src/engine/FormEngine.ts`, run on every `form.values()` / `form.collectValues()` call.
 
 ---
 
@@ -621,6 +700,7 @@ The "active form" tracks the most recently mounted form globally — when forms 
   initialChecked: boolean;
   isDirty: boolean;
   isTouched: boolean;
+  isValidating: boolean;       // an async validation rule is in-flight (§14)
   isValid: boolean | null;     // null = not yet validated
   error: ReactNode;
   errorsList: { [ruleName: string]: ReactNode };
@@ -638,7 +718,7 @@ The "active form" tracks the most recently mounted form globally — when forms 
   change(value, opts?): void;
   setChecked(checked): void;
   setError(error): void;
-  validate(): ReactNode;
+  validate(): Promise<ReactNode>;   // awaited by form.validate() so async rules gate submit (§14)
   isCollectable(): boolean;
   collectValue(): any;
   isVisible(): boolean;
@@ -672,15 +752,18 @@ The "active form" tracks the most recently mounted form globally — when forms 
   placeholder?: string;
   label?: ReactNode;
   rules?: InputRule[];
-  validate?: InputRule["validate"];              // per-instance custom validation
+  validate?: InputRule["validate"];              // per-instance custom validation (sync or async)
+  schema?: StandardSchemaV1;                     // per-field Standard Schema — wrapped as a rule, appended last (§16)
   errors?: { [ruleName: string]: ReactNode };    // override messages per rule
   errorKeys?: { [placeholder: string]: ReactNode }; // override message placeholders
   onChange?: (value, options) => void;
   onError?: (error: ReactNode) => void;
-  validateOn?: "change" | "blur";
+  validateOn?: "change" | "blur" | "submit";     // per-control validation trigger (§17)
   [key: string]: any;                            // anything else flows to otherProps
 }
 ```
+
+`FormControlOptions` (the 2nd `useFormControl` argument) also accepts a `schema` field — equivalent to the `schema` prop, handy when authoring a reusable input wrapper.
 
 ### `InputRule`
 
@@ -716,8 +799,8 @@ The "active form" tracks the most recently mounted form globally — when forms 
 - Listing `requiredRule` after value-dependent rules — they skip empty values and won't run.
 - Returning `false` from a `validate` function — must return a `ReactNode` or `undefined`. `false` is treated as truthy.
 - Spreading raw `props` (not `otherProps`) onto the host element — leaks hook-internal props.
-- Forgetting `form.submitting(false)` in the API-failure path — button stays disabled.
-- Omitting a static `id` on `<Form>` in SSR apps — the auto-generated `Math.random()` id differs between server and client and triggers a React hydration mismatch. Pass a stable, unique `id` per form.
+- Forgetting `form.submitting(false)` in the API-failure path **when `onSubmit` is synchronous** — button stays disabled. (If `onSubmit` returns a Promise, the engine auto-clears submitting state on settle; see §18.)
+- Calling `form.submitting(false)` manually after an awaited (Promise-returning) `onSubmit` — redundant; the engine already clears it. Harmless but unnecessary.
 - Subscribing to events without unsubscribing — leaks on remount, duplicate handlers.
 - Mixing `Form` (Web) and `NativeForm` (Native) in the same code path — pick the one matching the platform.
 - Using `<button onClick={() => form.submit()}>` on Web inside `<Form>` — works, but `<button type="submit">` is simpler and lets the browser handle the event natively.
@@ -725,153 +808,413 @@ The "active form" tracks the most recently mounted form globally — when forms 
 
 ---
 
-## 14. Architecture & extending `BaseForm`
+## 14. Async validation gating & `isValidating`
 
-### Class hierarchy
+> **Auto-trigger:** code reads `isValidating` from `useFormControl` / `formControl`; user asks "how do I show a spinner while async validation runs", "does async validation block submit in @mongez/react-form", "why does my submit fire before the async username check finishes", or "how does the async validation gating work"; a `validate` / rule that returns a `Promise`.
 
-```
-BaseForm<P extends FormProps>   (abstract — engine, no rendering)
-  ├── Form          (Web — renders <form>, DOM submit handling)
-  └── NativeForm    (React Native — Fragment default, programmatic submit)
-```
+In v4 a control's `validate()` returns `ReactNode | Promise<ReactNode>` and the form **awaits each control** during `form.validate()`, so async rules genuinely gate submission — the submit pipeline does not proceed until every control's async validation resolves.
 
-`BaseForm` is exported from the package root. Subclass it to support any other React renderer (`react-three-fiber`, terminal UIs, server-rendered validation, custom hosts).
+### Sync-fast-path
 
-### What `BaseForm` provides out of the box
+The rule pipeline runs synchronously and returns a plain `ReactNode` when **every** rule resolves synchronously — no extra microtask, identical timing to v3. It returns a `Promise` only once a rule's `validate` returns a `Promise`. So the common all-sync case stays sync; only forms with a genuinely async rule pay the async cost.
 
-Inheriting from `BaseForm` gives you the full `FormInterface` for free:
+### `isValidating`
 
-**Control registry:** `register(formControl)`, `unregister(formControl)`, `control(value, getBy?)`, `controls(names?)`, internal `formControls[]` array. Automatically wires per-control `onChange` subscriptions to maintain `dirtyControls`.
-
-**Validation pipeline:** `validate(controls?)`, `validateVisible()`, plus the events `validating`, `validation`, `validControl`, `invalidControl`, `validControls`, `invalidControls`. Listener returning `false` from `validating` aborts the run.
-
-**Value collection:** `values(names?)`, `value(name)`, `formData()`, `collectValues(names?)`, `shouldIgnoreEmptyValues()`. Honors dot-notation names (`user.firstName` → nested objects), array indices (`tags.0`), `multiple: true` controls, and `ignoreEmptyValues`.
-
-**State tracking:** `isDirty`, `dirtyControls[]`, `setIsDirty()`, `isSubmitting()`, `submitting(boolean)`, `isValid()`, `disable(isDisabled?)`, `enable()`. Each transition fires the matching event.
-
-**Event bus:** `on(event, cb)`, `trigger(event, ...args)`, `triggerAll(event, ...args)`. Built on `@mongez/events`. Event names are typed via `FormEventType`.
-
-**Active-form registry:** Constructor auto-registers via `setActiveForm()` + `addToFormsList()`. `componentWillUnmount` auto-unregisters. So `getActiveForm()` and `getForm(id)` work without any subclass setup.
-
-**Reset:** `reset()`, `resetErrors()`. `reset()` fires `resetting` → calls each control's `reset()` → resets internal flags → fires `reset`.
-
-**Default-value resolution:** `props.defaultValue` is exposed as `this.defaultValue` and consumed by `useFormControl` via the `FormContext` lookup chain.
-
-**Shared submit pipeline:** Protected `handleSubmit(event?)` method — runs `validate()`, short-circuits on invalid form / already-submitting, calls `props.onSubmit({ form, event, values, formData })` with `values` and `formData` as getters (lazy), then fires the `submit` event.
-
-### What you must implement
-
-Two abstract surfaces:
-
-1. **`submit(): void`** — programmatic submit. Typical implementation calls `this.handleSubmit()`.
-2. **`render(): ReactNode`** — must wrap children in `<FormContext.Provider value={this}>` so descendants' `useFormControl` calls find the form. Beyond that, render whatever fits the platform.
-
-### Canonical subclass templates
-
-**Headless (no host element):**
+When an async rule is in-flight, the control flips `isValidating` to `true` (exposed both on `FormControl.isValidating` and on the `useFormControl` return), then back to `false` when it resolves. Use it for per-field spinners:
 
 ```tsx
-import { BaseForm, FormContext, type FormProps, type FormInterface } from "@mongez/react-form";
+const { value, changeValue, error, isValidating } = useFormControl(props);
 
-export class HeadlessForm extends BaseForm implements FormInterface {
-  public formElement = null;
+return (
+  <>
+    <input value={value} onChange={(e) => changeValue(e.target.value)} />
+    {isValidating && <Spinner />}
+    {error && <span className="error">{error}</span>}
+  </>
+);
+```
 
-  public submit() {
-    if (this.isSubmitting()) return;
-    this.handleSubmit();
+### Stale-result discarding
+
+Each validation run captures a monotonic per-control sequence token (`validationSeq`). If a newer run starts before an earlier async rule resolves, the **stale** result is discarded — only the latest run commits its error/validity. This prevents a slow earlier request (e.g. a username check for "jo") from overwriting the result of a newer one ("john").
+
+### Async per-field schema / custom validate
+
+Both a per-field Standard `schema` (§16) and a `validate` prop that returns a Promise participate in the same gating and `isValidating` flag. The per-field schema rule is appended **last** in the pipeline.
+
+---
+
+## 15. Reactive hydration — `values`, `fill`, `setValues`, `setDefaultValue`, `setErrors`
+
+> **Auto-trigger:** code passes a `values` prop to `<Form>`, or calls `form.fill(...)`, `form.setValues(...)`, `form.setDefaultValue(...)`, `form.setErrors(...)`, or `form.getInitialValue(...)`; user asks "how do I load an edit form whose record arrives after mount", "how do I bulk-set form values", "how do I map a 422 server error response onto fields", or "what's the difference between defaultValue and values".
+
+### `defaultValue` vs `values`
+
+- **`defaultValue`** is the **reset baseline**. `form.reset()` restores every control to it. It is read once when a control mounts (per-control `defaultValue`/`value` props still win over the form-level lookup).
+- **`values`** is the **reactive current data**. Changing the *identity* of the `values` object **re-hydrates already-mounted controls** and **seeds controls that mount later** (via `engine.hydrationValues`, read through `form.getInitialValue(name)`). Ideal for edit forms whose record loads asynchronously.
+
+```tsx
+const { data: user } = useUser(id);   // arrives after mount
+
+<Form values={user} onSubmit={save}>
+  <TextInput name="firstName" />
+  <TextInput name="email" />
+</Form>;
+```
+
+When `user` resolves and its object identity changes, both already-mounted controls receive the new values and any control mounting afterward seeds from the latest snapshot.
+
+### `form.fill(values, options?)` / `form.setValues(values, options?)`
+
+Bulk-write values onto mounted controls and merge them into the hydration snapshot for later-mounting controls. `setValues` is an alias of `fill`. **Does not change the reset baseline.**
+
+```ts
+form.fill(
+  { user: { firstName: "Jane" }, country: "EG" },
+  { dirty: false, validate: false }  // both default to false
+);
+```
+
+`FillOptions`: `{ dirty?: boolean (default false); validate?: boolean (default false) }`. `dirty: false` writes without marking controls dirty (so the form stays pristine); `validate: false` skips revalidation on write.
+
+### `form.setDefaultValue(defaultValue)`
+
+Update the reset baseline. **Pristine (non-dirty) controls re-hydrate** to the new baseline; dirty controls keep the user's edits. (`Form` calls this automatically when the `defaultValue` prop identity changes.)
+
+### `form.getInitialValue(name)`
+
+Resolve a control's seed value: the reactive hydration snapshot first, then the reset baseline; returns `undefined` when neither has it. Used internally by `useFormControl` (and `useFieldArray`) when a control mounts.
+
+### `form.setErrors({ "dot.name": message })`
+
+Bulk-assign errors keyed by dot-notation control name — the canonical way to map a server validation response (HTTP 422) back onto controls. Names with no matching control are ignored. Triggers `invalidControls` so submit buttons re-disable.
+
+```ts
+onSubmit={async ({ values, form }) => {
+  try {
+    await api.save(values);
+  } catch (e) {
+    if (e.status === 422) form.setErrors(e.data.errors); // { "user.email": "Already taken" }
   }
+}}
+```
 
-  public render() {
-    return (
-      <FormContext.Provider value={this}>
-        {(this.props as FormProps).children}
-      </FormContext.Provider>
-    );
-  }
+---
+
+## 16. Standard Schema interop (seal / zod / valibot)
+
+> **Auto-trigger:** code passes a `schema` prop to `<Form>` or `useFormControl`, imports `isStandardSchema`, `standardSchemaToRule`, `runStandardSchema`, `issuePathToName`, `StandardSchemaV1`, `InferFormValues`, or `InferFormInput`; user asks "how do I validate a @mongez/react-form with zod / valibot / @warlock.js/seal", "how do I infer onSubmit value types from my schema", or "how do I run a whole-form schema on submit".
+> **Skip when:** `mongez-react-form-validation-rules` for the built-in `InputRule` system (the schema is wrapped as a rule but rule authoring is a separate topic).
+
+v4 consumes any [Standard Schema](https://standardschema.dev) validator (`@warlock.js/seal`, `zod`, `valibot`, `arktype`, …) **with zero runtime dependency** — it only duck-types the `~standard` property (`isStandardSchema`). The spec's `~standard.validate` may be sync or async; the adapter awaits uniformly.
+
+### Whole-form validation
+
+```tsx
+import { Form } from "@mongez/react-form";
+import { z } from "zod";
+
+const schema = z.object({
+  email: z.string().email(),
+  age: z.coerce.number().min(18),
+});
+
+<Form
+  schema={schema}
+  onSubmit={({ values }) => api.save(values)}  // values typed as { email: string; age: number }
+>
+  <TextInput name="email" />
+  <TextInput name="age" type="number" />
+</Form>;
+```
+
+On submit the engine collects the form's values, runs the schema, and **maps each issue back to its control** by `issue.path` → dot-notation name (`issuePathToName`) → `control.setError`. **Issues whose control is not in the validated subset are ignored**, so `form.validateVisible()` (steppers) won't fail on hidden fields. Whole-form schema validation runs **after** per-control rules, inside `form.validate()`.
+
+### Per-field schema
+
+```tsx
+useFormControl({ ...props, schema: z.string().email() });
+// or the prop form:
+<TextInput name="email" schema={z.string().email()} />
+```
+
+The schema is wrapped as an `InputRule` (`standardSchemaToRule`) appended **last** in that control's pipeline. `requiresValue` is `false`, so empty values are still handed to the schema (its own `optional`/`required` semantics decide). The first issue's message becomes the rendered error. Async-capable — participates in the §14 gating + `isValidating`.
+
+### Type inference helpers
+
+```ts
+import type { InferFormValues, InferFormInput, StandardSchemaV1 } from "@mongez/react-form";
+
+type Values = InferFormValues<typeof schema>;  // post-validation OUTPUT shape (used for onSubmit)
+type Input  = InferFormInput<typeof schema>;   // pre-validation INPUT shape
+```
+
+`FormProps<Schema>` threads the schema type through so `onSubmit`'s `values` is `InferFormValues<Schema>`.
+
+### Adapter exports
+
+| Export | Purpose |
+|---|---|
+| `isStandardSchema(value)` | Duck-type guard for the `~standard` property |
+| `runStandardSchema(schema, value)` | Run a schema; returns `Promise<{ value } \| { issues }>` |
+| `issuePathToName(path)` | Issue path (`["user", { key: "addr" }, 0]`) → dot name (`user.addr.0`) |
+| `standardSchemaToRule(schema, name?)` | Wrap a single-field schema as an async `InputRule` |
+| `StandardSchemaV1` | The spec interface (+ `InferInput` / `InferOutput` namespace types) |
+| `InferFormValues` / `InferFormInput` | Output / input shape aliases |
+
+---
+
+## 17. `validateOn` — change / blur / submit
+
+> **Auto-trigger:** code passes `validateOn` to `<Form>` or an input, or sets `setFormConfigurations({ validateOn })`, or reads `onBlur` / `wasSubmitted`; user asks "how do I validate on blur instead of on every keystroke", "how do I only validate on submit", or "how do I set the validation trigger globally".
+
+Each control resolves its trigger with this precedence: **per-control `validateOn` prop > `<Form validateOn>` > `setFormConfigurations({ validateOn })` global > `"change"`** (default).
+
+| Mode | Behavior |
+|---|---|
+| `"change"` | Validate on every value change (the v3 behavior). |
+| `"blur"` | Validate when the field blurs. Wire `onBlur` (or use `getInputProps`, §19). |
+| `"submit"` | Validate only when the form is submitted. |
+
+**Revalidate-on-change after error/submit:** for `"blur"` and `"submit"`, once the field has **already errored** (`formControl.isValid === false`) or the form **has been submitted** (`form.wasSubmitted === true`), subsequent value changes revalidate live — so a cleared error updates immediately instead of staying stale until the next blur/submit. The engine sets `wasSubmitted = true` at the start of `handleSubmit`.
+
+```tsx
+<Form validateOn="blur">
+  <TextInput name="email" />                      {/* inherits "blur" */}
+  <TextInput name="coupon" validateOn="submit" /> {/* overrides to "submit" */}
+</Form>
+```
+
+```ts
+import { setFormConfigurations } from "@mongez/react-form";
+setFormConfigurations({ validateOn: "blur" });    // global default
+```
+
+The `useFormControl` return exposes **`onBlur`** — a handler that marks the control touched and validates when the resolved mode is `"blur"`. Spread it directly or via `getInputProps`.
+
+---
+
+## 18. Awaited submit
+
+> **Auto-trigger:** `onSubmit` returns a Promise / is `async`; user asks "do I still need form.submitting(false) after an async submit", "why is my submit button stuck disabled / not stuck disabled", or "how does awaited submit work".
+
+If `onSubmit` returns a `Promise`, the engine **auto-clears the submitting state when the promise settles — success OR failure** — so you no longer call `form.submitting(false)` manually in that case:
+
+```tsx
+<Form onSubmit={async ({ values }) => {
+  await api.save(values);   // submitting(false) fires automatically on resolve/reject
+}} />
+```
+
+- **Sync `onSubmit`** behaves exactly as before: the button is your responsibility, and the API-failure path must still call `form.submitting(false)` to re-enable it.
+- A throw from a sync `onSubmit` clears submitting state and re-throws.
+- Internally: `handleSubmit` sets `wasSubmitted = true`, validates (awaited), short-circuits on invalid/already-submitting, calls `submitting(true)`, then `onSubmit`; if the result is thenable it attaches `.then(clear, clear)`.
+
+---
+
+## 19. Accessibility — `getInputProps` / `getErrorProps`
+
+> **Auto-trigger:** code calls `getInputProps(...)` or `getErrorProps()`, or reads `errorId`; user asks "how do I make my form inputs accessible", "how do I wire aria-invalid / aria-describedby", or "what's the recommended way to spread props onto my input".
+
+`useFormControl` returns two prop-bag builders that wire correct ARIA without boilerplate.
+
+### `getInputProps(overrides?)`
+
+Returns an accessibility-complete bag to spread onto the host input. It includes:
+
+- `id`, `name`, `ref` (the `inputRef`), `disabled`
+- `value` + `onChange` for text inputs, or `checked` + `onChange` for `type="checkbox"`/`"radio"`
+- `onBlur` (the §17 blur handler)
+- `aria-invalid` (when touched-and-invalid), `aria-required` (from the `required` prop), `aria-describedby` (the `errorId` when an error is present)
+- all `otherProps`, then your `overrides` merged last
+
+```tsx
+export function TextInput(props: FormControlProps) {
+  const { getInputProps, getErrorProps, error } = useFormControl(props);
+
+  return (
+    <>
+      <input {...getInputProps()} />
+      {error && <span {...getErrorProps()}>{error}</span>}
+    </>
+  );
 }
 ```
 
-**Web (mirrors what `Form.tsx` does):**
+`overrides` win over the computed values, so `getInputProps({ className: "input", onBlur: myHandler })` works.
+
+### `getErrorProps()`
+
+Returns `{ id: errorId, role: "alert", "aria-live": "polite" }` for the error element so screen readers announce it. `errorId` (also returned directly) is `` `${id}-error` `` and is referenced by the input's `aria-describedby` automatically.
+
+---
+
+## 20. `useFieldArray` — dynamic repeated rows
+
+> **Auto-trigger:** code imports/calls `useFieldArray`; user asks "how do I build a repeating/dynamic list of fields", "how do I add/remove address rows in @mongez/react-form", or "how do I keep field rows stable when reordering".
+
+`useFieldArray(name)` manages a dynamic list of repeated field rows with **stable keys** that survive reordering and removal. Each row's input names derive from its current index (`addresses.0.city`, `addresses.1.city`, …), so the form's dot-notation collection nests them into an array automatically.
 
 ```tsx
-import { BaseForm, FormContext } from "@mongez/react-form";
+import { useFieldArray } from "@mongez/react-form";
 
-export class CustomWebForm extends BaseForm {
-  public formElement!: HTMLFormElement;
+function Addresses() {
+  const { fields, append, remove } = useFieldArray("addresses");
 
-  public submit() {
-    if (!this.formElement || this.isSubmitting()) return;
-    this.formElement.requestSubmit();
-  }
-
-  protected async triggerSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    e.stopPropagation();
-    await this.handleSubmit(e);
-  }
-
-  public render() {
-    return (
-      <FormContext.Provider value={this}>
-        <form
-          ref={(el) => (this.formElement = el!)}
-          onSubmit={this.triggerSubmit.bind(this)}
-          noValidate
-        >
-          {(this.props as any).children}
-        </form>
-      </FormContext.Provider>
-    );
-  }
+  return (
+    <>
+      {fields.map((field) => (
+        <div key={field.key}>
+          <TextInput name={`${field.name}.city`} />
+          <TextInput name={`${field.name}.zip`} />
+          <button type="button" onClick={() => remove(field.index)}>Remove</button>
+        </div>
+      ))}
+      <button type="button" onClick={() => append()}>Add address</button>
+    </>
+  );
 }
 ```
 
-### Generic prop type
+### Return shape (`FieldArrayHelpers`)
 
-`BaseForm<P extends FormProps = FormProps>` — pass a wider prop type to your subclass when it needs platform-specific props:
-
-```tsx
-type MyFormProps = FormProps & { view: "modal" | "inline" };
-
-export class MyForm extends BaseForm<MyFormProps> {
-  public submit() { this.handleSubmit(); }
-  public render() {
-    const { view, children } = this.props;
-    return (
-      <FormContext.Provider value={this}>
-        <div className={`form form-${view}`}>{children}</div>
-      </FormContext.Provider>
-    );
-  }
+```ts
+{
+  fields: { key: string; index: number; name: string }[];  // map with key={key}, name prefix={name}
+  append: (count = 1) => void;       // add rows at the end
+  prepend: (count = 1) => void;      // add rows at the start
+  remove: (index?) => void;          // remove at index, or the last row when omitted
+  insert: (index) => void;           // insert one row at index
+  move: (from, to) => void;          // move a row
+  swap: (a, b) => void;              // swap two rows
+  replace: (count) => void;          // replace all rows with `count` fresh rows
 }
 ```
 
-### When NOT to subclass
+- **`field.key`** is a stable React key — always use it, never the index. **`field.name`** is the dot-notation prefix; compose child names as `` `${field.name}.city` ``.
+- The initial row count seeds from `form.getInitialValue(name)` (so a hydrated array renders its rows). On `form.reset()`, the list returns to its initial row count.
 
-If all you need is a different rendered element, **don't subclass — use the `component` prop:**
+---
+
+## 21. `useWatch` — reactive value reads
+
+> **Auto-trigger:** code imports/calls `useWatch`; user asks "how do I read another field's value reactively", "how do I build a dependent/conditional field", or "how do I watch the whole form's values".
+
+`useWatch` reactively reads form values from any descendant and re-renders the calling component whenever **any** control changes (the engine now emits a form-level `change` event on every control change) or the form resets.
+
+```tsx
+import { useWatch } from "@mongez/react-form";
+
+const all = useWatch();                 // whole collected values object
+const email = useWatch("user.email");   // single control value
+const [first, last] = useWatch(["firstName", "lastName"]); // array of values
+```
+
+Overloads: `useWatch()` → `Record<string, any>`; `useWatch(name)` → that value; `useWatch(names[])` → an array of values. Outside a form it returns `{}`, `undefined`, or an array of `undefined` respectively.
+
+Use it for dependent fields (show a "state" select only when `country === "US"`), live summaries, or character counters — without subscribing to events manually.
+
+---
+
+## 22. Architecture & extending `FormEngine`
+
+### Component model (v4)
+
+```
+FormEngine        (plain class — implements FormInterface, React-free, no rendering)
+  ├── Form        (Web FC — forwardRef; renders <form>, DOM submit, exposes engine via ref)
+  └── NativeForm  (React Native FC — forwardRef; Fragment default, programmatic submit)
+
+BaseForm = FormEngine   (deprecated alias, kept for one major — removed in v5)
+```
+
+`Form` / `NativeForm` are **function components** that lazily instantiate one `FormEngine` (held in a `useRef`) and wrap children in `<FormContext.Provider value={engine}>`. The shared wiring lives in `useFormEngine(props, submitHandler)`:
+
+- lazy single-engine instantiation (stable identity for context + the event bus)
+- SSR-safe id from `useId()`
+- `engine.setOptions(...)` synced every render (no React state mutated)
+- reactive `values` → `engine.fill(...)` on identity change; reactive `defaultValue` → `engine.setDefaultValue(...)`
+- `engine.activate()` / `engine.destroy()` for the active-form registry on mount/unmount
+
+### What `FormEngine` provides
+
+`FormEngine` implements the full `FormInterface`:
+
+**Control registry:** `register(formControl)`, `unregister(formControl)`, `control(value, getBy?)`, `controls(names?)`. Wires per-control `onChange` to maintain `dirtyControls` and emit the form-level `change` event (consumed by `useWatch`).
+
+**Validation pipeline (async-aware):** `validate(controls?)` — `await`s each control's `validate()` so async rules gate submission — `validateVisible()`, whole-form schema validation (`validateSchema`), plus the `validating` / `validation` / `validControl` / `invalidControl` / `validControls` / `invalidControls` events. A `validating` listener returning `false` aborts the run.
+
+**Value collection:** `values(names?)`, `value(name)`, `formData()`, `collectValues(names?)`, `shouldIgnoreEmptyValues()`. Dot-notation nesting, array indices, `multiple`, `ignoreEmptyValues`.
+
+**Hydration:** `fill()`, `setValues()`, `setDefaultValue()`, `getInitialValue()`, `hydrationValues`, `setErrors()` (§15).
+
+**State tracking:** `isDirty`, `dirtyControls[]`, `isSubmitting()`, `submitting(boolean)`, `isValid()`, `disable()`, `enable()`, `wasSubmitted`.
+
+**Event bus:** `on(event, cb)`, `trigger(...)`, `triggerAll(...)` over `@mongez/events`, typed by `FormEventType`.
+
+**Active-form registry:** `activate()` / `destroy()` (called by the host) register/unregister with `setActiveForm()` + `addToFormsList()`, so `getActiveForm()` / `getForm(id)` work.
+
+**Submit pipeline:** `handleSubmit(event?)` — sets `wasSubmitted`, awaits `validate()`, short-circuits on invalid/already-submitting, calls `onSubmit({ form, event, values, formData })` with lazy getters, and auto-clears submitting state for a Promise result (§18). `submit()` delegates to an injected `submitHandler` (the host knows how to dispatch web vs. native).
+
+### Custom renderers — subclass `FormEngine`, not `BaseForm`
+
+To support another React renderer (terminal UIs, `react-three-fiber`, a custom host), **subclass `FormEngine`** and render a thin function component that lazy-inits it. Do **not** subclass `BaseForm` (it's just the deprecated alias).
+
+```tsx
+import {
+  FormEngine, FormContext, type FormProps, type FormInterface,
+} from "@mongez/react-form";
+import { useRef, useEffect, useId } from "react";
+
+class HeadlessEngine extends FormEngine {}
+
+export function HeadlessForm(props: FormProps) {
+  const id = useId();
+  const ref = useRef<HeadlessEngine>();
+  if (!ref.current) ref.current = new HeadlessEngine({ ...props, id });
+  const engine = ref.current;
+
+  engine.setOptions({ ...props, id });
+  engine.submitHandler = () => engine.handleSubmit();
+
+  useEffect(() => {
+    engine.activate();
+    return () => engine.destroy();
+  }, [engine]);
+
+  return <FormContext.Provider value={engine}>{props.children}</FormContext.Provider>;
+}
+```
+
+In practice most cases need neither a subclass nor a custom component — use the **`component` prop** to swap the rendered element:
 
 ```tsx
 <Form component={MyStyledFormWrapper}>...</Form>
 <NativeForm component={View} style={{ padding: 16 }}>...</NativeForm>
 ```
 
-Subclass only when submit semantics, rendering rules, or platform integration genuinely differ from both Web and Native.
+Subclass `FormEngine` only when submit semantics, value handling, or platform integration genuinely differ from both Web and Native.
+
+### `BaseForm` migration
+
+`BaseForm` is now `export const BaseForm = FormEngine` (plus a `type BaseForm = FormEngine`). Code that referenced the *type* of a form instance still works (it's assignable to `FormInterface`). Code that **subclassed** `BaseForm` as a `React.Component` (overriding `render()` / `submit()` as instance methods) must migrate to the function-component-over-engine pattern above — there is no `render()` on the engine. The alias is removed in v5.
 
 ### DOM-guarded code in `useFormControl`
 
-The same `useFormControl` hook runs on Web and Native unchanged. DOM-specific code paths are guarded with `typeof document !== "undefined"`:
+The same `useFormControl` hook runs on Web and Native unchanged. DOM-specific code paths are guarded with `typeof document !== "undefined" && typeof window !== "undefined"`:
 
-- `formControl.isVisible()` walks `parentElement` chain on Web; on Native it always returns `true`. Consequence: `form.validateVisible()` on Native is identical to `form.validate()`.
-- The auto-touch DOM `focus` event listener is a no-op on Native. Native input components must set `formControl.isTouched = true` manually in their own `onFocus` handler if they want the flag tracked.
+- `formControl.isVisible()` walks the `parentElement` chain on Web; on Native it always returns `true`. Consequence: `form.validateVisible()` on Native is identical to `form.validate()`.
+- The auto-touch DOM `focus` event listener is a no-op on Native. Native input components must set `formControl.isTouched = true` manually in their own `onFocus` handler (or wire `onBlur` from the hook).
 - `inputRef.current.focus()` / `.blur()` work on both — React Native's `TextInput` ref exposes both methods natively.
 
-### Where the platform-specific code lives
+### Where the code lives
 
-When extending `BaseForm` or contributing back, these are the only files you need to read:
-
-- `src/components/BaseForm.ts` — the engine (≈400 lines, no rendering).
-- `src/components/Form.tsx` — Web concrete (≈55 lines).
-- `src/components/NativeForm.tsx` — Native concrete (≈45 lines).
+- `src/engine/FormEngine.ts` — the React-free engine (all logic; implements `FormInterface`).
+- `src/components/useFormEngine.ts` — the shared `Form` / `NativeForm` wiring hook.
+- `src/components/Form.tsx` — Web FC (`forwardRef`).
+- `src/components/NativeForm.tsx` — Native FC (`forwardRef`).
+- `src/components/BaseForm.ts` — the deprecated `FormEngine` alias.
 - `src/hooks/useFormControl.ts` — the hook, with DOM guards inline.
+- `src/standard-schema/` — `types.ts` (vendored spec) + `adapter.ts` (interop helpers).
 
 All other files (rules, hooks, contexts, configurations, active-form registry, types) are 100% platform-agnostic.

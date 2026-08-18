@@ -1,3 +1,5 @@
+"use client";
+
 import { useContext } from "react";
 import { FormContext } from "../contexts/FormContext";
 import { FormContextData } from "../types";
