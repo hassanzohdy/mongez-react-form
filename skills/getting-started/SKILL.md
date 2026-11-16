@@ -187,9 +187,9 @@ You still want an explicit, stable `id` whenever you need the form's identity to
 
 Rules of thumb:
 
-- **Pass an `id` when you target the form** in tests, styles, or analytics — `useId()` produces opaque values like `form-:r3:`, while `id="signup"` renders the stable `form-signup`.
+- **Pass an `id` when you target the form** in tests, styles, or analytics — `useId()` produces opaque values like `form-:r3:`, while `id="signup"` renders the stable `signup` (and control ids such as `signup-email`).
 - **Keep an explicit `id` unique on the page.** The id drives the engine's event prefix (`form.<id>`), so two forms sharing an `id` would cross-wire their events.
-- **Inputs never need an `id`.** A control's id is derived from its `name` (`input-<name>`), already deterministic on both server and client.
+- **Inputs never need an `id`.** A control's id is derived from its form's id and its `name` (`<form-id>-<name>`, or `input-<name>` outside a form). Both are deterministic on the server and the client, and two forms on one page do not collide. Pass an explicit `id` only when you want a fixed value.
 
 ### 6. The engine behind the form (`FormEngine`)
 

@@ -161,7 +161,9 @@ import { View } from "react-native";
 
 > **`values` and `formData` on the `onSubmit` payload are getters.** They re-collect on every access — don't reference them twice if collection is expensive.
 
-> **SSR (v4):** ids are derived from `useId()`, so `<Form>` hydrates cleanly without a static `id`. Pass an explicit `id` only when you want a fixed, human-readable one (it also sets the event prefix `form.<id>`).
+> **SSR (v4):** ids are derived from `useId()`, so `<Form>` hydrates cleanly without a static `id`. Pass an explicit `id` only when you want a fixed, human-readable one (it also sets the event prefix `form.<id>` and the prefix of every control id inside the form).
+>
+> **Control ids across forms:** when two forms on one page have a field with the same name, give each form its own `id` (`<Form id="billing">`, `<Form id="shipping">`) or pass an explicit `id` to the control. Without an explicit `id` the form's `useId()` value already keeps the ids apart, so this only matters when you want readable ids.
 >
 > **Next.js App Router:** the components and hooks ship a `"use client"` boundary, so you can import `<Form>` / `useFormControl` straight into a Server Component tree without marking your own file. The pure exports (rules, types, `standard-schema` helpers, `FormEngine`) stay server-importable. `getActiveForm()` / `getForm()` are client-only conveniences (populated by mount effects) — they return `null` during server render.
 
@@ -173,7 +175,7 @@ The `TextInput` shown in Quick start above is the canonical wrapper pattern. Thr
 
 - **Spread `otherProps`, not raw `props`**, onto the host element. `otherProps` excludes hook-internal keys (`name`, `rules`, `errors`, `onChange`, `value`, `defaultValue`, `errorKeys`, ...) and any `preservedProps` declared by active rules (`minLength`, `pattern`, `match`, `strong`, ...).
 - **Wire `inputRef`** if you want `formControl.focus()` / `.blur()` to work, or auto-touch tracking on web.
-- The hook is **always controlled internally** — `value` from the hook is the source of truth even when the consumer passes a `value` prop. The `id` defaults to `input-<sanitized-name>` (dots become dashes), computed by the exported `useControlId({ id?, name })` hook — call it yourself if you need the same id outside `useFormControl`. **Renamed from `useId` in v4** so importing it no longer shadows React 18's own `useId`.
+- The hook is **always controlled internally** — `value` from the hook is the source of truth even when the consumer passes a `value` prop. The `id` defaults to `<formId>-<sanitized-name>` inside a `<Form>` (the form's id, so two forms on one page with the same field name get different ids) and to `input-<sanitized-name>` outside one (dots become dashes). A nameless control gets a `useId()`-based id, which is the same on server and client. An explicit `id` prop always wins, and `errorId` / `getErrorProps().id` is always `<id>-error`. The exported `useControlId({ id?, name, formId? })` hook computes the same id outside `useFormControl`. **Renamed from `useId` in v4** so importing it no longer shadows React 18's own `useId`.
 
 ### Hook return shape
 

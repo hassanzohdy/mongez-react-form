@@ -2,6 +2,22 @@
 
 All notable changes to `@mongez/react-form` are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.1.0] — 2026-11-16
+
+### Fixed
+
+- **Default control ids are unique per form.** A control inside a `<Form>` now gets `<formId>-<name>`, where the form id is the `id` prop or the form's `useId()` value, so two forms on one page with a field `email` no longer share `input-email`. Outside a form the id stays `input-<name>`. An explicit `id` prop still wins, and the error id still follows it (`<id>-error`).
+- **Nameless controls get a `useId()`-based id.** The fallback no longer uses `Math.random()`, so it matches between server and client. A nameless control in a form gets `<formId>-<reactId>`. A nameless control also no longer derives its id from the string `undefined`.
+- `FormInterface` declares the optional `id` property that the engine already exposes. It is optional so custom `FormInterface` implementations keep compiling.
+
+### Upgrading
+
+- Inputs inside a `<Form>` that have no explicit `id` now render `<form-id>-<name>` instead of `input-<name>`. Update CSS selectors, tests, or `label` / anchor references that used `#input-<name>`. Set an explicit `id` on the control to keep a fixed value.
+
+### Documentation
+
+- README and the create-form-control and getting-started skills describe the new id derivation and the `useControlId({ id?, name, formId? })` signature.
+
 ## [4.0.0] — 2026-08-18
 
 Major rewrite. The form's logic now lives in a **React-free `FormEngine` class**, and `Form` / `NativeForm` are **function components** built over it. Most apps upgrade with no code changes; the breaking items below are narrow. A migration guide follows the change lists.

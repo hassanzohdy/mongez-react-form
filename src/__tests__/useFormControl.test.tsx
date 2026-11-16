@@ -241,20 +241,21 @@ describe("useFormControl — value collection", () => {
 
 describe("useFormControl — id derivation", () => {
   it("derives id from name when none is supplied", () => {
-    const { getByTestId } = render(
-      <Form onSubmit={() => {}}>
-        <TextInput name="firstName" />
-      </Form>,
-    );
+    const { getByTestId } = render(<TextInput name="firstName" />);
     expect(getByTestId("input-firstName").id).toBe("input-firstName");
   });
 
-  it("sanitizes dots and brackets in derived ids", () => {
+  it("derives id from the form id and name inside a form", () => {
     const { getByTestId } = render(
-      <Form onSubmit={() => {}}>
-        <TextInput name="user.firstName" />
+      <Form id="profile" onSubmit={() => {}}>
+        <TextInput name="firstName" />
       </Form>,
     );
+    expect(getByTestId("input-firstName").id).toBe("profile-firstName");
+  });
+
+  it("sanitizes dots and brackets in derived ids", () => {
+    const { getByTestId } = render(<TextInput name="user.firstName" />);
     expect(getByTestId("input-user.firstName").id).toBe("input-user-firstName");
   });
 

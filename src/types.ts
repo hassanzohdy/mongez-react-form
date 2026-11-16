@@ -483,6 +483,13 @@ export type ReactComponent =
 
 export interface FormInterface {
   /**
+   * Form id: the `id` prop when given, otherwise a stable id from React's
+   * `useId()`. Default control ids inside the form are derived from it.
+   * Optional so custom `FormInterface` implementations keep compiling; without
+   * it, controls fall back to `input-<name>`.
+   */
+  id?: string;
+  /**
    * Form element.
    *
    * On web this is the rendered `HTMLFormElement`. On React Native (or

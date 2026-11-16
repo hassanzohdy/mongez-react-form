@@ -389,8 +389,8 @@ describe("a11y — getInputProps / getErrorProps", () => {
 
     const input = getByTestId("input-firstName") as HTMLInputElement;
 
-    // id derives from the name; name is forwarded as-is.
-    expect(input.id).toBe("input-firstName");
+    // id derives from the form id and the name; name is forwarded as-is.
+    expect(input.id).toMatch(/^[a-zA-Z0-9-]+-firstName$/);
     expect(input.getAttribute("name")).toBe("firstName");
 
     // onChange is wired — typing updates the controlled value.

@@ -25,7 +25,7 @@ v4 keeps the shape of the everyday API (`useFormControl`, the rules system, valu
 
 ### Breaking changes
 
-- **`useId` renamed to `useControlId`.** `import { useId } from "@mongez/react-form"` no longer resolves — the rename stops the package from shadowing React 18's own `useId`. Same signature (`{ id?, name }`) and behavior.
+- **`useId` renamed to `useControlId`.** `import { useId } from "@mongez/react-form"` no longer resolves — the rename stops the package from shadowing React 18's own `useId`. Same signature (`{ id?, name }`) and behavior. Since 4.1.0 it also takes `formId`; see the SSR section.
 - **`useValue`, `useError`, and `useChecked` hooks removed with no alias.** Use `useFormControl` (destructure `value` / `error` / `checked` from its return) or `useWatch(name)` for a reactive read outside a control.
 - **`Form` / `NativeForm` refs now yield a `FormEngine`**, not a class-component instance. Only code that subclassed `BaseForm` or relied on class-component lifecycle methods on the ref needs review — the `FormInterface` method surface (`validate`, `values`, `submit`, `reset`, `on`, `control`, …) is unchanged.
 
@@ -170,7 +170,7 @@ You may still pass an explicit, static `id`:
 
 - A static `id` makes the `<form>` easy to target in tests and styles, and it sets the event prefix (`form.<id>`) explicitly.
 - Keep each form's `id` unique on the page — the id drives the internal event prefix, so duplicate ids cross-wire events.
-- Inputs derive their id from `name` (`input-<name>`), which is already deterministic. This is implemented by the exported `useControlId({ id?, name })` hook — call it yourself if you need the same id outside `useFormControl`. **Renamed from `useId` in v4** (see "Breaking changes" in §0) so importing it no longer shadows React 18's own `useId`.
+- Inputs derive their id from the form id and `name` (`<formId>-<name>` inside a form since 4.1.0, `input-<name>` outside one; a nameless control gets a `useId()`-based id), all deterministic. This is implemented by the exported `useControlId({ id?, name, formId? })` hook — call it yourself if you need the same id outside `useFormControl`. **Renamed from `useId` in v4** (see "Breaking changes" in §0) so importing it no longer shadows React 18's own `useId`.
 
 > Note on the internal engine id: when constructed without options, `FormEngine` falls back to a counter-based id (`frm-<base36 counter>`), not `Math.random()`. In practice `Form` / `NativeForm` always pass the `useId()`-derived id, so the rendered attribute is the SSR-safe `form-<react-id>`.
 

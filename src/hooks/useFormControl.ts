@@ -111,9 +111,13 @@ export function useFormControl<T extends FormControlProps>(
     [incomingName]
   );
 
+  const form = useForm();
+
   const id = useControlId({
     id: incomingId,
-    name,
+    // A nameless control has no field name; `useControlId` then uses its React id.
+    name: incomingName === undefined || incomingName === null ? "" : name,
+    formId: form?.id,
   });
 
   const errorId = `${id}-error`;
@@ -127,7 +131,6 @@ export function useFormControl<T extends FormControlProps>(
 
   const inputRef = useRef<any>();
   const visibleElementRef = useRef<any>();
-  const form = useForm();
 
   // Monotonic token guarding against stale async validation results: each
   // validation run captures the current value; if a newer run starts before an

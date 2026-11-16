@@ -258,7 +258,7 @@ It calls `useFormControl` and returns `null`. The value still appears in `form.v
 
 ## Default `id` generation
 
-If no `id` prop is provided, the hook derives one from `name`: `input-<sanitized-name>` (dots become dashes, non-alphanumerics stripped). This is deliberate — it makes the input's `id` predictable for `<label htmlFor>` association. The derivation is the exported `useControlId({ id?, name })` hook — call it yourself if you need the same id outside `useFormControl`. **Renamed from `useId` in v4** so importing it no longer shadows React 18's own `useId`.
+If no `id` prop is provided, the hook derives one. Inside a `<Form>` it is `<formId>-<sanitized-name>` (the form's id, from its `id` prop or its `useId()` value, so the same field name in two forms yields different ids). Outside a form it is `input-<sanitized-name>`. Dots become dashes and non-alphanumerics are stripped. A nameless control gets a `useId()`-based id that matches between server and client. An explicit `id` prop always wins, and the error id is `<id>-error`. The derivation is the exported `useControlId({ id?, name, formId? })` hook — call it yourself if you need the same id outside `useFormControl`. **Renamed from `useId` in v4** so importing it no longer shadows React 18's own `useId`.
 
 ## Recap checklist before committing a new input component
 
