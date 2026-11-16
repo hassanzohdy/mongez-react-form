@@ -161,6 +161,8 @@ import { View } from "react-native";
 
 > **`values` and `formData` on the `onSubmit` payload are getters.** They re-collect on every access — don't reference them twice if collection is expensive.
 
+> **Default `method="post"`:** when the rendered component is the native `"form"` and you pass no `method`, `<Form>` renders `method="post"` so a pre-hydration or no-JavaScript submit does not put field values in the URL (a GET would). An explicit `method` wins. Caveat: POST stops the URL leak, but it does not make an API-only form work without JavaScript.
+
 > **SSR (v4):** ids are derived from `useId()`, so `<Form>` hydrates cleanly without a static `id`. Pass an explicit `id` only when you want a fixed, human-readable one (it also sets the event prefix `form.<id>` and the prefix of every control id inside the form).
 >
 > **Control ids across forms:** when two forms on one page have a field with the same name, give each form its own `id` (`<Form id="billing">`, `<Form id="shipping">`) or pass an explicit `id` to the control. Without an explicit `id` the form's `useId()` value already keeps the ids apart, so this only matters when you want readable ids.
@@ -865,6 +867,8 @@ Most apps upgrade with **no code changes**. Review these only if they apply:
 - **SSR ids are automatic** via `useId()`; you can drop the static-`id` workaround that older versions needed to avoid hydration mismatches (still fine to keep for readable ids).
 - **`validateOn` / `schema` no longer leak onto the DOM** — if you filtered them out of forwarded props yourself, you can drop that workaround.
 - **`useId` renamed to `useControlId`.** `import { useId } from "@mongez/react-form"` no longer resolves — rename the import to `useControlId`; the return value and usage are unchanged. (The rename stops the package from shadowing React 18's own `useId`.)
+- **Default English `validation.*` messages no longer overwrite yours.** Importing the package fills only the `validation.*` keys not already defined for `en`, whatever the import order. If you relied on the package's defaults replacing your own earlier `extend("en", { validation })`, call `extend` again after the import. Length messages now receive both `:length` and the rule-specific name (`:maxLength` / `:minLength`), so either placeholder renders.
+- **`<Form>` renders `method="post"`** on the native `<form>` when you pass no `method`. Pass `method="get"` explicitly if you need the old behaviour.
 - **`useValue`, `useError`, and `useChecked` hooks removed with no alias.** Replace them with `useFormControl(props)` (destructure `value`, `error`, `checked` from its return) or `useWatch(name)` for a reactive read outside a control.
 
 ---

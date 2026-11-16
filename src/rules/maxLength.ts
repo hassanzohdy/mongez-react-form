@@ -11,6 +11,7 @@ export const maxLengthRule: InputRule = {
       return trans("validation.maxLength", {
         input: errorKeys.name,
         length: maxLength,
+        maxLength,
       });
     }
   },

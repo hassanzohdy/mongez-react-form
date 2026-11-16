@@ -94,6 +94,7 @@ export const strongRule: InputRule = {
         trans("validation.strongMinLength", {
           input: errorKeys.name,
           length: criteria.minLength,
+          minLength: criteria.minLength,
         })
       );
     }

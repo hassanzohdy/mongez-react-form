@@ -79,6 +79,15 @@ export const Form = forwardRef(function Form(
     await engine.handleSubmit(event);
   };
 
+  // A native `<form>` with no `method` submits as GET, which would put field
+  // values (passwords included) in the URL if submitted before hydration or
+  // with JavaScript off. Default to POST; an explicit `method` wins. Spread
+  // after `otherProps` so a wrapper passing `method={undefined}` still posts.
+  const defaultMethod =
+    Component === "form" && (otherProps as any).method === undefined
+      ? { method: "post" }
+      : undefined;
+
   return (
     <FormContext.Provider value={engine}>
       <Component
@@ -89,6 +98,7 @@ export const Form = forwardRef(function Form(
         noValidate
         onSubmit={handleSubmit}
         {...otherProps}
+        {...defaultMethod}
       >
         {children}
       </Component>

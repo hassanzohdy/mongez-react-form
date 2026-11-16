@@ -18,10 +18,15 @@ function SignupForm() {
     try {
       await http.post("/signup", { data: values });
       navigate("/welcome");
-    } catch (error: any) {
-      if (error?.status === 422 && error.body?.errors) {
-        for (const [name, message] of Object.entries(error.body.errors)) {
-          form.control(name)?.setError(message as string);
+    } catch (error: unknown) {
+      const { status, body } = (error ?? {}) as {
+        status?: number;
+        body?: { errors?: Record<string, string> };
+      };
+
+      if (status === 422 && body?.errors) {
+        for (const [name, message] of Object.entries(body.errors)) {
+          form.control(name)?.setError(message);
         }
         return;
       }

@@ -9,6 +9,7 @@ import {
   setActiveForm,
 } from "../active-form";
 import { getFormConfig } from "../configurations";
+import { isDevelopment } from "../is-development";
 import {
   issuePathToName,
   isStandardSchema,
@@ -183,7 +184,7 @@ export class FormEngine implements FormInterface {
   /**
    * Form control change subscriptions, keyed by control id/name.
    */
-  protected formControlEvents: Record<string, EventSubscription[]> = {};
+  protected formControlEvents = new Map<string, EventSubscription[]>();
 
   /**
    * Current form dirty state.
@@ -588,10 +589,12 @@ export class FormEngine implements FormInterface {
       this.trigger("change", formControl, this);
     });
 
-    this.formControlEvents[formControl.id || formControl.name] = [
-      ...(this.formControlEvents[formControl.id || formControl.name] || []),
+    const eventsKey = formControl.id || formControl.name;
+
+    this.formControlEvents.set(eventsKey, [
+      ...(this.formControlEvents.get(eventsKey) || []),
       event,
-    ];
+    ]);
 
     this.trigger("register", formControl, this);
   }
@@ -626,14 +629,14 @@ export class FormEngine implements FormInterface {
 
     const formControlKey = formControl.id || formControl.name;
 
-    const controlEvents = this.formControlEvents[formControlKey];
+    const controlEvents = this.formControlEvents.get(formControlKey);
 
     if (controlEvents) {
       controlEvents.forEach((event) => {
         event.unsubscribe();
       });
 
-      delete this.formControlEvents[formControlKey];
+      this.formControlEvents.delete(formControlKey);
 
       if (this.dirtyControls.includes(formControl)) {
         this.dirtyControls = this.dirtyControls.filter(
@@ -1029,7 +1032,18 @@ export class FormEngine implements FormInterface {
       // after the work is actually done.
       Promise.resolve(result).then(
         () => this.submitting(false),
-        () => this.submitting(false)
+        (error) => {
+          this.submitting(false);
+
+          // The rejection is not rethrown (it would crash the app as an
+          // unhandled rejection), but it must not vanish silently either.
+          if (isDevelopment()) {
+            console.error(
+              "[@mongez/react-form] The async `onSubmit` handler rejected:",
+              error
+            );
+          }
+        }
       );
       return;
     }

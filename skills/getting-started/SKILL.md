@@ -191,6 +191,8 @@ Rules of thumb:
 - **Keep an explicit `id` unique on the page.** The id drives the engine's event prefix (`form.<id>`), so two forms sharing an `id` would cross-wire their events.
 - **Inputs never need an `id`.** A control's id is derived from its form's id and its `name` (`<form-id>-<name>`, or `input-<name>` outside a form). Both are deterministic on the server and the client, and two forms on one page do not collide. Pass an explicit `id` only when you want a fixed value.
 
+**Default `method="post"`.** When the rendered component is the native `"form"` and you pass no `method`, `<Form>` renders `method="post"`, so a submit before hydration (or with JavaScript off) does not leak field values into the URL as a GET would. An explicit `method` wins. Caveat: POST stops the URL leak, but it does not make an API-only form work without JavaScript, because the browser posts to the current URL and something there must handle it.
+
 ### 6. The engine behind the form (`FormEngine`)
 
 A `ref` to `<Form>` / `<NativeForm>` resolves to the **`FormEngine`** instance (typed as `FormInterface`) — a plain, React-free class that owns registration, validation, value collection, dirty tracking, events, hydration, and the submit pipeline:

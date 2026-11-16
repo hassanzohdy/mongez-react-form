@@ -104,9 +104,14 @@ After a failed submit, map a server validation response back onto controls in on
 const onSubmit = async ({ form, values }) => {
   try {
     await api.signup(values);
-  } catch (error: any) {
-    if (error?.status === 422 && error.body?.errors) {
-      form.setErrors(error.body.errors); // { "email": "Already registered", ... }
+  } catch (error: unknown) {
+    const { status, body } = (error ?? {}) as {
+      status?: number;
+      body?: { errors?: Record<string, string> };
+    };
+
+    if (status === 422 && body?.errors) {
+      form.setErrors(body.errors); // { "email": "Already registered", ... }
       return;
     }
     toast.error("Signup failed");
@@ -128,22 +133,59 @@ For a single field, `form.control(name)?.setError(message)` still works; `setErr
 function EditProfile({ id }: { id: string }) {
   const formRef = useRef<FormInterface>(null);
 
+  const [loadError, setLoadError] = useState<string>();
+  const [formError, setFormError] = useState<string>();
+
   useEffect(() => {
-    api.getProfile(id).then((profile) => {
-      formRef.current?.fill(profile);   // hydrate when data arrives
-    });
+    let active = true; // a late response for a previous `id` must not fill the form
+
+    setLoadError(undefined);
+
+    api
+      .getProfile(id)
+      .then((profile) => {
+        if (active) formRef.current?.fill(profile); // hydrate when data arrives
+      })
+      .catch(() => {
+        if (active) setLoadError("Could not load the profile, try again.");
+      });
+
+    return () => {
+      active = false;
+    };
   }, [id]);
 
   const onSubmit = async ({ form, values }) => {
+    setFormError(undefined);
+
     try {
       await api.saveProfile(id, values);
-    } catch (e: any) {
-      if (e?.status === 422) form.setErrors(e.body.errors);
+    } catch (e: unknown) {
+      const { status, body } = (e ?? {}) as {
+        status?: number;
+        body?: { errors?: Record<string, string> };
+      };
+
+      if (status === 422 && body?.errors) {
+        form.setErrors(body.errors);
+
+        // `setErrors` skips names with no control: show those at form level.
+        const unknown = Object.entries(body.errors)
+          .filter(([name]) => !form.control(name))
+          .map(([name, message]) => `${name}: ${message}`);
+
+        if (unknown.length) setFormError(unknown.join(", "));
+        return;
+      }
+
+      setFormError("Could not save the profile, try again.");
     }
   };
 
   return (
-    <Form ref={formRef} onSubmit={onSubmit}>
+    <Form ref={formRef} method="post" onSubmit={onSubmit}>
+      {loadError && <p role="alert">{loadError}</p>}
+      {formError && <p role="alert">{formError}</p>}
       <TextInput name="firstName" required />
       <TextInput name="lastName" required />
       <TextInput name="bio" />
@@ -154,6 +196,10 @@ function EditProfile({ id }: { id: string }) {
 ```
 
 (You can equally drive this with `<Form values={profile}>` and skip the manual `fill` — pick whichever fits your data flow.)
+
+## SSR and the default `method`
+
+When the rendered component is the native `"form"` and you pass no `method`, `<Form>` renders `method="post"`, so a submit before hydration (or with JavaScript off) does not put field values, passwords included, in the URL. An explicit `method` wins. Caveat: POST stops the URL leak, but it does not make an API-only form work without JavaScript. The browser posts to the current URL, so you need a server route that handles it, or accept that the form needs JavaScript. Custom `component`s and `NativeForm` are not touched.
 
 ## Anti-patterns
 

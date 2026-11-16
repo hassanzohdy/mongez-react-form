@@ -9,14 +9,23 @@ All notable changes to `@mongez/react-form` are documented here. The format foll
 - **Default control ids are unique per form.** A control inside a `<Form>` now gets `<formId>-<name>`, where the form id is the `id` prop or the form's `useId()` value, so two forms on one page with a field `email` no longer share `input-email`. Outside a form the id stays `input-<name>`. An explicit `id` prop still wins, and the error id still follows it (`<id>-error`).
 - **Nameless controls get a `useId()`-based id.** The fallback no longer uses `Math.random()`, so it matches between server and client. A nameless control in a form gets `<formId>-<reactId>`. A nameless control also no longer derives its id from the string `undefined`.
 - `FormInterface` declares the optional `id` property that the engine already exposes. It is optional so custom `FormInterface` implementations keep compiling.
+- **Default English `validation.*` messages no longer overwrite an app's translations.** They fill only the keys not already defined for `en`, whatever the import order (FA-01).
+- **Length messages receive `maxLength` / `minLength` as well as `length`,** so messages written with either placeholder (for example seal-style `:maxLength`) render. `strong` also passes `strongMinLength`.
+- **`<Form>` renders `method="post"` on the native `<form>` when none is given.** Submitted before hydration (or without JavaScript), a form without a method was a GET and put field values, passwords included, in the URL, history and access logs (DW-14). An explicit `method` wins (`method={undefined}`, as a wrapper may pass, counts as none); custom components are untouched.
+- **A rejected async `onSubmit` is logged in development** (`console.error`) instead of vanishing; the form still leaves the submitting state.
+- **An invalid or oversized `pattern` warns once in development** instead of silently turning the rule off.
+- `formControlEvents` is a `Map`, and the compiled-pattern cache is bounded to 500 entries.
 
 ### Upgrading
 
 - Inputs inside a `<Form>` that have no explicit `id` now render `<form-id>-<name>` instead of `input-<name>`. Update CSS selectors, tests, or `label` / anchor references that used `#input-<name>`. Set an explicit `id` on the control to keep a fixed value.
+- The package defaults no longer replace `validation.*` keys already registered for `en`. If you relied on them replacing your earlier `extend`, remove those keys or call `extend` again after importing `@mongez/react-form`.
+- A `<Form>` without a `method` now posts natively. Pass `method="get"` if a form really should submit with GET. POST stops the URL leak, but an API-only form still needs JavaScript to submit.
 
 ### Documentation
 
 - README and the create-form-control and getting-started skills describe the new id derivation and the `useControlId({ id?, name, formId? })` signature.
+- The form-hydration and recipes skills use typed `catch (error: unknown)`, a stale-response guard and rejection handling in their async edit-form examples; README and the getting-started and form-hydration skills document the default `method`.
 
 ## [4.0.0] — 2026-08-18
 

@@ -66,6 +66,8 @@ extend("ar", { validation: arValidationTranslation });
 
 Without this, error messages render as raw keys like `validation.required`.
 
+Importing the package also registers the default English bundle, but it fills **only the `validation.*` keys not already defined for `en`**, whatever the import order, so it never overwrites your own translations. If you relied on the defaults replacing an earlier `extend("en", { validation })`, call `extend` again after importing `@mongez/react-form`. Length messages receive `:length` and also the rule-specific `:maxLength` / `:minLength` (`strong` also passes `:strongMinLength`), so either placeholder renders.
+
 ---
 
 ## 3. Form components
@@ -116,6 +118,8 @@ type FormProps<Schema extends StandardSchemaV1 | undefined = undefined> = {
 };
 ```
 
+- **Default `method="post"`:** when the rendered component is the native `"form"` and you pass no `method`, `<Form>` renders `method="post"`, so a submit before hydration (or with JavaScript off) does not put field values in the URL as a GET would. An explicit `method` wins; custom `component`s and `NativeForm` are untouched. POST stops the URL leak but does not make an API-only form work without JavaScript.
+- **A rejected async `onSubmit` is logged in development** (`console.error`); the form still leaves the submitting state.
 - **`onSubmit` may return a `Promise`** — when it does, the engine auto-clears submitting state once it settles (§18). Sync `onSubmit` behaves as before.
 - **`schema` drives `onSubmit` value typing**: `FormProps<Schema>` types `values` as `InferFormValues<Schema>` (§16).
 
@@ -358,7 +362,7 @@ useFormControl({ ...props, rules: [requiredRule, minLengthRule, emailRule] });
 | `floatRule` | — | `type="float"` | |
 | `urlRule` | — | `type="url"` | |
 | `alphabetRule` | — | `type="alphabet"` | |
-| `patternRule` | `pattern` (RegExp) | — | Patterns cached by source+flags; source capped at 200 chars. A value over 2000 chars **fails the rule** (fails closed — it is not truncated and matched, which would let an anchored pattern pass on a valid prefix) (ReDoS guard). An oversized/invalid pattern skips validation instead of failing the field |
+| `patternRule` | `pattern` (RegExp) | — | Patterns cached by source+flags; source capped at 200 chars. A value over 2000 chars **fails the rule** (fails closed — it is not truncated and matched, which would let an anchored pattern pass on a valid prefix) (ReDoS guard). An oversized/invalid pattern skips validation instead of failing the field and warns once per pattern in development (`console.warn`); the compiled-pattern cache is bounded to 500 entries |
 | `matchRule` | `match` (other input name) | — | Subscribes to the other input's changes |
 | `strongRule` | `strong` (boolean or object) | `type="password"` | Composite: 5 criteria, per-criterion errors in `errorsList["strong.<key>"]` |
 
@@ -893,8 +897,10 @@ Bulk-assign errors keyed by dot-notation control name — the canonical way to m
 onSubmit={async ({ values, form }) => {
   try {
     await api.save(values);
-  } catch (e) {
-    if (e.status === 422) form.setErrors(e.data.errors); // { "user.email": "Already taken" }
+  } catch (error: unknown) {
+    const { status, data } = (error ?? {}) as { status?: number; data?: { errors?: Record<string, string> } };
+
+    if (status === 422 && data?.errors) form.setErrors(data.errors); // { "user.email": "Already taken" }
   }
 }}
 ```

@@ -1,4 +1,5 @@
 import { trans } from "@mongez/localization";
+import { isDevelopment } from "../is-development";
 import { InputRule } from "../types";
 
 // Defense-in-depth caps: validation patterns/values may end up sourced from
@@ -6,7 +7,17 @@ import { InputRule } from "../types";
 const MAX_PATTERN_LENGTH = 200;
 const MAX_VALUE_LENGTH = 2000;
 
+const MAX_CACHE_SIZE = 500;
+
 const regexCache = new Map<string, RegExp | null>();
+
+function warnInvalidPattern(source: string) {
+  if (!isDevelopment()) return;
+
+  console.warn(
+    `[@mongez/react-form] The \`pattern\` rule is disabled: the pattern is invalid or longer than ${MAX_PATTERN_LENGTH} characters (${source.slice(0, 50)}).`
+  );
+}
 
 function compilePattern(pattern: string | RegExp): RegExp | null {
   const isString = typeof pattern === "string";
@@ -27,6 +38,12 @@ function compilePattern(pattern: string | RegExp): RegExp | null {
       compiled = null;
     }
   }
+
+  if (!compiled) warnInvalidPattern(source);
+
+  // Bound the cache: dynamic patterns (CMS-driven, per-keystroke) must not
+  // grow it forever. Clear on overflow, entries are cheap to recompile.
+  if (regexCache.size >= MAX_CACHE_SIZE) regexCache.clear();
 
   regexCache.set(cacheKey, compiled);
 

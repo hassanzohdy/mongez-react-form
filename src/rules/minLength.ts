@@ -11,6 +11,7 @@ export const minLengthRule: InputRule = {
       return trans(errors?.minLength ?? "validation.minLength", {
         input: errorKeys.name,
         length: minLength,
+        minLength,
       });
     }
   },
