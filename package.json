@@ -1,6 +1,6 @@
 {
   "name": "@mongez/react-form",
-  "version": "4.0.0",
+  "version": "4.1.0",
   "description": "A Powerful React form handler.",
   "main": "src/index.ts",
   "sideEffects": [
